@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Omahoy</title>
+<meta name="description" content="An onboard computer system for sailors who run Omarchy. Chartplotter, AIS, anchor watch, tides and the ship's log, written in Rust. Built in public aboard Dash.">
+<meta property="og:title" content="Omahoy">
+<meta property="og:description" content="An onboard computer system for sailors who run Omarchy.">
+<meta property="og:url" content="https://omahoy.org/">
+<meta property="og:image" content="https://omahoy.org/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1b26">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+<script>
+  // Palettes from Omarchy's own themes (themes/*/colors.toml). link, warn and
+  // sea are the colors used for text; they match the theme's accent, yellow and
+  // cyan except where those are too faint to read on the theme's background.
+  window.OMAHOY_THEMES = {
+    "tokyo-night": { bg: "#1a1b26", well: "#13141c", fg: "#a9b1d6", bright: "#c0caf5", dim: "#565f89", muted: "#414868", accent: "#7aa2f7", yellow: "#e0af68", green: "#9ece6a", link: "#7aa2f7", warn: "#e0af68", sea: "#449dab", soft: "#7e84a1" },
+    "catppuccin":  { bg: "#1e1e2e", well: "#161622", fg: "#cdd6f4", bright: "#cdd6f4", dim: "#6c7086", muted: "#585b70", accent: "#89b4fa", yellow: "#f9e2af", green: "#a6e3a1", link: "#89b4fa", warn: "#f9e2af", sea: "#94e2d5", soft: "#999fb9" },
+    "gruvbox":     { bg: "#282828", well: "#1e1e1e", fg: "#d4be98", bright: "#d4be98", dim: "#7c6f64", muted: "#665c54", accent: "#7daea3", yellow: "#d8a657", green: "#a9b665", link: "#7daea3", warn: "#d8a657", sea: "#89b482", soft: "#a09176" },
+    "matte-black": { bg: "#121212", well: "#0d0d0d", fg: "#bebebe", bright: "#bebebe", dim: "#555555", muted: "#333333", accent: "#e68e0d", yellow: "#b91c1c", green: "#FFC107", link: "#e68e0d", warn: "#e68e0d", sea: "#bebebe", soft: "#8a8a8a" },
+    "rose-pine":   { bg: "#faf4ed", well: "#ede7e1", fg: "#575279", bright: "#575279", dim: "#9893a5", muted: "#cecacd", accent: "#56949f", yellow: "#ea9d34", green: "#286983", link: "#3e6f78", warn: "#955a14", sea: "#3e6f78", soft: "#6f6a8a" },
+    "white":       { bg: "#ffffff", well: "#f5f5f5", fg: "#000000", bright: "#000000", dim: "#808080", muted: "#c0c0c0", accent: "#6e6e6e", yellow: "#4a4a4a", green: "#3a3a3a", link: "#6e6e6e", warn: "#4a4a4a", sea: "#3e3e3e", soft: "#4d4d4d" }
+  };
+  (function () {
+    var name = null;
+    try { name = localStorage.getItem("omahoy-theme"); } catch (e) {}
+    if (!window.OMAHOY_THEMES[name]) {
+      name = window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches ? "rose-pine" : "tokyo-night";
+    }
+    var t = window.OMAHOY_THEMES[name], s = document.documentElement.style;
+    for (var k in t) s.setProperty("--" + k, t[k]);
+    document.documentElement.dataset.theme = name;
+  })();
+</script>
+<style>
+  :root {
+    --bg: #1a1b26; --well: #13141c; --fg: #a9b1d6; --bright: #c0caf5; --dim: #565f89;
+    --muted: #414868; --accent: #7aa2f7; --yellow: #e0af68; --green: #9ece6a;
+    --link: #7aa2f7; --warn: #e0af68; --sea: #449dab; --soft: #7e84a1;
+    --line: color-mix(in srgb, var(--fg) 16%, var(--bg));
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", "Cascadia Mono", ui-monospace, monospace;
+    font-size: 14px;
+    line-height: 1.65;
+    padding-inline: 20px;
+    padding-block: 18px 40px;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  main { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 64px; }
+  p { margin: 0; max-width: 72ch; }
+
+  .row {
+    display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 16px;
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .row .right { color: var(--soft); }
+
+  .hero { display: flex; flex-direction: column; gap: 22px; }
+  .wordmark { width: min(100%, 620px); height: auto; color: var(--accent); display: block; }
+  h1 { margin: 0; font-size: clamp(20px, 3vw, 30px); line-height: 1.3; color: var(--bright); font-weight: 700; text-wrap: balance; max-width: 34ch; }
+  .lede { font-size: 15px; color: var(--fg); }
+  .state { color: var(--soft); font-size: 13px; }
+  .state b { color: var(--warn); font-weight: 400; }
+
+  .window { margin: 0; border: 2px solid var(--accent); background: var(--well); }
+  .bar {
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 18px;
+    padding: 5px 12px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--soft); background: var(--bg);
+  }
+  .bar.top { border-bottom: 1px solid var(--line); }
+  .bar.bottom { border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .bar .me { color: var(--link); }
+  .bar .near { color: var(--warn); }
+  .bar button {
+    font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--link);
+    background: none; border: 0; padding: 0; cursor: pointer;
+  }
+  .bar .group { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+  canvas#bay { display: block; width: 100%; height: auto; aspect-ratio: 192 / 170; }
+
+  .themes { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; font-size: 12px; margin-top: 12px; }
+  .themes .label { color: var(--soft); text-transform: uppercase; letter-spacing: 0.08em; margin-right: 6px; }
+  .themes button {
+    font: inherit; color: var(--soft); background: none; border: 1px solid var(--line);
+    padding: 1px 8px; cursor: pointer;
+  }
+  .themes button[aria-pressed="true"] { color: var(--bg); background: var(--link); border-color: var(--link); }
+  .themes kbd { font: inherit; color: var(--link); }
+  .themes .hint { color: var(--soft); margin-left: 6px; }
+
+  section { display: flex; flex-direction: column; gap: 18px; }
+  h2 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--link); }
+  h2::before { content: "## "; color: var(--dim); }
+
+  .apps { display: grid; grid-template-columns: max-content 1fr max-content; border-top: 1px solid var(--line); }
+  .apps > div { display: contents; }
+  .apps span, .apps a { padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .apps a { font-weight: 700; padding-right: 28px; }
+  .apps .what { color: var(--fg); padding-right: 20px; }
+  .apps .when { color: var(--soft); font-size: 12px; text-align: right; white-space: nowrap; }
+  .apps .when.first { color: var(--green); }
+  .apps .when.later { color: var(--soft); }
+  @media (max-width: 640px) {
+    .apps { display: block; }
+    .apps > div { display: grid; grid-template-columns: 1fr max-content; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .apps span, .apps a { padding: 0; border: 0; }
+    .apps .when { order: 2; }
+    .apps .what { order: 3; grid-column: 1 / -1; }
+  }
+
+  .dash { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px 48px; align-items: start; }
+  .dash p + p { margin-top: 12px; }
+  .dash dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; font-variant-numeric: tabular-nums; }
+  .dash dt { color: var(--soft); text-transform: uppercase; font-size: 12px; letter-spacing: 0.08em; padding-top: 1px; }
+  .dash dd { margin: 0; color: var(--bright); }
+  @media (max-width: 720px) { .dash { grid-template-columns: 1fr; } }
+
+  .principles { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px 40px; }
+  .principles li { display: flex; flex-direction: column; }
+  .principles b { color: var(--bright); }
+  .principles span { color: var(--soft); }
+
+  pre.cmd { margin: 0; padding: 12px 14px; background: var(--well); border-left: 2px solid var(--accent); overflow-x: auto; color: var(--bright); }
+  pre.cmd .prompt { color: var(--green); user-select: none; }
+
+  footer { max-width: 1100px; margin: 72px auto 0; border-top: 1px solid var(--line); padding-top: 14px; font-size: 12px; color: var(--soft); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="row">
+    <span>omahoy.org</span>
+    <span class="right">planned · MIT · <a href="https://github.com/shieldsworks/omahoy">github</a></span>
+  </div>
+
+  <div class="hero">
+    <svg class="wordmark" viewBox="0 0 74 18" role="img" aria-label="Omahoy"><path fill="currentColor" d="M17 1h3v1h-3zM2 2h5v1h-5zM13 2h11v1h-11zM31 2h7v1h-7zM44 2h1v1h-1zM48 2h1v1h-1zM56 2h5v1h-5zM67 2h1v1h-1zM71 2h1v1h-1zM1 3h7v1h-7zM12 3h13v1h-13zM30 3h8v1h-8zM43 3h2v1h-2zM48 3h2v1h-2zM55 3h7v1h-7zM66 3h2v1h-2zM71 3h2v1h-2zM0 4h3v1h-3zM6 4h3v1h-3zM11 4h3v1h-3zM17 4h3v1h-3zM23 4h3v1h-3zM29 4h3v1h-3zM35 4h3v1h-3zM42 4h3v1h-3zM48 4h3v1h-3zM54 4h3v1h-3zM60 4h3v1h-3zM65 4h3v1h-3zM71 4h3v1h-3zM0 5h3v1h-3zM6 5h3v1h-3zM11 5h3v1h-3zM17 5h3v1h-3zM23 5h3v1h-3zM29 5h3v1h-3zM35 5h3v1h-3zM42 5h3v1h-3zM48 5h3v1h-3zM54 5h3v1h-3zM60 5h3v1h-3zM65 5h3v1h-3zM71 5h3v1h-3zM0 6h3v1h-3zM6 6h3v1h-3zM11 6h3v1h-3zM17 6h3v1h-3zM23 6h3v1h-3zM29 6h3v1h-3zM35 6h3v1h-3zM42 6h3v1h-3zM48 6h3v1h-3zM54 6h3v1h-3zM60 6h3v1h-3zM65 6h3v1h-3zM71 6h3v1h-3zM0 7h3v1h-3zM6 7h3v1h-3zM11 7h3v1h-3zM17 7h3v1h-3zM23 7h3v1h-3zM29 7h3v1h-3zM35 7h3v1h-3zM42 7h3v1h-3zM48 7h3v1h-3zM54 7h3v1h-3zM60 7h3v1h-3zM65 7h3v1h-3zM71 7h3v1h-3zM0 8h3v1h-3zM6 8h3v1h-3zM11 8h3v1h-3zM17 8h3v1h-3zM23 8h3v1h-3zM29 8h3v1h-3zM35 8h3v1h-3zM42 8h3v1h-3zM48 8h3v1h-3zM54 8h3v1h-3zM60 8h3v1h-3zM65 8h3v1h-3zM71 8h3v1h-3zM0 9h3v1h-3zM6 9h3v1h-3zM11 9h3v1h-3zM17 9h3v1h-3zM23 9h3v1h-3zM28 9h10v1h-10zM41 9h11v1h-11zM54 9h3v1h-3zM60 9h3v1h-3zM65 9h9v1h-9zM0 10h3v1h-3zM6 10h3v1h-3zM11 10h3v1h-3zM17 10h3v1h-3zM23 10h3v1h-3zM28 10h10v1h-10zM40 10h11v1h-11zM54 10h3v1h-3zM60 10h3v1h-3zM65 10h9v1h-9zM0 11h3v1h-3zM6 11h3v1h-3zM11 11h3v1h-3zM17 11h3v1h-3zM23 11h3v1h-3zM29 11h3v1h-3zM35 11h3v1h-3zM42 11h3v1h-3zM48 11h3v1h-3zM54 11h3v1h-3zM60 11h3v1h-3zM71 11h3v1h-3zM0 12h3v1h-3zM6 12h3v1h-3zM11 12h3v1h-3zM17 12h3v1h-3zM23 12h3v1h-3zM29 12h3v1h-3zM35 12h3v1h-3zM42 12h3v1h-3zM48 12h3v1h-3zM54 12h3v1h-3zM60 12h3v1h-3zM66 12h2v1h-2zM71 12h3v1h-3zM0 13h3v1h-3zM6 13h3v1h-3zM11 13h3v1h-3zM17 13h3v1h-3zM23 13h3v1h-3zM29 13h3v1h-3zM35 13h3v1h-3zM42 13h3v1h-3zM48 13h3v1h-3zM54 13h3v1h-3zM60 13h3v1h-3zM65 13h3v1h-3zM71 13h3v1h-3zM0 14h3v1h-3zM6 14h3v1h-3zM11 14h3v1h-3zM17 14h3v1h-3zM23 14h3v1h-3zM29 14h3v1h-3zM35 14h3v1h-3zM42 14h3v1h-3zM48 14h3v1h-3zM54 14h3v1h-3zM60 14h3v1h-3zM65 14h3v1h-3zM71 14h3v1h-3zM0 15h3v1h-3zM6 15h3v1h-3zM11 15h3v1h-3zM17 15h3v1h-3zM23 15h3v1h-3zM29 15h3v1h-3zM35 15h3v1h-3zM42 15h3v1h-3zM48 15h3v1h-3zM54 15h3v1h-3zM60 15h3v1h-3zM65 15h3v1h-3zM71 15h3v1h-3zM1 16h7v1h-7zM12 16h2v1h-2zM17 16h3v1h-3zM23 16h2v1h-2zM29 16h3v1h-3zM35 16h2v1h-2zM42 16h3v1h-3zM48 16h2v1h-2zM55 16h7v1h-7zM66 16h7v1h-7zM2 17h5v1h-5zM13 17h1v1h-1zM17 17h3v1h-3zM23 17h1v1h-1zM29 17h3v1h-3zM35 17h1v1h-1zM42 17h3v1h-3zM48 17h1v1h-1zM56 17h5v1h-5zM67 17h5v1h-5z"/></svg>
+    <h1>An onboard computer system for sailors who run Omarchy.</h1>
+    <p class="lede">Chartplotter, AIS, anchor watch, tides and the ship's log. Small Rust apps that stand alone, work together, and draw in your Omarchy theme. Built in public aboard Dash, a Pacific Seacraft 25 on San Francisco Bay.</p>
+    <p class="state"><b>[ planned ]</b> Nothing to install yet. Follow the build on <a href="https://github.com/shieldsworks">GitHub</a>.</p>
+  </div>
+
+  <div>
+    <figure class="window">
+      <div class="bar top"><span class="me">omahelm</span><span class="group"><span>San Francisco Bay · sample traffic</span><button type="button" id="motion">Pause</button></span></div>
+      <canvas id="bay" role="img" aria-label="Dot chart of San Francisco Bay, with Dash berthed at Berkeley Marina, two-mile and four-mile range rings, and three sample vessels underway: a ferry, a cargo ship and a sailboat."></canvas>
+      <div class="bar bottom">
+        <span class="group"><span class="me">◆ Dash</span><span>37°52.0′N 122°18.9′W</span><span>Berthed · Berkeley Marina</span></span>
+        <span class="group"><span id="ais">AIS 3</span><span class="near" id="nearest">&nbsp;</span></span>
+      </div>
+    </figure>
+    <div class="themes" id="themes">
+      <span class="label">Theme</span>
+      <span class="hint">press <kbd>T</kbd></span>
+    </div>
+  </div>
+
+  <section>
+    <h2>The apps</h2>
+    <p>Install only what you want. Each app is its own repo and its own Omarchy plugin, and each one keeps working if the others aren't there.</p>
+    <div class="apps">
+      <div><a href="https://github.com/shieldsworks/omakeel">omakeel</a><span class="what">The data hub. GPS, AIS and sensors, served to every app, on the boat and across its network.</span><span class="when first">building first</span></div>
+      <div><a href="https://github.com/shieldsworks/omahelm">omahelm</a><span class="what">Chartplotter. NOAA charts, read and drawn from scratch, full screen on a workspace of its own.</span><span class="when">planned</span></div>
+      <div><a href="https://github.com/shieldsworks/omalookout">omalookout</a><span class="what">AIS targets, closest point of approach, and collision alarms. The nearest vessel sits in your bar.</span><span class="when">planned</span></div>
+      <div><a href="https://github.com/shieldsworks/omanchor">omanchor</a><span class="what">Anchor watch. Drag alarms aboard and on your phone, still watching with the laptop closed.</span><span class="when">planned</span></div>
+      <div><a href="https://github.com/shieldsworks/omalogbook">omalogbook</a><span class="what">The ship's log. Automatic entries and your own notes, as plain text in a git repo.</span><span class="when">planned</span></div>
+      <div><a href="https://github.com/shieldsworks/omatide">omatide</a><span class="what">Tides and currents, predicted on the boat with no connection.</span><span class="when">planned</span></div>
+      <div><a href="https://github.com/shieldsworks/omabosun">omabosun</a><span class="what">The boat's systems. Battery, solar, bilge, engine hours, maintenance, and the Starlink switch.</span><span class="when">planned</span></div>
+      <div><a href="https://github.com/shieldsworks/omagauge">omagauge</a><span class="what">Instrument dials for speed, course, depth, wind and pressure, as windows or bar widgets.</span><span class="when">planned</span></div>
+      <div><a href="https://github.com/shieldsworks/omatiller">omatiller</a><span class="what">Tiller pilot control. Last to be built, because it steers the boat.</span><span class="when later">later</span></div>
+      <div><a href="https://github.com/shieldsworks/omarig">omarig</a><span class="what">Open sensor hardware. ESP32 nodes with Rust firmware, built for salt air.</span><span class="when">planned</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Aboard Dash</h2>
+    <div class="dash">
+      <div>
+        <p>Omahoy is being built on a real boat. Dash is a Pacific Seacraft 25, one of 157 built between 1976 and 1981, berthed in the Berkeley Marina. She sails San Francisco Bay today. Someday she sails around the world.</p>
+        <p>First a laptop comes aboard with a GPS and an AIS receiver. Then a permanent nav station, sensors, and Starlink. Every part goes up in the open, the wiring included.</p>
+      </div>
+      <dl>
+        <dt>Length</dt><dd>24.5 ft</dd>
+        <dt>Beam</dt><dd>8.0 ft</dd>
+        <dt>Draft</dt><dd>3.3 ft</dd>
+        <dt>Weight</dt><dd>5,700 lb</dd>
+        <dt>Steering</dt><dd>Tiller</dd>
+        <dt>Berth</dt><dd>37°52′N 122°19′W</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <h2>Principles</h2>
+    <ul class="principles">
+      <li><b>From scratch, in Rust.</b><span>No borrowed marine software. The hub, the chart renderer and the firmware are all new.</span></li>
+      <li><b>Native to Omarchy.</b><span>Standard plugins. Your theme's colors, and a key for everything.</span></li>
+      <li><b>Safe without the internet.</b><span>Starlink carries the data. Anchor watch, AIS and position never depend on it.</span></li>
+      <li><b>Honest.</b><span>Stale data says it's stale. A missing fix is never drawn as a fix.</span></li>
+      <li><b>Any Omarchy machine.</b><span>x86_64 and aarch64, from a nav station PC to a MacBook on Asahi.</span></li>
+      <li><b>Good company.</b><span>Pairs with <a href="https://omastorm.com">Omastorm</a>, live NEXRAD radar for Omarchy.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Install</h2>
+    <p>Not yet. When omakeel ships, installing it will look like this:</p>
+    <pre class="cmd"><span class="prompt">$ </span>omarchy plugin add https://github.com/shieldsworks/omakeel.git --enable</pre>
+  </section>
+</main>
+
+<footer>
+  <span>MIT · Not for navigation. Carry a backup.</span>
+  <span>Coastline © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
+</footer>
+
+<script src="bay.js"></script>
+<script>
+(function () {
+  var THEMES = window.OMAHOY_THEMES, NAMES = Object.keys(THEMES), BAY = window.OMAHOY_BAY;
+  var root = document.documentElement;
+  var canvas = document.getElementById("bay"), ctx = canvas.getContext("2d");
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+  var paused = reduce.matches, visible = true, raf = 0, clock = 0, last = 0;
+
+  // Unpack the dot grid: 0 water, 1 land, 2 coast, four dots per byte.
+  var raw = atob(BAY.grid), grid = new Uint8Array(BAY.w * BAY.h);
+  for (var i = 0; i < grid.length; i++) grid[i] = (raw.charCodeAt(i >> 2) >> ((i & 3) * 2)) & 3;
+
+  // Routes as cumulative distances so a target moves at a steady pace.
+  var targets = BAY.routes.map(function (r, n) {
+    var pts = r.points.slice();
+    if (r.loop) pts.push(pts[0]);
+    var acc = [0];
+    for (var j = 1; j < pts.length; j++) {
+      acc.push(acc[j - 1] + Math.hypot(pts[j][0] - pts[j - 1][0], pts[j][1] - pts[j - 1][1]));
+    }
+    return { name: r.name, knots: r.knots, pts: pts, acc: acc, len: acc[acc.length - 1], phase: [0.35, 0.15, 0.6][n] || 0 };
+  });
+
+  function place(t, time) {
+    var d = (t.phase * t.len + time * t.knots * 0.35) % t.len;
+    var j = 1;
+    while (t.acc[j] < d) j++;
+    var a = t.pts[j - 1], b = t.pts[j], f = (d - t.acc[j - 1]) / (t.acc[j] - t.acc[j - 1]);
+    return { x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, dir: Math.atan2(b[1] - a[1], b[0] - a[0]) };
+  }
+
+  var theme, pitch = 1, dpr = 1, base = document.createElement("canvas");
+
+  function color(k) { return theme[k]; }
+
+  function drawBase() {
+    var w = canvas.width, h = canvas.height, b = base.getContext("2d");
+    base.width = w; base.height = h;
+    b.fillStyle = color("well"); b.fillRect(0, 0, w, h);
+    var p = pitch * dpr, s = Math.max(1, p * 0.5);
+    b.fillStyle = color("muted");
+    for (var y = 0; y < BAY.h; y++) for (var x = 0; x < BAY.w; x++) {
+      if (grid[y * BAY.w + x] === 1 && ((x + y) & 1) === 0) b.fillRect(x * p + (p - s) / 2, y * p + (p - s) / 2, s, s);
+    }
+    b.fillStyle = color("fg");
+    var c = Math.max(1, p * 0.62);
+    for (y = 0; y < BAY.h; y++) for (x = 0; x < BAY.w; x++) {
+      if (grid[y * BAY.w + x] === 2) b.fillRect(x * p + (p - c) / 2, y * p + (p - c) / 2, c, c);
+    }
+    // Range rings around the berth, two and four miles.
+    var bx = BAY.berth.at[0] * p, by = BAY.berth.at[1] * p;
+    b.strokeStyle = color("dim"); b.lineWidth = Math.max(1, dpr); b.setLineDash([3 * dpr, 4 * dpr]);
+    [2, 4].forEach(function (nm) {
+      var r = nm / BAY.nmPerDot * p;
+      b.beginPath(); b.arc(bx, by, r, 0, Math.PI * 2); b.stroke();
+    });
+    b.setLineDash([]);
+    var fs = Math.round(Math.min(13, Math.max(8, pitch * 3.4)) * dpr);
+    b.textAlign = "center"; b.textBaseline = "middle";
+    b.font = fs + 'px "JetBrains Mono", ui-monospace, monospace';
+    b.fillStyle = color("dim");
+    b.fillText("2 nm", bx, by - 2 / BAY.nmPerDot * p - fs * 0.7);
+    BAY.places.forEach(function (pl) {
+      var water = pl.kind === "water";
+      b.font = (water ? "italic " : "") + fs + 'px "JetBrains Mono", ui-monospace, monospace';
+      b.lineWidth = 4 * dpr; b.strokeStyle = color("well"); b.lineJoin = "round";
+      b.strokeText(pl.text, pl.at[0] * p, pl.at[1] * p);
+      b.fillStyle = water ? color("sea") : color("fg");
+      b.fillText(pl.text, pl.at[0] * p, pl.at[1] * p);
+    });
+    // Scale bar, one nautical mile.
+    var one = 1 / BAY.nmPerDot * p, sx = 14 * dpr, sy = h - 14 * dpr;
+    b.strokeStyle = color("fg"); b.lineWidth = Math.max(1, dpr);
+    b.beginPath(); b.moveTo(sx, sy - 4 * dpr); b.lineTo(sx, sy); b.lineTo(sx + one, sy); b.lineTo(sx + one, sy - 4 * dpr); b.stroke();
+    b.textAlign = "left"; b.fillStyle = color("fg"); b.font = fs + 'px "JetBrains Mono", ui-monospace, monospace';
+    b.fillText("1 nm", sx + one + 6 * dpr, sy - 2 * dpr);
+  }
+
+  var nearestEl = document.getElementById("nearest");
+
+  function frame(time) {
+    var p = pitch * dpr;
+    ctx.drawImage(base, 0, 0);
+    var fs = Math.round(Math.min(13, Math.max(8, pitch * 3.4)) * dpr);
+    ctx.font = fs + 'px "JetBrains Mono", ui-monospace, monospace';
+    ctx.textBaseline = "middle";
+    var bx = BAY.berth.at[0] * p, by = BAY.berth.at[1] * p, near = null;
+    targets.forEach(function (t) {
+      var at = place(t, time / 1000), x = at.x * p, y = at.y * p, r = Math.max(4 * dpr, p * 2.4);
+      // Course over ground for the next six minutes.
+      var ahead = t.knots * 0.1 / BAY.nmPerDot * p;
+      ctx.strokeStyle = color("warn"); ctx.lineWidth = Math.max(1, dpr);
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(at.dir) * ahead, y + Math.sin(at.dir) * ahead); ctx.stroke();
+      ctx.save(); ctx.translate(x, y); ctx.rotate(at.dir);
+      ctx.fillStyle = color("warn");
+      ctx.beginPath(); ctx.moveTo(r, 0); ctx.lineTo(-r * 0.7, r * 0.6); ctx.lineTo(-r * 0.7, -r * 0.6); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      ctx.textAlign = "left"; ctx.lineWidth = 4 * dpr; ctx.strokeStyle = color("well"); ctx.lineJoin = "round";
+      // Label above and right of the target, kept inside the chart.
+      var label = t.name + " " + t.knots + " kn", lw = ctx.measureText(label).width;
+      var lx = Math.min(x + r + 5 * dpr, canvas.width - lw - 4 * dpr), ly = Math.max(fs * 0.8, y - r - 2 * dpr);
+      ctx.strokeText(label, lx, ly);
+      ctx.fillStyle = color("warn"); ctx.fillText(label, lx, ly);
+      var nm = Math.hypot(at.x - BAY.berth.at[0], at.y - BAY.berth.at[1]) * BAY.nmPerDot;
+      if (!near || nm < near.nm) near = { name: t.name, nm: nm };
+    });
+    // Dash, berthed.
+    var d = Math.max(5 * dpr, p * 3);
+    ctx.fillStyle = color("accent");
+    ctx.beginPath(); ctx.moveTo(bx, by - d); ctx.lineTo(bx + d, by); ctx.lineTo(bx, by + d); ctx.lineTo(bx - d, by); ctx.closePath(); ctx.fill();
+    ctx.textAlign = "right"; ctx.font = "bold " + fs + 'px "JetBrains Mono", ui-monospace, monospace';
+    ctx.lineWidth = 4 * dpr; ctx.strokeStyle = color("well"); ctx.fillStyle = color("link");
+    ctx.strokeText("DASH", bx - d - 5 * dpr, by); ctx.fillText("DASH", bx - d - 5 * dpr, by);
+    if (near) {
+      var status = "Nearest " + near.name + " " + near.nm.toFixed(1) + " nm";
+      if (nearestEl.textContent !== status) nearestEl.textContent = status;
+    }
+  }
+
+  // Animation runs on its own clock so pausing and scrolling away resume in place.
+  function tick(now) {
+    raf = 0;
+    if (paused || !visible) return;
+    if (last) clock += now - last;
+    last = now;
+    frame(clock);
+    raf = requestAnimationFrame(tick);
+  }
+  function run() { if (!raf && !paused && visible) { last = 0; raf = requestAnimationFrame(tick); } }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = canvas.clientWidth;
+    pitch = w / BAY.w;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(pitch * BAY.h * dpr);
+    drawBase();
+    frame(clock);
+  }
+
+  function apply(name) {
+    theme = THEMES[name];
+    for (var k in theme) root.style.setProperty("--" + k, theme[k]);
+    root.dataset.theme = name;
+    document.querySelector('meta[name="theme-color"]').setAttribute("content", theme.bg);
+    buttons.forEach(function (btn) { btn.setAttribute("aria-pressed", String(btn.dataset.theme === name)); });
+    try { localStorage.setItem("omahoy-theme", name); } catch (e) {}
+    if (canvas.width) { drawBase(); frame(clock); }
+  }
+
+  var picker = document.getElementById("themes"), hint = picker.querySelector(".hint");
+  var buttons = NAMES.map(function (name) {
+    var btn = document.createElement("button");
+    btn.type = "button"; btn.textContent = name; btn.dataset.theme = name;
+    btn.addEventListener("click", function () { apply(name); });
+    picker.insertBefore(btn, hint);
+    return btn;
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "t" && e.key !== "T") return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var n = NAMES.indexOf(root.dataset.theme);
+    apply(NAMES[(n + (e.shiftKey ? NAMES.length - 1 : 1)) % NAMES.length]);
+  });
+
+  apply(root.dataset.theme in THEMES ? root.dataset.theme : "tokyo-night");
+  resize();
+  window.addEventListener("resize", resize);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
+  var motion = document.getElementById("motion");
+  function setPaused(p) {
+    paused = p;
+    motion.textContent = p ? "Play" : "Pause";
+    run();
+  }
+  motion.addEventListener("click", function () { setPaused(!paused); });
+  reduce.addEventListener("change", function (e) { setPaused(e.matches); });
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) {
+      visible = entries[0].isIntersecting;
+      run();
+    }).observe(canvas);
+  }
+  setPaused(paused);
+})();
+</script>
+</body>
+</html>
