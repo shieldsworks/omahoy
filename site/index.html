@@ -16,14 +16,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
 <script>
-  // Palettes from Omarchy's own themes (themes/*/colors.toml).
+  // Palettes from Omarchy's own themes (themes/*/colors.toml). link, warn and
+  // sea are the colors used for text; they match the theme's accent, yellow and
+  // cyan except where those are too faint to read on the theme's background.
   window.OMAHOY_THEMES = {
-    "tokyo-night": { bg: "#1a1b26", well: "#13141c", fg: "#a9b1d6", bright: "#c0caf5", dim: "#565f89", muted: "#414868", accent: "#7aa2f7", yellow: "#e0af68", red: "#f7768e", cyan: "#449dab", green: "#9ece6a" },
-    "catppuccin":  { bg: "#1e1e2e", well: "#161622", fg: "#cdd6f4", bright: "#cdd6f4", dim: "#6c7086", muted: "#585b70", accent: "#89b4fa", yellow: "#f9e2af", red: "#f38ba8", cyan: "#94e2d5", green: "#a6e3a1" },
-    "gruvbox":     { bg: "#282828", well: "#1e1e1e", fg: "#d4be98", bright: "#d4be98", dim: "#7c6f64", muted: "#665c54", accent: "#7daea3", yellow: "#d8a657", red: "#ea6962", cyan: "#89b482", green: "#a9b665" },
-    "matte-black": { bg: "#121212", well: "#0d0d0d", fg: "#bebebe", bright: "#bebebe", dim: "#555555", muted: "#333333", accent: "#e68e0d", yellow: "#b91c1c", red: "#D35F5F", cyan: "#bebebe", green: "#FFC107" },
-    "rose-pine":   { bg: "#faf4ed", well: "#ede7e1", fg: "#575279", bright: "#575279", dim: "#9893a5", muted: "#cecacd", accent: "#56949f", yellow: "#ea9d34", red: "#b4637a", cyan: "#d7827e", green: "#286983" },
-    "white":       { bg: "#ffffff", well: "#f5f5f5", fg: "#000000", bright: "#000000", dim: "#808080", muted: "#c0c0c0", accent: "#6e6e6e", yellow: "#4a4a4a", red: "#2a2a2a", cyan: "#3e3e3e", green: "#3a3a3a" }
+    "tokyo-night": { bg: "#1a1b26", well: "#13141c", fg: "#a9b1d6", bright: "#c0caf5", dim: "#565f89", muted: "#414868", accent: "#7aa2f7", yellow: "#e0af68", green: "#9ece6a", link: "#7aa2f7", warn: "#e0af68", sea: "#449dab", soft: "#7e84a1" },
+    "catppuccin":  { bg: "#1e1e2e", well: "#161622", fg: "#cdd6f4", bright: "#cdd6f4", dim: "#6c7086", muted: "#585b70", accent: "#89b4fa", yellow: "#f9e2af", green: "#a6e3a1", link: "#89b4fa", warn: "#f9e2af", sea: "#94e2d5", soft: "#999fb9" },
+    "gruvbox":     { bg: "#282828", well: "#1e1e1e", fg: "#d4be98", bright: "#d4be98", dim: "#7c6f64", muted: "#665c54", accent: "#7daea3", yellow: "#d8a657", green: "#a9b665", link: "#7daea3", warn: "#d8a657", sea: "#89b482", soft: "#a09176" },
+    "matte-black": { bg: "#121212", well: "#0d0d0d", fg: "#bebebe", bright: "#bebebe", dim: "#555555", muted: "#333333", accent: "#e68e0d", yellow: "#b91c1c", green: "#FFC107", link: "#e68e0d", warn: "#e68e0d", sea: "#bebebe", soft: "#8a8a8a" },
+    "rose-pine":   { bg: "#faf4ed", well: "#ede7e1", fg: "#575279", bright: "#575279", dim: "#9893a5", muted: "#cecacd", accent: "#56949f", yellow: "#ea9d34", green: "#286983", link: "#3e6f78", warn: "#955a14", sea: "#3e6f78", soft: "#6f6a8a" },
+    "white":       { bg: "#ffffff", well: "#f5f5f5", fg: "#000000", bright: "#000000", dim: "#808080", muted: "#c0c0c0", accent: "#6e6e6e", yellow: "#4a4a4a", green: "#3a3a3a", link: "#6e6e6e", warn: "#4a4a4a", sea: "#3e3e3e", soft: "#4d4d4d" }
   };
   (function () {
     var name = null;
@@ -39,8 +41,8 @@
 <style>
   :root {
     --bg: #1a1b26; --well: #13141c; --fg: #a9b1d6; --bright: #c0caf5; --dim: #565f89;
-    --muted: #414868; --accent: #7aa2f7; --yellow: #e0af68; --red: #f7768e; --cyan: #449dab; --green: #9ece6a;
-    --soft: color-mix(in srgb, var(--fg) 70%, var(--bg));
+    --muted: #414868; --accent: #7aa2f7; --yellow: #e0af68; --green: #9ece6a;
+    --link: #7aa2f7; --warn: #e0af68; --sea: #449dab; --soft: #7e84a1;
     --line: color-mix(in srgb, var(--fg) 16%, var(--bg));
   }
   * { box-sizing: border-box; }
@@ -53,7 +55,7 @@
     padding-block: 18px 40px;
     -webkit-font-smoothing: antialiased;
   }
-  a { color: var(--accent); text-decoration: none; }
+  a { color: var(--link); text-decoration: none; }
   a:hover { text-decoration: underline; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   main { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 64px; }
@@ -70,7 +72,7 @@
   h1 { margin: 0; font-size: clamp(20px, 3vw, 30px); line-height: 1.3; color: var(--bright); font-weight: 700; text-wrap: balance; max-width: 34ch; }
   .lede { font-size: 15px; color: var(--fg); }
   .state { color: var(--soft); font-size: 13px; }
-  .state b { color: var(--yellow); font-weight: 400; }
+  .state b { color: var(--warn); font-weight: 400; }
 
   .window { margin: 0; border: 2px solid var(--accent); background: var(--well); }
   .bar {
@@ -80,8 +82,12 @@
   }
   .bar.top { border-bottom: 1px solid var(--line); }
   .bar.bottom { border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
-  .bar .me { color: var(--accent); }
-  .bar .near { color: var(--yellow); }
+  .bar .me { color: var(--link); }
+  .bar .near { color: var(--warn); }
+  .bar button {
+    font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--link);
+    background: none; border: 0; padding: 0; cursor: pointer;
+  }
   .bar .group { display: flex; flex-wrap: wrap; gap: 4px 18px; }
   canvas#bay { display: block; width: 100%; height: auto; aspect-ratio: 192 / 170; }
 
@@ -91,12 +97,12 @@
     font: inherit; color: var(--soft); background: none; border: 1px solid var(--line);
     padding: 1px 8px; cursor: pointer;
   }
-  .themes button[aria-pressed="true"] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
-  .themes kbd { font: inherit; color: var(--accent); }
+  .themes button[aria-pressed="true"] { color: var(--bg); background: var(--link); border-color: var(--link); }
+  .themes kbd { font: inherit; color: var(--link); }
   .themes .hint { color: var(--soft); margin-left: 6px; }
 
   section { display: flex; flex-direction: column; gap: 18px; }
-  h2 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+  h2 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--link); }
   h2::before { content: "## "; color: var(--dim); }
 
   .apps { display: grid; grid-template-columns: max-content 1fr max-content; border-top: 1px solid var(--line); }
@@ -106,7 +112,7 @@
   .apps .what { color: var(--fg); padding-right: 20px; }
   .apps .when { color: var(--soft); font-size: 12px; text-align: right; white-space: nowrap; }
   .apps .when.first { color: var(--green); }
-  .apps .when.later { color: var(--dim); }
+  .apps .when.later { color: var(--soft); }
   @media (max-width: 640px) {
     .apps { display: block; }
     .apps > div { display: grid; grid-template-columns: 1fr max-content; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
@@ -149,7 +155,7 @@
 
   <div>
     <figure class="window">
-      <div class="bar top"><span class="me">omahelm</span><span>San Francisco Bay · sample traffic</span></div>
+      <div class="bar top"><span class="me">omahelm</span><span class="group"><span>San Francisco Bay · sample traffic</span><button type="button" id="motion">Pause</button></span></div>
       <canvas id="bay" role="img" aria-label="Dot chart of San Francisco Bay, with Dash berthed at Berkeley Marina, two-mile and four-mile range rings, and three sample vessels underway: a ferry, a cargo ship and a sailboat."></canvas>
       <div class="bar bottom">
         <span class="group"><span class="me">◆ Dash</span><span>37°52.0′N 122°18.9′W</span><span>Berthed · Berkeley Marina</span></span>
@@ -227,7 +233,8 @@
   var THEMES = window.OMAHOY_THEMES, NAMES = Object.keys(THEMES), BAY = window.OMAHOY_BAY;
   var root = document.documentElement;
   var canvas = document.getElementById("bay"), ctx = canvas.getContext("2d");
-  var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+  var paused = reduce.matches, visible = true, raf = 0, clock = 0, last = 0;
 
   // Unpack the dot grid: 0 water, 1 land, 2 coast, four dots per byte.
   var raw = atob(BAY.grid), grid = new Uint8Array(BAY.w * BAY.h);
@@ -288,7 +295,7 @@
       b.font = (water ? "italic " : "") + fs + 'px "JetBrains Mono", ui-monospace, monospace';
       b.lineWidth = 4 * dpr; b.strokeStyle = color("well"); b.lineJoin = "round";
       b.strokeText(pl.text, pl.at[0] * p, pl.at[1] * p);
-      b.fillStyle = water ? color("cyan") : color("fg");
+      b.fillStyle = water ? color("sea") : color("fg");
       b.fillText(pl.text, pl.at[0] * p, pl.at[1] * p);
     });
     // Scale bar, one nautical mile.
@@ -299,7 +306,7 @@
     b.fillText("1 nm", sx + one + 6 * dpr, sy - 2 * dpr);
   }
 
-  var nearestEl = document.getElementById("nearest"), lastStatus = 0;
+  var nearestEl = document.getElementById("nearest");
 
   function frame(time) {
     var p = pitch * dpr;
@@ -312,16 +319,18 @@
       var at = place(t, time / 1000), x = at.x * p, y = at.y * p, r = Math.max(4 * dpr, p * 2.4);
       // Course over ground for the next six minutes.
       var ahead = t.knots * 0.1 / BAY.nmPerDot * p;
-      ctx.strokeStyle = color("yellow"); ctx.lineWidth = Math.max(1, dpr);
+      ctx.strokeStyle = color("warn"); ctx.lineWidth = Math.max(1, dpr);
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(at.dir) * ahead, y + Math.sin(at.dir) * ahead); ctx.stroke();
       ctx.save(); ctx.translate(x, y); ctx.rotate(at.dir);
-      ctx.fillStyle = color("yellow");
+      ctx.fillStyle = color("warn");
       ctx.beginPath(); ctx.moveTo(r, 0); ctx.lineTo(-r * 0.7, r * 0.6); ctx.lineTo(-r * 0.7, -r * 0.6); ctx.closePath(); ctx.fill();
       ctx.restore();
       ctx.textAlign = "left"; ctx.lineWidth = 4 * dpr; ctx.strokeStyle = color("well"); ctx.lineJoin = "round";
-      var label = t.name + " " + t.knots + " kn";
-      ctx.strokeText(label, x + r + 5 * dpr, y - r - 2 * dpr);
-      ctx.fillStyle = color("yellow"); ctx.fillText(label, x + r + 5 * dpr, y - r - 2 * dpr);
+      // Label above and right of the target, kept inside the chart.
+      var label = t.name + " " + t.knots + " kn", lw = ctx.measureText(label).width;
+      var lx = Math.min(x + r + 5 * dpr, canvas.width - lw - 4 * dpr), ly = Math.max(fs * 0.8, y - r - 2 * dpr);
+      ctx.strokeText(label, lx, ly);
+      ctx.fillStyle = color("warn"); ctx.fillText(label, lx, ly);
       var nm = Math.hypot(at.x - BAY.berth.at[0], at.y - BAY.berth.at[1]) * BAY.nmPerDot;
       if (!near || nm < near.nm) near = { name: t.name, nm: nm };
     });
@@ -330,13 +339,24 @@
     ctx.fillStyle = color("accent");
     ctx.beginPath(); ctx.moveTo(bx, by - d); ctx.lineTo(bx + d, by); ctx.lineTo(bx, by + d); ctx.lineTo(bx - d, by); ctx.closePath(); ctx.fill();
     ctx.textAlign = "right"; ctx.font = "bold " + fs + 'px "JetBrains Mono", ui-monospace, monospace';
-    ctx.lineWidth = 4 * dpr; ctx.strokeStyle = color("well");
+    ctx.lineWidth = 4 * dpr; ctx.strokeStyle = color("well"); ctx.fillStyle = color("link");
     ctx.strokeText("DASH", bx - d - 5 * dpr, by); ctx.fillText("DASH", bx - d - 5 * dpr, by);
-    if (near && (time - lastStatus > 500 || !lastStatus)) {
-      lastStatus = time;
-      nearestEl.textContent = "Nearest " + near.name + " " + near.nm.toFixed(1) + " nm";
+    if (near) {
+      var status = "Nearest " + near.name + " " + near.nm.toFixed(1) + " nm";
+      if (nearestEl.textContent !== status) nearestEl.textContent = status;
     }
   }
+
+  // Animation runs on its own clock so pausing and scrolling away resume in place.
+  function tick(now) {
+    raf = 0;
+    if (paused || !visible) return;
+    if (last) clock += now - last;
+    last = now;
+    frame(clock);
+    raf = requestAnimationFrame(tick);
+  }
+  function run() { if (!raf && !paused && visible) { last = 0; raf = requestAnimationFrame(tick); } }
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -345,7 +365,7 @@
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(pitch * BAY.h * dpr);
     drawBase();
-    frame(performance.now());
+    frame(clock);
   }
 
   function apply(name) {
@@ -355,7 +375,7 @@
     document.querySelector('meta[name="theme-color"]').setAttribute("content", theme.bg);
     buttons.forEach(function (btn) { btn.setAttribute("aria-pressed", String(btn.dataset.theme === name)); });
     try { localStorage.setItem("omahoy-theme", name); } catch (e) {}
-    if (canvas.width) { drawBase(); frame(performance.now()); }
+    if (canvas.width) { drawBase(); frame(clock); }
   }
 
   var picker = document.getElementById("themes"), hint = picker.querySelector(".hint");
@@ -378,7 +398,21 @@
   resize();
   window.addEventListener("resize", resize);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
-  if (!still) (function loop(t) { frame(t); requestAnimationFrame(loop); })(performance.now());
+  var motion = document.getElementById("motion");
+  function setPaused(p) {
+    paused = p;
+    motion.textContent = p ? "Play" : "Pause";
+    run();
+  }
+  motion.addEventListener("click", function () { setPaused(!paused); });
+  reduce.addEventListener("change", function (e) { setPaused(e.matches); });
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) {
+      visible = entries[0].isIntersecting;
+      run();
+    }).observe(canvas);
+  }
+  setPaused(paused);
 })();
 </script>
 </body>

@@ -81,7 +81,13 @@ def fetch_coastline():
     """Coastline ways, cached in .cache/ because Overpass is often busy."""
     cache = ROOT / ".cache" / "coastline.json"
     if cache.exists():
-        return json.loads(cache.read_text())["elements"]
+        try:
+            elements = json.loads(cache.read_text())["elements"]
+            if elements:
+                return elements
+        except (ValueError, KeyError):
+            pass
+        cache.unlink()  # a bad download; fetch it again
     pad = 0.06
     query = (f'[out:json][timeout:120];way["natural"="coastline"]'
              f'({SOUTH - pad},{WEST - pad},{NORTH + pad},{EAST + pad});out geom;')
@@ -98,9 +104,12 @@ def fetch_coastline():
                 raise
             print(f"Overpass busy ({e.code}), retrying in {20 * attempt} s", file=sys.stderr)
             time.sleep(20 * attempt)
+    elements = json.loads(body)["elements"]
+    if not elements:
+        sys.exit("Overpass returned no coastline; nothing cached, try again later")
     cache.parent.mkdir(exist_ok=True)
     cache.write_bytes(body)
-    return json.loads(body)["elements"]
+    return elements
 
 
 def draw_line(grid, a, b):
