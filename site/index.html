@@ -15,136 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
-<script>
-  // Palettes from Omarchy's own themes (themes/*/colors.toml). link, warn and
-  // sea are the colors used for text; they match the theme's accent, yellow and
-  // cyan except where those are too faint to read on the theme's background.
-  window.OMAHOY_THEMES = {
-    "tokyo-night": { bg: "#1a1b26", well: "#13141c", fg: "#a9b1d6", bright: "#c0caf5", dim: "#565f89", muted: "#414868", accent: "#7aa2f7", yellow: "#e0af68", green: "#9ece6a", link: "#7aa2f7", warn: "#e0af68", sea: "#449dab", soft: "#7e84a1" },
-    "catppuccin":  { bg: "#1e1e2e", well: "#161622", fg: "#cdd6f4", bright: "#cdd6f4", dim: "#6c7086", muted: "#585b70", accent: "#89b4fa", yellow: "#f9e2af", green: "#a6e3a1", link: "#89b4fa", warn: "#f9e2af", sea: "#94e2d5", soft: "#999fb9" },
-    "gruvbox":     { bg: "#282828", well: "#1e1e1e", fg: "#d4be98", bright: "#d4be98", dim: "#7c6f64", muted: "#665c54", accent: "#7daea3", yellow: "#d8a657", green: "#a9b665", link: "#7daea3", warn: "#d8a657", sea: "#89b482", soft: "#a09176" },
-    "matte-black": { bg: "#121212", well: "#0d0d0d", fg: "#bebebe", bright: "#bebebe", dim: "#555555", muted: "#333333", accent: "#e68e0d", yellow: "#b91c1c", green: "#FFC107", link: "#e68e0d", warn: "#e68e0d", sea: "#bebebe", soft: "#8a8a8a" },
-    "rose-pine":   { bg: "#faf4ed", well: "#ede7e1", fg: "#575279", bright: "#575279", dim: "#9893a5", muted: "#cecacd", accent: "#56949f", yellow: "#ea9d34", green: "#286983", link: "#3e6f78", warn: "#955a14", sea: "#3e6f78", soft: "#6f6a8a" },
-    "white":       { bg: "#ffffff", well: "#f5f5f5", fg: "#000000", bright: "#000000", dim: "#808080", muted: "#c0c0c0", accent: "#6e6e6e", yellow: "#4a4a4a", green: "#3a3a3a", link: "#6e6e6e", warn: "#4a4a4a", sea: "#3e3e3e", soft: "#4d4d4d" },
-    // Omahoy's own: red on black for the helm after dark.
-    "night-watch": { bg: "#0c0404", well: "#070202", fg: "#e8503f", bright: "#ff7a66", dim: "#6e2219", muted: "#551a12", accent: "#ff3b2f", yellow: "#ffa28a", green: "#ff6b5a", link: "#ff6b5a", warn: "#ffa28a", sea: "#e0604c", soft: "#d9483a" }
-  };
-  (function () {
-    // A shared link (?theme=night-watch) wins, then the visitor's last pick.
-    var own = function (n) { return Object.prototype.hasOwnProperty.call(window.OMAHOY_THEMES, n); };
-    var name = new URLSearchParams(location.search).get("theme");
-    if (!own(name)) {
-      name = null;
-      try { name = localStorage.getItem("omahoy-theme"); } catch (e) {}
-    }
-    if (!own(name)) {
-      name = window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches ? "rose-pine" : "tokyo-night";
-    }
-    var t = window.OMAHOY_THEMES[name], s = document.documentElement.style;
-    for (var k in t) s.setProperty("--" + k, t[k]);
-    document.documentElement.dataset.theme = name;
-  })();
-</script>
-<style>
-  :root {
-    --bg: #1a1b26; --well: #13141c; --fg: #a9b1d6; --bright: #c0caf5; --dim: #565f89;
-    --muted: #414868; --accent: #7aa2f7; --yellow: #e0af68; --green: #9ece6a;
-    --link: #7aa2f7; --warn: #e0af68; --sea: #449dab; --soft: #7e84a1;
-    --line: color-mix(in srgb, var(--fg) 16%, var(--bg));
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--bg); color: var(--fg); }
-  body {
-    font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", "Cascadia Mono", ui-monospace, monospace;
-    font-size: 14px;
-    line-height: 1.65;
-    padding-inline: 20px;
-    padding-block: 18px 40px;
-    -webkit-font-smoothing: antialiased;
-  }
-  a { color: var(--link); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  main { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 64px; }
-  p { margin: 0; max-width: 72ch; }
-
-  .row {
-    display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 16px;
-    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
-  }
-  .row .right { color: var(--soft); }
-
-  .hero { display: flex; flex-direction: column; gap: 22px; }
-  .wordmark { width: min(100%, 620px); height: auto; color: var(--accent); display: block; }
-  h1 { margin: 0; font-size: clamp(20px, 3vw, 30px); line-height: 1.3; color: var(--bright); font-weight: 700; text-wrap: balance; max-width: 34ch; }
-  .lede { font-size: 15px; color: var(--fg); }
-  .state { color: var(--soft); font-size: 13px; }
-  .state b { color: var(--warn); font-weight: 400; }
-
-  .window { margin: 0; border: 2px solid var(--accent); background: var(--well); }
-  .bar {
-    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 18px;
-    padding: 5px 12px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--soft); background: var(--bg);
-  }
-  .bar.top { border-bottom: 1px solid var(--line); }
-  .bar.bottom { border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
-  .bar .me { color: var(--link); }
-  .bar .near { color: var(--warn); }
-  .bar button {
-    font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--link);
-    background: none; border: 0; padding: 0; cursor: pointer;
-  }
-  .bar .group { display: flex; flex-wrap: wrap; gap: 4px 18px; }
-  canvas#bay { display: block; width: 100%; height: auto; aspect-ratio: 192 / 170; }
-
-  .themes { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; font-size: 12px; margin-top: 12px; }
-  .themes .label { color: var(--soft); text-transform: uppercase; letter-spacing: 0.08em; margin-right: 6px; }
-  .themes button {
-    font: inherit; color: var(--soft); background: none; border: 1px solid var(--line);
-    padding: 1px 8px; cursor: pointer;
-  }
-  .themes button[aria-pressed="true"] { color: var(--bg); background: var(--link); border-color: var(--link); }
-  .themes kbd { font: inherit; color: var(--link); }
-  .themes .hint { color: var(--soft); margin-left: 6px; }
-
-  section { display: flex; flex-direction: column; gap: 18px; }
-  h2 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--link); }
-  h2::before { content: "## "; color: var(--dim); }
-
-  .apps { display: grid; grid-template-columns: max-content 1fr max-content; border-top: 1px solid var(--line); }
-  .apps > div { display: contents; }
-  .apps span, .apps a { padding: 9px 0; border-bottom: 1px solid var(--line); }
-  .apps a { font-weight: 700; padding-right: 28px; }
-  .apps .what { color: var(--fg); padding-right: 20px; }
-  .apps .when { color: var(--soft); font-size: 12px; text-align: right; white-space: nowrap; }
-  .apps .when.early { color: var(--green); }
-  .apps .when.later { color: var(--soft); }
-  @media (max-width: 640px) {
-    .apps { display: block; }
-    .apps > div { display: grid; grid-template-columns: 1fr max-content; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
-    .apps span, .apps a { padding: 0; border: 0; }
-    .apps .when { order: 2; }
-    .apps .what { order: 3; grid-column: 1 / -1; }
-  }
-
-  .dash { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px 48px; align-items: start; }
-  .dash p + p { margin-top: 12px; }
-  .dash dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; font-variant-numeric: tabular-nums; }
-  .dash dt { color: var(--soft); text-transform: uppercase; font-size: 12px; letter-spacing: 0.08em; padding-top: 1px; }
-  .dash dd { margin: 0; color: var(--bright); }
-  @media (max-width: 720px) { .dash { grid-template-columns: 1fr; } }
-
-  .principles { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px 40px; }
-  .principles li { display: flex; flex-direction: column; }
-  .principles b { color: var(--bright); }
-  .principles span { color: var(--soft); }
-
-  pre.cmd { margin: 0; padding: 12px 14px; background: var(--well); border-left: 2px solid var(--accent); overflow-x: auto; color: var(--bright); }
-  pre.cmd .prompt { color: var(--green); user-select: none; }
-
-  footer { max-width: 1100px; margin: 72px auto 0; border-top: 1px solid var(--line); padding-top: 14px; font-size: 12px; color: var(--soft); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; }
-</style>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
 </head>
 <body>
 <main>
@@ -177,15 +49,15 @@
 
   <section>
     <h2>The apps</h2>
-    <p>Install only what you want. Each app is its own repo. omakeel, the hub, reads the instruments; the apps are Omarchy plugins that read from it, and each one keeps working if the others aren't there.</p>
+    <p>Install only what you want. Each app is its own repo. omakeel, the hub, reads the instruments; the apps are Omarchy plugins that read from it, and each one keeps working if the others aren't there. The four that run today have pages of their own, with recordings.</p>
     <div class="apps">
-      <div><a href="https://github.com/shieldsworks/omakeel">omakeel</a><span class="what">The data hub. GPS, AIS and sensors, served to every app, on the boat and across its network.</span><span class="when early">early</span></div>
-      <div><a href="https://github.com/shieldsworks/omahelm">omahelm</a><span class="what">Chartplotter. NOAA charts, read and drawn from scratch, with your boat on them. Full screen, or tiled beside omalookout.</span><span class="when early">early</span></div>
-      <div><a href="https://github.com/shieldsworks/omalookout">omalookout</a><span class="what">AIS targets, closest point of approach, and collision alarms. The nearest vessel sits in your bar.</span><span class="when early">early</span></div>
+      <div><a href="omakeel/">omakeel</a><span class="what">The data hub. GPS, AIS and sensors, served to every app, on the boat and across its network.</span><span class="when early">early</span></div>
+      <div><a href="omahelm/">omahelm</a><span class="what">Chartplotter. NOAA charts, read and drawn from scratch, with your boat on them. Full screen, or tiled beside omalookout.</span><span class="when early">early</span></div>
+      <div><a href="omalookout/">omalookout</a><span class="what">AIS targets, closest point of approach, and collision alarms. The nearest vessel sits in your bar.</span><span class="when early">early</span></div>
       <div><a href="https://github.com/shieldsworks/omanchor">omanchor</a><span class="what">Anchor watch. Drag alarms aboard and on your phone, still watching with the laptop closed.</span><span class="when">planned</span></div>
       <div><a href="https://github.com/shieldsworks/omalogbook">omalogbook</a><span class="what">The ship's log. Automatic entries and your own notes, as plain text in a git repo.</span><span class="when">planned</span></div>
       <div><a href="https://github.com/shieldsworks/omatide">omatide</a><span class="what">Tides and currents, predicted on the boat with no connection.</span><span class="when">planned</span></div>
-      <div><a href="https://github.com/shieldsworks/omawind">omawind</a><span class="what">Wind forecasts. NOAA models decoded from GRIB, drawn over the chart and kept aboard for when the connection drops.</span><span class="when early">early</span></div>
+      <div><a href="omawind/">omawind</a><span class="what">Wind forecasts. NOAA models decoded from GRIB, drawn over the chart and kept aboard for when the connection drops.</span><span class="when early">early</span></div>
       <div><a href="https://github.com/shieldsworks/omabosun">omabosun</a><span class="what">The boat's systems. Battery, solar, bilge, engine hours, maintenance, and the Starlink switch.</span><span class="when">planned</span></div>
       <div><a href="https://github.com/shieldsworks/omagauge">omagauge</a><span class="what">Instrument dials for speed, course, depth, wind and pressure, as windows or bar widgets.</span><span class="when">planned</span></div>
       <div><a href="https://github.com/shieldsworks/omatiller">omatiller</a><span class="what">Tiller pilot control. Last to be built, because it steers the boat.</span><span class="when later">later</span></div>
@@ -240,8 +112,7 @@
 <script src="bay.js"></script>
 <script>
 (function () {
-  var THEMES = window.OMAHOY_THEMES, NAMES = Object.keys(THEMES), BAY = window.OMAHOY_BAY;
-  var root = document.documentElement;
+  var BAY = window.OMAHOY_BAY;
   var canvas = document.getElementById("bay"), ctx = canvas.getContext("2d");
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
   var paused = reduce.matches, visible = true, raf = 0, clock = 0, last = 0;
@@ -378,33 +249,9 @@
     frame(clock);
   }
 
-  function apply(name) {
-    theme = THEMES[name];
-    for (var k in theme) root.style.setProperty("--" + k, theme[k]);
-    root.dataset.theme = name;
-    document.querySelector('meta[name="theme-color"]').setAttribute("content", theme.bg);
-    buttons.forEach(function (btn) { btn.setAttribute("aria-pressed", String(btn.dataset.theme === name)); });
-    try { localStorage.setItem("omahoy-theme", name); } catch (e) {}
-    if (canvas.width) { drawBase(); frame(clock); }
-  }
-
-  var picker = document.getElementById("themes"), hint = picker.querySelector(".hint");
-  var buttons = NAMES.map(function (name) {
-    var btn = document.createElement("button");
-    btn.type = "button"; btn.textContent = name; btn.dataset.theme = name;
-    btn.addEventListener("click", function () { apply(name); });
-    picker.insertBefore(btn, hint);
-    return btn;
-  });
-
-  document.addEventListener("keydown", function (e) {
-    if (e.key !== "t" && e.key !== "T") return;
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    var n = NAMES.indexOf(root.dataset.theme);
-    apply(NAMES[(n + (e.shiftKey ? NAMES.length - 1 : 1)) % NAMES.length]);
-  });
-
-  apply(Object.prototype.hasOwnProperty.call(THEMES, root.dataset.theme) ? root.dataset.theme : "tokyo-night");
+  // The chart redraws in whichever theme theme.js has on.
+  theme = omahoyTheme.colors();
+  omahoyTheme.onChange(function (name, t) { theme = t; if (canvas.width) { drawBase(); frame(clock); } });
   resize();
   window.addEventListener("resize", resize);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);

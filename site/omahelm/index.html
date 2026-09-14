@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>omahelm · Omahoy</title>
+<meta name="description" content="omahelm is the Omahoy chartplotter. It reads NOAA charts from scratch in Rust, draws them in your Omarchy theme, and puts your boat, AIS traffic and the wind on them.">
+<meta property="og:title" content="omahelm · Omahoy">
+<meta property="og:description" content="A chartplotter for Omarchy. NOAA charts read and drawn from scratch in Rust.">
+<meta property="og:url" content="https://omahoy.org/omahelm/">
+<meta property="og:image" content="https://omahoy.org/media/omahelm-wind.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1b26">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../style.css">
+<script src="../theme.js"></script>
+</head>
+<body>
+<main>
+  <div class="row">
+    <a href="../">omahoy.org</a>
+    <nav aria-label="Apps">
+      <a href="../omakeel/">omakeel</a>
+      <a href="../omahelm/" aria-current="page">omahelm</a>
+      <a href="../omalookout/">omalookout</a>
+      <a href="../omawind/">omawind</a>
+    </nav>
+    <span class="right"><a href="https://github.com/shieldsworks/omahelm">github</a></span>
+  </div>
+
+  <div class="hero">
+    <p class="tagline"><span>Chartplotter</span><span class="early">early · v0.1</span><span>MIT</span></p>
+    <h1 class="app-name">omahelm</h1>
+    <p class="lede">NOAA's charts, in your Omarchy theme, with your boat on them. Soundings, contours and shading, buoys and beacons labeled the way a paper chart labels them, lights and their sectors, rocks and wrecks, traffic lanes and anchorages. The boat, its track and the AIS traffic come from <a href="../omakeel/">omakeel</a>; the wind comes from <a href="../omawind/">omawind</a>.</p>
+  </div>
+
+  <figure class="window clip">
+    <div class="bar top"><span class="me">omahelm</span><span class="hint"><kbd>b</kbd> wind · <kbd>t</kbd> time bar · <kbd>space</kbd> play</span></div>
+    <video src="../media/omahelm-wind.mp4" poster="../media/omahelm-wind.webp" width="1920" height="1166" autoplay muted loop playsinline preload="metadata" aria-label="The chartplotter following the boat out of Berkeley Marina. The wind barbs come on, then the time bar, and the forecast plays hour by hour."></video>
+    <figcaption>Leaving Berkeley Marina on the sample sail. <b>b</b> puts on the forecast wind and the stations' measured wind, <b>t</b> opens the time bar, and space plays the forecast hour by hour.</figcaption>
+  </figure>
+
+  <section>
+    <h2>What it does</h2>
+    <ul class="points">
+      <li><b>Reads the charts itself.</b> The S-57 reader, the chart updates, the symbols and the renderer are all written from scratch in Rust, with no map library or GDAL in between. The reader is checked against GDAL on every California cell NOAA publishes: the same features and the same vertices, updates applied.</li>
+      <li><b>Follows the boat.</b> It opens following, and panning stops it. <kbd>f</kbd> follows again, <kbd>c</kbd> centers once.</li>
+      <li><b>Says what's there.</b> Click the chart for what's charted at that spot. With the wind on, the card leads with the forecast for that very spot and the nearest station within 10 nm.</li>
+      <li><b>Wind, forecast and measured.</b> HRRR barbs from omawind, and the wind NOAA's piers and buoys measured, drawn as accent barbs labeled like <code>7g11</code>. The time bar shows when the breeze builds.</li>
+      <li><b>A waypoint.</b> Right-click, or <kbd>w</kbd>, for bearing, range and ETA from the boat.</li>
+      <li><b>Night Watch.</b> <kbd>n</kbd> turns the window red on black, chart and all. Marks keep their meaning by brightness, shape and label.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>In every Omarchy theme</h2>
+    <div class="two">
+      <figure class="window clip">
+        <div class="bar top"><span class="me">omahelm</span><span class="hint">six themes, then <kbd>n</kbd></span></div>
+        <video src="../media/omahelm-themes.mp4" poster="../media/omahelm-themes.webp" width="1920" height="1166" autoplay muted loop playsinline preload="metadata" aria-label="The same stretch of chart redrawn in Tokyo Night, Catppuccin, Gruvbox, Matte Black, Rose Pine and White, then in Night Watch, red on black."></video>
+      </figure>
+      <div>
+        <p>The chart takes its colors from the active Omarchy theme and redraws when you switch. Colors that mean something at sea don't follow the theme: a green buoy stays green even when the theme's green is amber.</p>
+        <p>For after dark, Night Watch turns this one window red on black, whatever the theme, and leaves the rest of the desktop alone. Or choose <code>palette = "paper"</code> for the colors of a paper chart.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Keys</h2>
+    <div class="keys-wrap">
+      <table class="keys">
+        <thead><tr><th>Key</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd></td><td>Pan; the arrows work too</td></tr>
+          <tr><td><kbd>+</kbd> <kbd>-</kbd></td><td>Zoom; so does scrolling</td></tr>
+          <tr><td><kbd>f</kbd></td><td>Follow the boat, or stop</td></tr>
+          <tr><td><kbd>c</kbd></td><td>Center on the boat once</td></tr>
+          <tr><td>Click, <kbd>i</kbd></td><td>What's charted there, or at the center</td></tr>
+          <tr><td><kbd>w</kbd>, right-click</td><td>Set a waypoint; <kbd>W</kbd> clears it</td></tr>
+          <tr><td><kbd>b</kbd></td><td>Wind barbs, forecast and measured</td></tr>
+          <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>The wind an hour earlier, later</td></tr>
+          <tr><td><kbd>t</kbd></td><td>The time bar: the forecast at the boat, hour by hour</td></tr>
+          <tr><td><kbd>space</kbd></td><td>Play the wind hour by hour</td></tr>
+          <tr><td><kbd>n</kbd></td><td>Night Watch</td></tr>
+          <tr><td><kbd>?</kbd></td><td>Every key</td></tr>
+          <tr><td><kbd>q</kbd></td><td>Close</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Install</h2>
+    <p>You need Rust and the Omarchy shell. Build it, add it to the shell, then download your waters. NOAA's charts are free:</p>
+    <pre class="cmd"><span class="prompt">$ </span>git clone https://github.com/shieldsworks/omahelm ~/.local/share/omahelm/src
+<span class="prompt">$ </span>cd ~/.local/share/omahelm/src
+<span class="prompt">$ </span>cargo build --release --locked
+<span class="prompt">$ </span>bash scripts/link-plugin.sh
+<span class="prompt">$ </span>target/release/omahelm fetch CA   <span class="note"># California, about 55 MB</span></pre>
+    <p>Open it with <code>omarchy shell shell toggle org.omahoy.helm "{}"</code>, or on its own with <code>./run.sh</code>. Run <code>fetch</code> again each week for NOAA's corrections. The <a href="https://github.com/shieldsworks/omahelm#readme">README</a> covers settings: units, safety depth and contours.</p>
+  </section>
+
+  <section>
+    <h2>Not yet</h2>
+    <ul class="points">
+      <li>No routes yet. One waypoint at a time.</li>
+      <li>The track is kept for the session only, until omalogbook.</li>
+      <li>Labels can crowd each other near busy harbor entrances.</li>
+      <li>No touch gestures.</li>
+    </ul>
+  </section>
+
+  <nav class="pager" aria-label="More apps">
+    <span>← <a href="../omakeel/">omakeel</a> · the hub</span>
+    <span><a href="../omalookout/">omalookout</a> · AIS →</span>
+  </nav>
+
+  <div class="themes" id="themes">
+    <span class="label">Theme</span>
+    <span class="hint">press <kbd>T</kbd></span>
+  </div>
+</main>
+
+<footer>
+  <span>MIT · Not for navigation. NOAA's charts in it aren't certified for navigation; carry the official charts.</span>
+  <span>Charts: NOAA Office of Coast Survey · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
+</footer>
+</body>
+</html>

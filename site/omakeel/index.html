@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>omakeel · Omahoy</title>
+<meta name="description" content="omakeel is the Omahoy data hub: a Rust daemon that reads GPS and AIS, works out collision risk, records every sail, and serves one live stream to every app.">
+<meta property="og:title" content="omakeel · Omahoy">
+<meta property="og:description" content="The data hub for Omahoy. GPS and AIS in, one live stream out.">
+<meta property="og:url" content="https://omahoy.org/omakeel/">
+<meta property="og:image" content="https://omahoy.org/media/omakeel.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1b26">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../style.css">
+<script src="../theme.js"></script>
+</head>
+<body>
+<main>
+  <div class="row">
+    <a href="../">omahoy.org</a>
+    <nav aria-label="Apps">
+      <a href="../omakeel/" aria-current="page">omakeel</a>
+      <a href="../omahelm/">omahelm</a>
+      <a href="../omalookout/">omalookout</a>
+      <a href="../omawind/">omawind</a>
+    </nav>
+    <span class="right"><a href="https://github.com/shieldsworks/omakeel">github</a></span>
+  </div>
+
+  <div class="hero">
+    <p class="tagline"><span>The data hub</span><span class="early">early</span><span>MIT</span></p>
+    <h1 class="app-name">omakeel</h1>
+    <p class="lede">Everything is built on the keel. omakeel is a headless Rust daemon that reads the boat's instruments and serves one live stream to every Omahoy app. It has no window; <code>omakeel watch</code> shows what it hears.</p>
+  </div>
+
+  <figure class="window clip">
+    <div class="bar top"><span class="me">omakeel watch</span><span class="hint">in a terminal</span></div>
+    <video src="../media/omakeel.mp4" poster="../media/omakeel.webp" width="1920" height="1166" autoplay muted loop playsinline preload="metadata" aria-label="A terminal running omakeel watch. Each second a new fix prints, with position, speed and course, and a line of AIS traffic naming BAY RUNNER as a danger."></video>
+    <figcaption><code>omakeel watch</code> on the sample sail: a fix each second, the sentences it checked, and the AIS traffic, with <b>BAY RUNNER</b> flagged as a danger.</figcaption>
+  </figure>
+
+  <section>
+    <h2>What it does</h2>
+    <ul class="points">
+      <li><b>Reads NMEA 0183</b> from a USB or serial GPS, a TCP stream like a phone sharing its GPS, or a recording, and checks every sentence's checksum.</li>
+      <li><b>Knows when a fix is stale.</b> Position, speed and course from RMC and GGA, and speed and course are never passed off as current once the GPS stops sending them.</li>
+      <li><b>Decodes AIS</b> from a receiver like the dAISy: class A ships and class B small craft, with names, callsigns, types, sizes and destinations.</li>
+      <li><b>Watches for collisions.</b> It keeps every vessel heard in the last 10 minutes with range, bearing and closest point of approach, and flags any passing within 0.5 nm in the next 12 minutes. It runs with the laptop closed.</li>
+      <li><b>Records every sail.</b> Each line it receives, with the time it arrived, and it replays them in real time, so the apps can be built at the dock.</li>
+      <li><b>Serves it all</b> over a Unix socket as newline-delimited JSON, to <a href="../omahelm/">omahelm</a>, <a href="../omalookout/">omalookout</a> and <a href="../omawind/">omawind</a>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Install</h2>
+    <p>Rust 1.89 or newer. Then start it on your receivers, each at its own baud rate. Our BU-353-style GPS puck sends at 115200; older pucks send at 4800:</p>
+    <pre class="cmd"><span class="prompt">$ </span>cargo install --git https://github.com/shieldsworks/omakeel --locked
+<span class="prompt">$ </span>omakeel run --source serial:/dev/ttyUSB0:115200 --source serial:/dev/ttyACM0:38400 \
+    --record ~/sails/$(date +%F).nmea
+<span class="prompt">$ </span>omakeel watch</pre>
+    <p>No boat? Replay the sample sail out of Berkeley Marina with <code>mise replay</code> in a checkout. In a VM with no USB, like Try Omarchy on a Mac, share the GPS from the host over TCP; the <a href="https://github.com/shieldsworks/omakeel#readme">README</a> has the socat line.</p>
+  </section>
+
+  <section>
+    <h2>Next</h2>
+    <ul class="points">
+      <li>The anchor watch, for omanchor.</li>
+      <li>A bar widget with speed and course.</li>
+      <li>The same stream across the boat's network.</li>
+      <li>AIS is tested on a replayed sail so far. GPS runs on a real USB receiver.</li>
+    </ul>
+  </section>
+
+  <nav class="pager" aria-label="More apps">
+    <span>← <a href="../omawind/">omawind</a> · wind</span>
+    <span><a href="../omahelm/">omahelm</a> · the chartplotter →</span>
+  </nav>
+
+  <div class="themes" id="themes">
+    <span class="label">Theme</span>
+    <span class="hint">press <kbd>T</kbd></span>
+  </div>
+</main>
+
+<footer>
+  <span>MIT · Not for navigation. Carry a backup.</span>
+  <span>The sample sail's vessels are invented · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>omawind · Omahoy</title>
+<meta name="description" content="omawind brings wind forecasts to Omahoy: NOAA's HRRR decoded from GRIB in Rust, the wind NOAA's stations measure, kept aboard for when the connection drops.">
+<meta property="og:title" content="omawind · Omahoy">
+<meta property="og:description" content="Wind forecasts from GRIB, decoded from scratch in Rust, in your Omarchy bar.">
+<meta property="og:url" content="https://omahoy.org/omawind/">
+<meta property="og:image" content="https://omahoy.org/media/omawind.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1b26">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../style.css">
+<script src="../theme.js"></script>
+</head>
+<body>
+<main>
+  <div class="row">
+    <a href="../">omahoy.org</a>
+    <nav aria-label="Apps">
+      <a href="../omakeel/">omakeel</a>
+      <a href="../omahelm/">omahelm</a>
+      <a href="../omalookout/">omalookout</a>
+      <a href="../omawind/" aria-current="page">omawind</a>
+    </nav>
+    <span class="right"><a href="https://github.com/shieldsworks/omawind">github</a></span>
+  </div>
+
+  <div class="hero">
+    <p class="tagline"><span>Wind forecasts</span><span class="early">early</span><span>MIT</span></p>
+    <h1 class="app-name">omawind</h1>
+    <p class="lede">The wind at the boat, now and hour by hour. omawind downloads NOAA's HRRR forecast for the waters around you, decodes the GRIB itself, and keeps it aboard for when the connection drops. Alongside it, the wind NOAA's piers and buoys are measuring right now.</p>
+  </div>
+
+  <figure class="window clip">
+    <div class="bar top"><span class="me">omahelm · omawind</span><span class="hint">tiled on one workspace</span></div>
+    <video src="../media/omawind.mp4" poster="../media/omawind.webp" width="1920" height="1166" autoplay muted loop playsinline preload="metadata" aria-label="The chartplotter with wind barbs beside the omawind window, which lists the forecast wind at the boat hour by hour and the stations nearest the boat."></video>
+    <figcaption>The omawind window beside omahelm: the wind at the boat, every hour of the run, and the stations nearest the boat with range, bearing and the age of each report. The forecast is live HRRR over the Bay; the boat is on the sample sail.</figcaption>
+  </figure>
+
+  <section>
+    <h2>What it does</h2>
+    <ul class="points">
+      <li><b>Fetches only what it needs.</b> The newest HRRR run, a 3 km forecast that runs every hour, cut to your region and four fields: wind, gusts and sea-level pressure. About 32 KB an hour for the Bay.</li>
+      <li><b>Decodes GRIB2 from scratch.</b> The Lambert conformal grid, simple packing and bitmaps, in Rust. Every value matches ECMWF's eccodes on a real Bay run, and the winds are turned to true north, checked against pyproj.</li>
+      <li><b>Works offline.</b> The forecast stays on disk and says how old it is.</li>
+      <li><b>Measured wind.</b> NOAA's National Data Buoy Center reports, every 10 minutes: the buoys offshore, and the piers and tide gauges of NOAA's PORTS program around the Bay.</li>
+      <li><b>In the bar.</b> <code>WSW 14G19 kn</code>, in the theme's urgent color at 21 knots or more. Click for the hours ahead.</li>
+      <li><b>On the chart.</b> <a href="../omahelm/">omahelm</a> draws both as barbs, with a time bar to play the forecast through.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>From a terminal</h2>
+    <pre class="cmd"><span class="prompt">$ </span>omawind at
+<span class="note">HRRR 2026-09-14T03:00:00Z at 37.8663, -122.3148
+UTC                    from     kn   gust      hPa
+2026-09-14T19:00:00Z   224°    4.2    6.1   1013.6
+2026-09-14T20:00:00Z   225°    6.2    8.9   1012.6
+2026-09-14T21:00:00Z   206°    6.0   11.5   1012.1</span>
+<span class="prompt">$ </span>omawind stations
+<span class="note">NDBC                                 UTC  from     kn   gust
+46026   SAN FRANCISCO - 18NM West  17:30  330°    7.8   11.7
+AAMC1   Alameda                    17:18  110°    2.9    4.1
+FTPC1   San Francisco              17:18  250°    7.0   11.1</span></pre>
+  </section>
+
+  <section>
+    <h2>Install</h2>
+    <p>Add the widget to the Omarchy bar; it starts the engine itself. The window runs from the checkout with <code>./run.sh</code>, and needs no chartplotter.</p>
+    <pre class="cmd"><span class="prompt">$ </span>omarchy plugin add https://github.com/shieldsworks/omawind.git --enable
+<span class="prompt">$ </span>cd ~/.config/omarchy/plugins/org.omahoy.wind &amp;&amp; cargo build --release --locked</pre>
+    <p>The region and a home position for when there's no GPS live in <code>~/.config/omawind/config.toml</code>. Both default to San Francisco Bay.</p>
+  </section>
+
+  <section>
+    <h2>Not yet</h2>
+    <ul class="points">
+      <li>HRRR only, so US waters only. GFS, for offshore, is next.</li>
+      <li>The region is fixed by the settings. It doesn't follow the boat yet.</li>
+      <li>A forecast is a model. HRRR can miss the sea breeze by hours and knots, and a pier's anemometer may be sheltered. Look at the water.</li>
+    </ul>
+  </section>
+
+  <nav class="pager" aria-label="More apps">
+    <span>← <a href="../omalookout/">omalookout</a> · AIS</span>
+    <span><a href="../omakeel/">omakeel</a> · the hub →</span>
+  </nav>
+
+  <div class="themes" id="themes">
+    <span class="label">Theme</span>
+    <span class="hint">press <kbd>T</kbd></span>
+  </div>
+</main>
+
+<footer>
+  <span>MIT · Not for navigation. A forecast is not an observation.</span>
+  <span>Forecasts and reports: NOAA NCEP and NDBC · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
+</footer>
+</body>
+</html>
