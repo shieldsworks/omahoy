@@ -25,12 +25,19 @@
     "gruvbox":     { bg: "#282828", well: "#1e1e1e", fg: "#d4be98", bright: "#d4be98", dim: "#7c6f64", muted: "#665c54", accent: "#7daea3", yellow: "#d8a657", green: "#a9b665", link: "#7daea3", warn: "#d8a657", sea: "#89b482", soft: "#a09176" },
     "matte-black": { bg: "#121212", well: "#0d0d0d", fg: "#bebebe", bright: "#bebebe", dim: "#555555", muted: "#333333", accent: "#e68e0d", yellow: "#b91c1c", green: "#FFC107", link: "#e68e0d", warn: "#e68e0d", sea: "#bebebe", soft: "#8a8a8a" },
     "rose-pine":   { bg: "#faf4ed", well: "#ede7e1", fg: "#575279", bright: "#575279", dim: "#9893a5", muted: "#cecacd", accent: "#56949f", yellow: "#ea9d34", green: "#286983", link: "#3e6f78", warn: "#955a14", sea: "#3e6f78", soft: "#6f6a8a" },
-    "white":       { bg: "#ffffff", well: "#f5f5f5", fg: "#000000", bright: "#000000", dim: "#808080", muted: "#c0c0c0", accent: "#6e6e6e", yellow: "#4a4a4a", green: "#3a3a3a", link: "#6e6e6e", warn: "#4a4a4a", sea: "#3e3e3e", soft: "#4d4d4d" }
+    "white":       { bg: "#ffffff", well: "#f5f5f5", fg: "#000000", bright: "#000000", dim: "#808080", muted: "#c0c0c0", accent: "#6e6e6e", yellow: "#4a4a4a", green: "#3a3a3a", link: "#6e6e6e", warn: "#4a4a4a", sea: "#3e3e3e", soft: "#4d4d4d" },
+    // Omahoy's own: red on black for the helm after dark.
+    "night-watch": { bg: "#0c0404", well: "#070202", fg: "#e8503f", bright: "#ff7a66", dim: "#6e2219", muted: "#551a12", accent: "#ff3b2f", yellow: "#ffa28a", green: "#ff6b5a", link: "#ff6b5a", warn: "#ffa28a", sea: "#e0604c", soft: "#d9483a" }
   };
   (function () {
-    var name = null;
-    try { name = localStorage.getItem("omahoy-theme"); } catch (e) {}
-    if (!window.OMAHOY_THEMES[name]) {
+    // A shared link (?theme=night-watch) wins, then the visitor's last pick.
+    var own = function (n) { return Object.prototype.hasOwnProperty.call(window.OMAHOY_THEMES, n); };
+    var name = new URLSearchParams(location.search).get("theme");
+    if (!own(name)) {
+      name = null;
+      try { name = localStorage.getItem("omahoy-theme"); } catch (e) {}
+    }
+    if (!own(name)) {
       name = window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches ? "rose-pine" : "tokyo-night";
     }
     var t = window.OMAHOY_THEMES[name], s = document.documentElement.style;
@@ -210,7 +217,8 @@
       <li><b>Native to Omarchy.</b><span>Standard plugins. Your theme's colors, and a key for everything.</span></li>
       <li><b>Safe without the internet.</b><span>Starlink carries the data. Anchor watch, AIS and position never depend on it.</span></li>
       <li><b>Honest.</b><span>Stale data says it's stale. A missing fix is never drawn as a fix.</span></li>
-      <li><b>Any Omarchy machine.</b><span>x86_64 and aarch64, from a nav station PC to a MacBook on Asahi.</span></li>    </ul>
+      <li><b>Any Omarchy machine.</b><span>x86_64 and aarch64, from a nav station PC to a MacBook on Asahi.</span></li>
+      <li><b>Night watch.</b><span>A red Omarchy theme for the helm after dark, easy on night vision. <a href="?theme=night-watch">See it here</a>.</span></li>    </ul>
   </section>
 
   <section>
@@ -392,7 +400,7 @@
     apply(NAMES[(n + (e.shiftKey ? NAMES.length - 1 : 1)) % NAMES.length]);
   });
 
-  apply(root.dataset.theme in THEMES ? root.dataset.theme : "tokyo-night");
+  apply(Object.prototype.hasOwnProperty.call(THEMES, root.dataset.theme) ? root.dataset.theme : "tokyo-night");
   resize();
   window.addEventListener("resize", resize);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);

@@ -15,7 +15,10 @@ wordmark is OMAHOY cut from the letters of Omarchy's `logo.txt`. `index.html`
 inlines the same path, so paste the new `d` attribute there if it changes.
 
 Press T on the page to cycle through Omarchy's theme palettes. They're copied
-from each theme's `colors.toml`.
+from each theme's `colors.toml`. The last one, `night-watch`, is Omahoy's own
+red theme for the helm after dark. A link can pick the theme:
+`https://omahoy.org/?theme=night-watch`. Every theme's text colors are chosen
+to reach at least 4.5:1 contrast.
 
 ## Hosting
 
