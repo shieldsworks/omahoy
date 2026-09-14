@@ -29,6 +29,7 @@ the others read from; the rest are Omarchy plugins.
 | [omanchor](https://github.com/shieldsworks/omanchor) | Anchor watch |
 | [omalogbook](https://github.com/shieldsworks/omalogbook) | Ship's log, kept in git |
 | [omatide](https://github.com/shieldsworks/omatide) | Tides and currents, offline |
+| [omawind](https://github.com/shieldsworks/omawind) | Wind forecasts from GRIB, kept for when you're offline |
 | [omabosun](https://github.com/shieldsworks/omabosun) | Batteries, bilge, engine hours, maintenance |
 | [omagauge](https://github.com/shieldsworks/omagauge) | Instrument dials |
 | [omatiller](https://github.com/shieldsworks/omatiller) | Tiller pilot control |
