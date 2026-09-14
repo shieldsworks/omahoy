@@ -1,7 +1,20 @@
 # omahoy.org
 
 Static, no build step: `index.html`, `bay.js` (the chart data), `favicon.svg`,
-`wordmark.svg`, and `og.png` for link previews.
+`wordmark.svg`, and `og.png` for link previews. Every page shares `style.css`
+and `theme.js` (the palettes, the picker and the T key).
+
+Each app that runs today has a page: `omakeel/`, `omahelm/`, `omalookout/`
+and `omawind/`, each an `index.html`, so Vercel serves them as `/omahelm/`
+with no config. Their recordings are in `media/`: an H.264 MP4 each, with a
+WebP poster of the same name.
+
+The recordings are of the real apps, on omakeel's sample sail out of Berkeley
+Marina (a replay, not a real track, and its vessels are invented), never on
+the boat's real GPS. The wind is live HRRR and NDBC over the Bay. They were
+captured with `grim` at 15 fps from a headless Hyprland output, so nothing
+had to be on screen, then encoded with ffmpeg at CRF 26. The theme clip is
+each theme once its tiles were drawn, crossfaded, so the redraw isn't shown.
 
 `bay.js` and `wordmark.svg` are generated. Regenerate them with:
 

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>omalookout · Omahoy</title>
+<meta name="description" content="omalookout shows AIS targets and collision alarms for Omahoy: the nearest vessel in your Omarchy bar, and every vessel heard in a window beside the chartplotter.">
+<meta property="og:title" content="omalookout · Omahoy">
+<meta property="og:description" content="AIS targets and collision alarms, in your Omarchy bar.">
+<meta property="og:url" content="https://omahoy.org/omalookout/">
+<meta property="og:image" content="https://omahoy.org/media/omalookout.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1b26">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../style.css">
+<script src="../theme.js"></script>
+</head>
+<body>
+<main>
+  <div class="row">
+    <a href="../">omahoy.org</a>
+    <nav aria-label="Apps">
+      <a href="../omakeel/">omakeel</a>
+      <a href="../omahelm/">omahelm</a>
+      <a href="../omalookout/" aria-current="page">omalookout</a>
+      <a href="../omawind/">omawind</a>
+    </nav>
+    <span class="right"><a href="https://github.com/shieldsworks/omalookout">github</a></span>
+  </div>
+
+  <div class="hero">
+    <p class="tagline"><span>AIS and collision alarms</span><span class="early">early</span><span>MIT</span></p>
+    <h1 class="app-name">omalookout</h1>
+    <p class="lede">The nearest vessel sits in your Omarchy bar. When one will pass within half a mile in the next 12 minutes, the bar turns the theme's urgent color and names it. Every vessel heard is a click away, nearest first, or in a window of its own beside the chartplotter.</p>
+  </div>
+
+  <figure class="window clip">
+    <div class="bar top"><span class="me">omahelm · omalookout</span><span class="hint">tiled on one workspace</span></div>
+    <video src="../media/omalookout.mp4" poster="../media/omalookout.webp" width="1920" height="1166" autoplay muted loop playsinline preload="metadata" aria-label="The chartplotter and omalookout tiled side by side. The ferry BAY RUNNER is on a collision course, flagged red in both, with its closest point of approach counting down."></video>
+    <figcaption>omalookout tiled beside omahelm on the sample sail. <b>BAY RUNNER</b>, an invented ferry at 20 knots, is set to cross 0.2 nm from the boat, so it's flagged red in both windows, its CPA counting down.</figcaption>
+  </figure>
+
+  <section>
+    <h2>What it shows</h2>
+    <div class="two">
+      <ul class="points">
+        <li><b>Every vessel heard</b> in the last 10 minutes, nearest first: range and bearing, closest point of approach and when, speed, course, status and destination.</li>
+        <li><b>A collision course</b> is flagged red and counted at the top: any vessel passing within 0.5 nm in the next 12 minutes.</li>
+        <li><b>The honest state.</b> With no GPS fix it says there's nothing to range from, and with no hub it says so.</li>
+        <li><b>Night Watch.</b> <kbd>n</kbd> turns this window red on black, and leaves the chartplotter beside it as it is.</li>
+      </ul>
+      <dl class="facts">
+        <dt>In the bar</dt><dd>AIS 3 · 0.8 nm</dd>
+        <dt>Collision</dt><dd>⚠ BAY RUNNER 0.19 nm</dd>
+        <dt>No hub</dt><dd>AIS off</dd>
+        <dt>Keys</dt><dd><kbd>j</kbd> <kbd>k</kbd> scroll, <kbd>g</kbd> <kbd>G</kbd> top and bottom, <kbd>n</kbd> Night Watch, <kbd>q</kbd> close</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <p>omalookout draws; <a href="../omakeel/">omakeel</a> listens. The hub decodes AIS from a receiver like the dAISy, keeps every vessel, and works out each one's closest point of approach against the boat's fix. It flags a collision course even with the laptop closed. omalookout reads the hub's targets over its socket and reconnects on its own.</p>
+  </section>
+
+  <section>
+    <h2>Install</h2>
+    <p>Omarchy on x86_64 or aarch64, with <a href="../omakeel/">omakeel</a> running on your GPS and AIS receiver:</p>
+    <pre class="cmd"><span class="prompt">$ </span>omarchy plugin add https://github.com/shieldsworks/omalookout.git --enable</pre>
+    <p>For the window, bind <code>omarchy shell shell toggle org.omahoy.lookout '{}'</code> to a key in <code>~/.config/hypr/bindings.lua</code>. No boat? Replay omakeel's sample sail, ferry and all, with <code>mise replay</code> in its checkout.</p>
+  </section>
+
+  <section>
+    <h2>Not yet</h2>
+    <ul class="points">
+      <li>Tested on a replayed sail only. It hasn't met a real AIS receiver yet.</li>
+      <li>The collision thresholds are fixed at 0.5 nm and 12 minutes.</li>
+      <li>Not a primary means of collision avoidance. Keep a lookout.</li>
+    </ul>
+  </section>
+
+  <nav class="pager" aria-label="More apps">
+    <span>← <a href="../omahelm/">omahelm</a> · the chartplotter</span>
+    <span><a href="../omawind/">omawind</a> · wind →</span>
+  </nav>
+
+  <div class="themes" id="themes">
+    <span class="label">Theme</span>
+    <span class="hint">press <kbd>T</kbd></span>
+  </div>
+</main>
+
+<footer>
+  <span>MIT · Not for navigation. Keep a lookout.</span>
+  <span>The sample sail's vessels are invented · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
+</footer>
+</body>
+</html>
