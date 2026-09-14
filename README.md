@@ -11,12 +11,15 @@ It's built in public aboard **Dash**, a Pacific Seacraft 25 berthed in the
 Berkeley Marina. She sails San Francisco Bay today, and plans to sail around the
 world someday.
 
-**Status: planned.** Nothing to install yet.
+**Status: early.** [omakeel](https://github.com/shieldsworks/omakeel) reads GPS
+and AIS, and [omalookout](https://github.com/shieldsworks/omalookout) puts the
+nearest vessel in your Omarchy bar. Both are tested on a replayed sail, not yet
+on a real receiver.
 
 ## Apps
 
-Install only the apps you want. Each one is its own repo and its own Omarchy
-plugin.
+Install only the apps you want. Each one is its own repo. omakeel is the hub
+the others read from; the rest are Omarchy plugins.
 
 | App | What it does |
 |---|---|
