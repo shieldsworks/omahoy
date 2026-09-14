@@ -31,9 +31,6 @@ plugin.
 | [omatiller](https://github.com/shieldsworks/omatiller) | Tiller pilot control |
 | [omarig](https://github.com/shieldsworks/omarig) | Open sensor hardware and firmware |
 
-Omahoy is designed to pair with
-[Omastorm](https://github.com/wesleygrimes/omastorm), live NEXRAD radar for Omarchy.
-
 ## Principles
 
 - **Rust from day one.** Engines, the hub, and the firmware.
