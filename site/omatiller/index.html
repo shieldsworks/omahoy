@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>omatiller · Omahoy</title>
+<meta name="description" content="An open tiller pilot, from the screw to the software. Explore Omatiller's 3D hardware concept. No NMEA network required.">
+<meta property="og:title" content="omatiller · From the screw to the software">
+<meta property="og:description" content="A tiller pilot built from scratch. Explore the assembly, lift the cover, and move the ram. No NMEA network required.">
+<meta property="og:url" content="https://omahoy.org/omatiller/">
+<meta property="og:image" content="https://omahoy.org/media/omatiller.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1b26">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="./tiller.css">
+<script src="../theme.js"></script>
+<script type="importmap">{"imports":{"three":"../vendor/three/three.module.js","three/addons/":"../vendor/three/addons/"}}</script>
+</head>
+<body>
+<main>
+  <div class="row">
+    <a href="../">omahoy.org</a>
+    <nav aria-label="Apps"><a href="../omakeel/">omakeel</a><a href="../omahelm/">omahelm</a><a href="../omalookout/">omalookout</a><a href="../omawind/">omawind</a><a href="./" aria-current="page">omatiller</a></nav>
+    <span class="right"><a href="https://github.com/shieldsworks/omatiller">github ↗</a></span>
+  </div>
+
+  <header class="tiller-intro">
+    <div><p class="tagline"><span>Open marine hardware</span><span class="concept">Concept 01</span></p>
+    <h1 class="app-name">omatiller<span class="dot">.</span></h1></div>
+    <p class="intro-copy">From the screw <br>to the software.<span>A tiller pilot, built from scratch for Dash.</span></p>
+  </header>
+
+  <figure class="workbench" aria-label="Interactive Omatiller concept assembly">
+    <div class="bench-top"><span><i></i> Design study <b>001</b></span><span>Pacific Seacraft 25 · Dash</span></div>
+    <div class="stage" id="stage">
+      <img class="poster" id="poster" src="../media/omatiller.webp" width="1398" height="801" alt="Omatiller concept: a pale rounded housing with a graphite service cover, orange controls, and a polished stainless ram ending in a removable tiller attachment.">
+      <div class="stage-title" aria-hidden="true"><span>OMATILLER</span><small>INDEPENDENT BY DESIGN</small></div>
+      <div class="model-label label-left" aria-hidden="true"><span>01 / DRIVE UNIT</span><b>Built to hold a heading.</b></div>
+      <div class="model-label label-right" aria-hidden="true"><span>02 / MANUAL RELEASE</span><b>Your hand takes over.</b></div>
+      <p class="load-state" id="load-state" role="status">Loading the assembly…</p>
+      <div class="view-tools" aria-label="Camera controls">
+        <button id="orbit" aria-pressed="false" disabled>↻ Rotate</button>
+        <button id="reset" disabled>↗ Reset view</button>
+      </div>
+      <p class="gesture" id="gesture">Drag to orbit · scroll to zoom · select a part</p>
+    </div>
+    <div class="controls">
+      <div class="view-modes" role="group" aria-label="Assembly view">
+        <button data-view="assembled" aria-pressed="true" disabled>Assembled</button>
+        <button data-view="exploded" aria-pressed="false" disabled>Exploded</button>
+        <button data-view="inside" aria-pressed="false" disabled>Inside</button>
+      </div>
+      <div class="travel-control"><label for="travel">Ram travel <output id="travel-value" for="travel">125 mm</output></label>
+        <input id="travel" type="range" min="0" max="250" value="125" step="1" disabled>
+        <button id="run" aria-pressed="false" aria-label="Animate ram travel" disabled>▶</button>
+      </div>
+    </div>
+    <figcaption><span>Explore the mechanism. Every part starts as dimensioned CAD.</span><span>Concept geometry · not yet built or tested</span></figcaption>
+  </figure>
+
+  <section class="component-section" aria-labelledby="component-heading">
+    <div class="component-heading"><h2 id="component-heading">Under the cover</h2><span>Choose a component to explore</span></div>
+    <div class="component-layout">
+      <div class="part-buttons" role="group" aria-label="Assembly components">
+        <button data-part="housing" aria-pressed="true"><span>01</span> Housing <span>↗</span></button>
+        <button data-part="drive" aria-pressed="false"><span>02</span> Screw drive <span>↗</span></button>
+        <button data-part="motor" aria-pressed="false"><span>03</span> Motor &amp; belt <span>↗</span></button>
+        <button data-part="electronics" aria-pressed="false"><span>04</span> Controller <span>↗</span></button>
+        <button data-part="ram" aria-pressed="false"><span>05</span> Ram &amp; release <span>↗</span></button>
+      </div>
+      <div class="part-story" aria-live="polite" aria-atomic="true"><span id="part-kicker">01 / THE OUTER SHELL</span>
+        <h3 id="part-title">Made to come apart.</h3>
+        <p id="part-description">A rounded housing, a separate service cover, and an accessible interior. The concept puts the drive, bearings, and electronics within reach, with a gasket at the cover and a wiper around the sliding rod.</p>
+        <span id="part-note">Pale shell · graphite cover · replaceable seals</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="independent" aria-labelledby="independent-heading">
+    <div><p class="eyebrow">Our hardware. Our protocol. Your boat.</p><h2 id="independent-heading">No NMEA network<br>required.</h2>
+      <p>Omatiller is being designed around its own heading sensor, controller, and motor drive. Holding a heading won't require an NMEA 2000 backbone, a proprietary chartplotter, or a gateway between them.</p>
+      <p class="compatibility">Existing instruments can still have a place: omakeel already reads NMEA 0183 GPS and AIS data. NMEA is a compatibility option for the wider suite, not a prerequisite for this pilot.</p>
+    </div>
+    <div class="signal-path" aria-label="Planned control path: heading sensor to Omatiller controller to motor and ram. Omahoy apps provide an optional connection.">
+      <div><span>01</span><b>Heading sensor</b><small>Direction + rate of turn</small></div>
+      <i aria-hidden="true">↓</i>
+      <div class="signal-core"><span>02</span><b>Omatiller controller</b><small>Our code. A local control loop.</small></div>
+      <i aria-hidden="true">↓</i>
+      <div><span>03</span><b>Motor + ram</b><small>A correction at the tiller</small></div>
+      <p>Planned architecture · optional Omahoy app connection</p>
+    </div>
+  </section>
+
+  <section class="design-notes">
+    <div><h2>Designed for Dash</h2><p>A 24.5-foot Pacific Seacraft with a tiller and a lot of sailing ahead. This first study explores a removable ram with 250 mm of travel. Mounting, materials, and drive sizing will evolve as the prototype takes shape.</p></div>
+    <div><h2>Open all the way down</h2><p>Python CAD, an original Rust control stack, and a design you can inspect. The model is the first step; bench testing and supervised boat trials come before steering.</p><a class="source-link" href="https://github.com/shieldsworks/omatiller">Follow the build on GitHub ↗</a></div>
+  </section>
+
+  <nav class="pager" aria-label="More apps"><span>← <a href="../omahelm/">omahelm</a> · the chartplotter</span><span><a href="../">The Omahoy suite</a> →</span></nav>
+  <div class="themes" id="themes"><span class="label">Theme</span><span class="hint">press <kbd>T</kbd></span></div>
+</main>
+<footer><span>Omatiller 01 · An open hardware concept.</span><span>Built aboard Dash · <a href="https://github.com/shieldsworks">shieldsworks</a></span></footer>
+<script type="module">
+  import('./viewer.js').catch(() => {
+    document.getElementById('load-state').textContent = 'Static preview · interactive 3D is unavailable in this browser.';
+    document.getElementById('gesture').hidden = true;
+  });
+</script>
+<noscript><style>.load-state,.gesture,.view-tools,.controls,.part-buttons{display:none}</style><p class="no-script">Enable JavaScript to orbit the model and explore the mechanism.</p></noscript>
+</body>
+</html>

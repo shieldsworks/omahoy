@@ -9,6 +9,27 @@ and `omawind/`, each an `index.html`, so Vercel serves them as `/omahelm/`
 with no config. Their recordings are in `media/`: an H.264 MP4 each, with a
 WebP poster of the same name.
 
+`omatiller/` is a hardware concept page with an interactive CAD assembly, exploded
+view, transparent housing view, and ram travel control. Its 69 named solids come
+from `../omatiller/cad/assembly.py` in the sibling repository. The generated GLB
+and component metadata live in `omatiller/model/`; copy them together after
+regenerating. `media/omatiller.webp` is a static render of the same model for
+fallback and link previews. This page makes no claim that the pilot is built.
+
+Three.js r180 and its required modules are vendored with their MIT license under
+`vendor/three/`. The model and renderer are served locally, without a CDN. Serve
+the site over HTTP for module and model loading:
+
+```sh
+python3 -m http.server 8765 --bind 127.0.0.1 --directory site
+```
+
+Open `http://127.0.0.1:8765/omatiller/`. Rendering stops while idle or offscreen;
+rotation and ram animation start only when requested. With the canvas focused,
+arrow keys orbit, `+`/`-` zoom, and Home resets the view. Reduced-motion settings
+disable transition animation. A static image remains if WebGL or JavaScript is
+unavailable.
+
 The recordings are of the real apps, on omakeel's sample sail out of Berkeley
 Marina (a replay, not a real track, and its vessels are invented), never on
 the boat's real GPS. The wind is live HRRR and NDBC over the Bay. They were

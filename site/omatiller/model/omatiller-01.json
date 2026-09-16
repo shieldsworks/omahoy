@@ -1,0 +1,768 @@
+{
+  "revision": "01",
+  "status": "concept",
+  "units": "mm",
+  "stroke": 250,
+  "screwLead": 8,
+  "parts": {
+    "cover_boss_-258_-25": {
+      "material": "graphite",
+      "group": "housing",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 1068.77
+    },
+    "cover_screw_-258_-25": {
+      "material": "steel",
+      "group": "cover",
+      "explode": [
+        0,
+        0,
+        95
+      ],
+      "moving": false,
+      "volume_mm3": 61.743
+    },
+    "cover_boss_-258_25": {
+      "material": "graphite",
+      "group": "housing",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 1068.77
+    },
+    "cover_screw_-258_25": {
+      "material": "steel",
+      "group": "cover",
+      "explode": [
+        0,
+        0,
+        95
+      ],
+      "moving": false,
+      "volume_mm3": 61.743
+    },
+    "cover_boss_96_-25": {
+      "material": "graphite",
+      "group": "housing",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 1068.77
+    },
+    "cover_screw_96_-25": {
+      "material": "steel",
+      "group": "cover",
+      "explode": [
+        0,
+        0,
+        95
+      ],
+      "moving": false,
+      "volume_mm3": 61.743
+    },
+    "cover_boss_96_25": {
+      "material": "graphite",
+      "group": "housing",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 1068.77
+    },
+    "cover_screw_96_25": {
+      "material": "steel",
+      "group": "cover",
+      "explode": [
+        0,
+        0,
+        95
+      ],
+      "moving": false,
+      "volume_mm3": 61.743
+    },
+    "lower_housing": {
+      "material": "ceramic",
+      "group": "housing",
+      "explode": [
+        0,
+        0,
+        -65
+      ],
+      "moving": false,
+      "volume_mm3": 376207.878
+    },
+    "service_cover": {
+      "material": "graphite",
+      "group": "cover",
+      "explode": [
+        0,
+        0,
+        95
+      ],
+      "moving": false,
+      "volume_mm3": 182392.878
+    },
+    "cover_gasket": {
+      "material": "orange",
+      "group": "cover",
+      "explode": [
+        0,
+        0,
+        55
+      ],
+      "moving": false,
+      "volume_mm3": 4127.227
+    },
+    "nose_bezel": {
+      "material": "graphite",
+      "group": "guide",
+      "explode": [
+        45,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 7699.384
+    },
+    "nose_accent": {
+      "material": "orange",
+      "group": "guide",
+      "explode": [
+        55,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 1513.933
+    },
+    "rod_wiper": {
+      "material": "rubber",
+      "group": "guide",
+      "explode": [
+        65,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 589.331
+    },
+    "guide_bushing": {
+      "material": "bronze",
+      "group": "guide",
+      "explode": [
+        25,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 3087.887
+    },
+    "pushrod": {
+      "material": "steel",
+      "group": "ram",
+      "explode": [
+        75,
+        0,
+        0
+      ],
+      "moving": true,
+      "volume_mm3": 66124.87
+    },
+    "rod_end_collar": {
+      "material": "graphite",
+      "group": "ram",
+      "explode": [
+        85,
+        0,
+        0
+      ],
+      "moving": true,
+      "volume_mm3": 4353.211
+    },
+    "tiller_attachment": {
+      "material": "graphite",
+      "group": "ram",
+      "explode": [
+        95,
+        0,
+        0
+      ],
+      "moving": true,
+      "volume_mm3": 28727.876
+    },
+    "tiller_bushing": {
+      "material": "bronze",
+      "group": "ram",
+      "explode": [
+        95,
+        0,
+        0
+      ],
+      "moving": true,
+      "volume_mm3": 1884.956
+    },
+    "release_tab": {
+      "material": "orange",
+      "group": "ram",
+      "explode": [
+        95,
+        0,
+        12
+      ],
+      "moving": true,
+      "volume_mm3": 2582.165
+    },
+    "screw_shaft": {
+      "material": "steel",
+      "group": "drive",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 27693.265
+    },
+    "screw_helix": {
+      "material": "steel",
+      "group": "drive",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 3408.426
+    },
+    "traveling_nut": {
+      "material": "bronze",
+      "group": "ram",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": true,
+      "volume_mm3": 12448.31
+    },
+    "nut_flange": {
+      "material": "bronze",
+      "group": "ram",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": true,
+      "volume_mm3": 4926.017
+    },
+    "nut_carriage": {
+      "material": "graphite",
+      "group": "ram",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": true,
+      "volume_mm3": 7429.758
+    },
+    "guide_rail_-24": {
+      "material": "steel",
+      "group": "drive",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 9047.787
+    },
+    "guide_rail_24": {
+      "material": "steel",
+      "group": "drive",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 9047.787
+    },
+    "rear_bearing": {
+      "material": "silver",
+      "group": "drive",
+      "explode": [
+        -20,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 5802.553
+    },
+    "bearing_bulkhead": {
+      "material": "graphite",
+      "group": "drive",
+      "explode": [
+        -20,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 27826.399
+    },
+    "motor_can": {
+      "material": "silver",
+      "group": "motor",
+      "explode": [
+        0,
+        -65,
+        -25
+      ],
+      "moving": false,
+      "volume_mm3": 73541.542
+    },
+    "motor_end_-226": {
+      "material": "graphite",
+      "group": "motor",
+      "explode": [
+        0,
+        -65,
+        -25
+      ],
+      "moving": false,
+      "volume_mm3": 4921.148
+    },
+    "motor_end_-141": {
+      "material": "graphite",
+      "group": "motor",
+      "explode": [
+        0,
+        -65,
+        -25
+      ],
+      "moving": false,
+      "volume_mm3": 4921.148
+    },
+    "motor_shaft": {
+      "material": "steel",
+      "group": "motor",
+      "explode": [
+        0,
+        -65,
+        -25
+      ],
+      "moving": false,
+      "volume_mm3": 565.487
+    },
+    "screw_pulley": {
+      "material": "bronze",
+      "group": "transmission",
+      "explode": [
+        -50,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 8042.477
+    },
+    "screw_pulley_flange_-256": {
+      "material": "graphite",
+      "group": "transmission",
+      "explode": [
+        -50,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 1400.758
+    },
+    "screw_pulley_flange_-244": {
+      "material": "graphite",
+      "group": "transmission",
+      "explode": [
+        -50,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 1400.758
+    },
+    "motor_pulley": {
+      "material": "bronze",
+      "group": "transmission",
+      "explode": [
+        -50,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 2544.69
+    },
+    "motor_pulley_flange_-256": {
+      "material": "graphite",
+      "group": "transmission",
+      "explode": [
+        -50,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 477.129
+    },
+    "motor_pulley_flange_-244": {
+      "material": "graphite",
+      "group": "transmission",
+      "explode": [
+        -50,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 477.129
+    },
+    "timing_belt": {
+      "material": "rubber",
+      "group": "transmission",
+      "explode": [
+        -50,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 1898.866
+    },
+    "controller_board": {
+      "material": "pcb",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 8127.419
+    },
+    "mcu": {
+      "material": "black",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 570.442
+    },
+    "driver": {
+      "material": "black",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 713.515
+    },
+    "terminal": {
+      "material": "orange",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 1396.871
+    },
+    "connector": {
+      "material": "ceramic",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 315.446
+    },
+    "pcb_contact_0": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 2.4
+    },
+    "pcb_contact_1": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 2.4
+    },
+    "pcb_contact_2": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 2.4
+    },
+    "pcb_contact_3": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 2.4
+    },
+    "pcb_contact_4": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 2.4
+    },
+    "pcb_contact_5": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 2.4
+    },
+    "pcb_contact_6": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 2.4
+    },
+    "pcb_contact_7": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 2.4
+    },
+    "board_standoff_-29_-19": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 137.79
+    },
+    "board_standoff_-29_19": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 137.79
+    },
+    "board_standoff_52_-19": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 137.79
+    },
+    "board_standoff_52_19": {
+      "material": "bronze",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 137.79
+    },
+    "capacitor_10": {
+      "material": "graphite",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 502.655
+    },
+    "capacitor_25": {
+      "material": "graphite",
+      "group": "electronics",
+      "explode": [
+        0,
+        -85,
+        -15
+      ],
+      "moving": false,
+      "volume_mm3": 502.655
+    },
+    "limit_sensor_-213": {
+      "material": "orange",
+      "group": "drive",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 705.304
+    },
+    "limit_sensor_58": {
+      "material": "orange",
+      "group": "drive",
+      "explode": [
+        0,
+        0,
+        0
+      ],
+      "moving": false,
+      "volume_mm3": 705.304
+    },
+    "mount_neck": {
+      "material": "steel",
+      "group": "mount",
+      "explode": [
+        0,
+        0,
+        -35
+      ],
+      "moving": false,
+      "volume_mm3": 6107.256
+    },
+    "socket_base": {
+      "material": "graphite",
+      "group": "mount",
+      "explode": [
+        0,
+        0,
+        -55
+      ],
+      "moving": false,
+      "volume_mm3": 6717.228
+    },
+    "socket_sleeve": {
+      "material": "bronze",
+      "group": "mount",
+      "explode": [
+        0,
+        0,
+        -55
+      ],
+      "moving": false,
+      "volume_mm3": 3543.214
+    },
+    "power_gland": {
+      "material": "graphite",
+      "group": "housing",
+      "explode": [
+        -20,
+        0,
+        -65
+      ],
+      "moving": false,
+      "volume_mm3": 2412.743
+    },
+    "nameplate": {
+      "material": "graphite",
+      "group": "cover",
+      "explode": [
+        0,
+        0,
+        95
+      ],
+      "moving": false,
+      "volume_mm3": 4710.957
+    },
+    "standby_button": {
+      "material": "orange",
+      "group": "cover",
+      "explode": [
+        0,
+        0,
+        95
+      ],
+      "moving": false,
+      "volume_mm3": 482.549
+    },
+    "heading_button": {
+      "material": "rubber",
+      "group": "cover",
+      "explode": [
+        0,
+        0,
+        95
+      ],
+      "moving": false,
+      "volume_mm3": 482.549
+    },
+    "status_light": {
+      "material": "orange",
+      "group": "cover",
+      "explode": [
+        0,
+        0,
+        95
+      ],
+      "moving": false,
+      "volume_mm3": 23.888
+    }
+  }
+}
