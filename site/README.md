@@ -15,10 +15,12 @@ come from `../omatiller/cad/assembly.py` in the sibling repository. The generate
 GLB and component metadata (`omatiller-02.glb`, `omatiller-02.json`) live in
 `omatiller/model/`; copy them together after regenerating. The viewer reads the
 assembly root, stroke, screw axis, nameplate, cable path and camera target from
-that metadata, so a new revision only changes `MODEL` in `viewer.js` and the page
-copy. `media/omatiller.webp` is a static render of the same model for fallback and
-link previews, captured from headless Chromium at 1398 × 801. This page makes no
-claim that the pilot is built.
+that metadata. A new revision that keeps the part names (`screw_shaft`,
+`screw_journal`, `screw_helix`, `nameplate`, `power_gland`) changes `MODEL` in
+`viewer.js` and the page copy; one with a new size may also need the camera
+positions and the ground height (y −170) adjusted. `media/omatiller.webp` is a
+static render of the same model for fallback and link previews, captured from
+headless Chromium at 1398 × 801. This page makes no claim that the pilot is built.
 
 Three.js r180 and its required modules are vendored with their MIT license under
 `vendor/three/`. The model and renderer are served locally, without a CDN. Serve

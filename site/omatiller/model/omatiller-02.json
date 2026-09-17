@@ -50,7 +50,7 @@
     "motor": {
       "mm": [
         57,
-        150
+        155
       ],
       "source": "provisional envelope for a 200 W brushless planetary gearmotor"
     },
@@ -116,7 +116,7 @@
       ]
     ],
     "target": [
-      15,
+      45,
       -30,
       -45
     ]
@@ -219,7 +219,7 @@
         -70
       ],
       "moving": false,
-      "volume_mm3": 717194.814
+      "volume_mm3": 714841.527
     },
     "service_cover": {
       "material": "graphite",
@@ -230,7 +230,7 @@
         110
       ],
       "moving": false,
-      "volume_mm3": 254823.1
+      "volume_mm3": 253136.564
     },
     "cover_gasket": {
       "material": "orange",
@@ -241,7 +241,7 @@
         65
       ],
       "moving": false,
-      "volume_mm3": 5535.848
+      "volume_mm3": 3373.087
     },
     "nameplate": {
       "material": "graphite",
@@ -373,7 +373,7 @@
         0
       ],
       "moving": true,
-      "volume_mm3": 32889.822
+      "volume_mm3": 28319.903
     },
     "fitting_bushing": {
       "material": "bronze",
@@ -406,7 +406,7 @@
         -30
       ],
       "moving": true,
-      "volume_mm3": 3259.402
+      "volume_mm3": 3180.863
     },
     "pin_shoulder": {
       "material": "steel",
@@ -450,7 +450,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 57163.917
+      "volume_mm3": 55861.036
     },
     "screw_journal": {
       "material": "steel",
@@ -461,7 +461,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 4071.504
+      "volume_mm3": 4976.283
     },
     "screw_helix": {
       "material": "steel",
@@ -472,7 +472,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 6641.678
+      "volume_mm3": 6314.95
     },
     "ball_nut": {
       "material": "bronze",
@@ -560,7 +560,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 115533.818
+      "volume_mm3": 102466.946
     },
     "fixed_bearing": {
       "material": "silver",
@@ -615,7 +615,7 @@
         -30
       ],
       "moving": false,
-      "volume_mm3": 646.917
+      "volume_mm3": 353.783
     },
     "motor_band_-123": {
       "material": "graphite",
@@ -626,7 +626,7 @@
         -30
       ],
       "moving": false,
-      "volume_mm3": 646.917
+      "volume_mm3": 353.783
     },
     "motor_band_-96": {
       "material": "graphite",
@@ -637,7 +637,7 @@
         -30
       ],
       "moving": false,
-      "volume_mm3": 646.917
+      "volume_mm3": 353.783
     },
     "motor_end_cap": {
       "material": "graphite",
@@ -670,7 +670,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 8042.477
+      "volume_mm3": 6892.576
     },
     "screw_pulley_flange_rear": {
       "material": "graphite",
@@ -681,7 +681,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 1273.523
+      "volume_mm3": 1270.684
     },
     "screw_pulley_flange_front": {
       "material": "graphite",
@@ -692,7 +692,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 1273.523
+      "volume_mm3": 1270.684
     },
     "motor_pulley": {
       "material": "bronze",
@@ -703,7 +703,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 8042.477
+      "volume_mm3": 7241.293
     },
     "motor_pulley_flange_rear": {
       "material": "graphite",
@@ -714,7 +714,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 1273.523
+      "volume_mm3": 1322.991
     },
     "motor_pulley_flange_front": {
       "material": "graphite",
@@ -725,7 +725,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 1273.523
+      "volume_mm3": 1322.991
     },
     "timing_belt": {
       "material": "rubber",
@@ -747,7 +747,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 43013.348
+      "volume_mm3": 54762.211
     },
     "odrive_board": {
       "material": "pcb",
@@ -846,7 +846,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 90.666
+      "volume_mm3": 78.578
     },
     "standoff_-35_20": {
       "material": "bronze",
@@ -857,7 +857,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 90.666
+      "volume_mm3": 78.578
     },
     "standoff_25_-20": {
       "material": "bronze",
@@ -868,7 +868,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 90.666
+      "volume_mm3": 78.578
     },
     "standoff_25_20": {
       "material": "bronze",
@@ -879,7 +879,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 90.666
+      "volume_mm3": 78.578
     },
     "standoff_38_-10": {
       "material": "bronze",
@@ -890,7 +890,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 90.666
+      "volume_mm3": 78.578
     },
     "standoff_38_10": {
       "material": "bronze",
@@ -901,7 +901,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 90.666
+      "volume_mm3": 78.578
     },
     "standoff_82_-10": {
       "material": "bronze",
@@ -912,7 +912,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 90.666
+      "volume_mm3": 78.578
     },
     "standoff_82_10": {
       "material": "bronze",
@@ -923,7 +923,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 90.666
+      "volume_mm3": 78.578
     },
     "dc_dc_converter": {
       "material": "graphite",
@@ -934,7 +934,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 43793.015
+      "volume_mm3": 44514.731
     },
     "dc_dc_fins": {
       "material": "silver",
@@ -945,7 +945,7 @@
         -25
       ],
       "moving": false,
-      "volume_mm3": 1656.0
+      "volume_mm3": 1584.0
     },
     "mount_neck": {
       "material": "steel",
@@ -953,10 +953,10 @@
       "explode": [
         0,
         0,
-        -40
+        -20
       ],
       "moving": false,
-      "volume_mm3": 6616.194
+      "volume_mm3": 8143.008
     },
     "pivot_pin": {
       "material": "steel",
@@ -964,7 +964,7 @@
       "explode": [
         0,
         0,
-        -40
+        -20
       ],
       "moving": false,
       "volume_mm3": 1256.637
@@ -975,7 +975,7 @@
       "explode": [
         0,
         0,
-        -70
+        -25
       ],
       "moving": false,
       "volume_mm3": 799.158
@@ -986,7 +986,7 @@
       "explode": [
         0,
         0,
-        -70
+        -25
       ],
       "moving": false,
       "volume_mm3": 1747.707
@@ -997,7 +997,7 @@
       "explode": [
         0,
         0,
-        -95
+        -30
       ],
       "moving": false,
       "volume_mm3": 438055.743
@@ -1256,7 +1256,7 @@
       "volume_mm3": 3769.911
     },
     "lower_ball_stem": {
-      "material": "rubber",
+      "material": "ceramic",
       "group": "remote",
       "explode": [
         75,
