@@ -11,18 +11,22 @@ const travelValue = document.getElementById('travel-value');
 const runButton = document.getElementById('run');
 const orbitButton = document.getElementById('orbit');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const MODEL = './model/omatiller-02';
 const descriptions = {
-  housing: ['01 / THE OUTER SHELL', 'Made to come apart.', 'A rounded housing, a separate service cover, and an accessible interior. The concept puts the drive, bearings, and electronics within reach, with a gasket at the cover and a wiper around the sliding rod.', 'Pale shell · graphite cover · replaceable seals'],
-  drive: ['02 / THE LINEAR DRIVE', 'A turn becomes a correction.', 'A rotating screw moves a captive nut and the hollow pushrod. Two guide rails keep the carriage aligned. The front bushing supports the rod; a wiper sits at the point where it meets the weather.', 'Screw + traveling nut · twin guide rails · front bushing'],
-  motor: ['03 / THE TRANSMISSION', 'Power, tucked alongside.', 'A motor sits beneath the screw, connected by a compact belt drive. The parallel layout keeps the unit short and leaves the transmission accessible. Motor size and reduction are provisional in this first study.', 'Parallel motor · flanged pulleys · timing belt'],
-  electronics: ['04 / THE CONTROL LOOP', 'The intelligence stays aboard.', 'The planned local controller combines heading and rate of turn with drive feedback. It will handle motor output, travel limits, and faults without depending on a running desktop app. The board shown here is a layout concept.', 'Original Rust firmware planned · local control · physical standby'],
-  ram: ['05 / THE CONNECTION', 'The tiller is still yours.', 'A polished sliding tube ends in a removable tiller attachment. The opposite end pivots in a cockpit socket. The orange release detail marks the manual connection; its mechanism and release under load still need prototyping.', '250 mm concept travel · removable attachment · pivoting base'],
+  housing: ['01 / THE HOUSING', 'Made to come apart.', 'The housing is 445 mm long, the same as the classic tiller pilots, and a little taller to fit the brushless drive. Four screws lift the service cover off its gasket, and a wiper cleans the ram where it meets the weather.', '445 × 100 × 138 mm · service cover · replaceable seals'],
+  drive: ['02 / THE BALL SCREW', 'A turn becomes a correction.', 'A 16 mm ball screw with a 5 mm lead: every turn moves the ram 5 mm, so 300 rpm makes 25 mm a second. The ball nut rides a carriage on two guide rails. A ball screw can be pushed back by hand, so it never locks the tiller.', '1605 ball screw · twin guide rails · limit sensors at both ends'],
+  motor: ['03 / THE BRUSHLESS DRIVE', 'Power, tucked beneath.', 'A 200 W-class brushless gearmotor sits under the screw, bolted to the bulkhead. Behind it, a 1:1 timing belt turns the screw; the planetary gearbox already brings the speed down. The motor outline is provisional until the part is in hand.', 'Brushless planetary · 1:1 belt · provisional envelope'],
+  electronics: ['04 / THE CONTROLLER', 'The loop stays aboard.', 'An ESP32 runs the steering loop in Rust and commands an ODrive S1 over CAN. The ODrive measures motor current, so a stall or a jammed rudder stops the drive. A 12 to 24 V converter keeps it in range on a sagging battery. It all holds a heading with the laptop closed.', 'ESP32 · ODrive S1 · 12→24 V converter · heat spreader'],
+  ram: ['05 / THE CONNECTION', 'The tiller is still yours.', 'The fitting drops over a pin in the tiller, 589 mm from the seat socket at mid-travel and 460 mm from the rudder stock, the spacing common tiller pilots use. The pin shoulder sits 12.5 mm above the tiller. Lift the fitting off the pin and you are steering.', '589 mm socket to pin · 250 mm travel, provisional · lift-off fitting'],
+  remote: ['06 / THE REMOTE', 'Steer from anywhere in the cockpit.', 'A keypad pod for AUTO, STBY and ±1° and ±10° changes. GoPro-style fingers and a 1-inch ball arm let it clip wherever your hand falls. Mounts like these hold accessories only; the ram and the compass get solid fittings.', 'GoPro-style fingers · 1-inch balls · M5 thumbscrew'],
 };
+// Groups that share a story with another group.
+const family = { cover: 'housing', guide: 'drive', transmission: 'motor', mount: 'ram', boat: 'ram' };
 
 let renderer, scene, camera, controls, root, data;
 let running = false, orbiting = false, visible = true, frame = 0, previous = 0;
 let view = 'assembled', explosion = 0, desiredExplosion = 0, selected = null;
-let phase = Math.PI / 2, travelMm = 125;
+let phase = Math.PI / 2, travelMm = 125, center = 125;
 const components = [];
 const movingPivots = [];
 
@@ -54,7 +58,7 @@ function setRunning(value) {
   runButton.setAttribute('aria-pressed', String(value));
   runButton.setAttribute('aria-label', value ? 'Pause ram travel' : 'Animate ram travel');
   runButton.textContent = value ? 'Ⅱ' : '▶';
-  phase = Math.asin(Math.max(-1, Math.min(1, (travelMm - 125) / 125)));
+  phase = Math.asin(Math.max(-1, Math.min(1, (travelMm - center) / center)));
   requestDraw();
 }
 
@@ -81,7 +85,7 @@ function updateMaterials() {
   for (const component of components) {
     const { group, material: materialName } = component.meta;
     const ghost = view === 'inside' && ['housing', 'cover'].includes(group);
-    const chosen = selected && (group === selected || (selected === 'motor' && group === 'transmission') || (selected === 'drive' && group === 'guide'));
+    const chosen = selected && (family[group] || group) === selected;
     component.node.traverse(mesh => {
       if (!mesh.isMesh) return;
       mesh.material.transparent = ghost || materialName === 'label';
@@ -99,12 +103,12 @@ function updateMaterials() {
 }
 
 function selectPart(name, changeView = true) {
-  if (!descriptions[name]) name = ({ cover: 'housing', guide: 'drive', transmission: 'motor', mount: 'ram' })[name] || 'housing';
+  if (!descriptions[name]) name = family[name] || 'housing';
   selected = name;
   const text = descriptions[name];
   ['part-kicker', 'part-title', 'part-description', 'part-note'].forEach((id, i) => document.getElementById(id).textContent = text[i]);
   document.querySelectorAll('[data-part]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.part === name)));
-  if (root && changeView) setView(name === 'housing' || name === 'ram' ? 'assembled' : 'exploded');
+  if (root && changeView) setView(['housing', 'ram', 'remote'].includes(name) ? 'assembled' : 'exploded');
   if (root) updateMaterials();
   requestDraw();
 }
@@ -113,7 +117,9 @@ document.querySelectorAll('[data-part]').forEach(button => button.addEventListen
 function home() {
   const portrait = stage.clientWidth < 600;
   camera.position.set(portrait ? 450 : 370, portrait ? 700 : 330, portrait ? 550 : 630);
-  controls.target.set(10, 0, 0);
+  // CAD is Z-up; the scene is Y-up, so CAD (x, y, z) sits at (x, z, -y).
+  const [x, y, z] = data.presentation.target;
+  controls.target.set(x, z, -y);
   camera.zoom = 1;
   camera.updateProjectionMatrix();
   controls.update();
@@ -150,14 +156,14 @@ function label(text, subtext, position, width, height) {
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width / 1000, height / 1000), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 }));
   mesh.position.set(...position.map(v => v / 1000));
   root.add(mesh);
-  components.push({ node: mesh, base: mesh.position.clone(), meta: { group: 'cover', material: 'label', explode: [0, 0, 95] } });
+  components.push({ node: mesh, base: mesh.position.clone(), meta: { group: 'cover', material: 'label', explode: data.parts.nameplate.explode } });
 }
 
 function draw(now) {
   frame = 0;
   const dt = Math.min((now - (previous || now)) / 1000, .05);
   previous = now;
-  if (running) { phase += dt * .75; setTravel(125 + Math.sin(phase) * 125); }
+  if (running) { phase += dt * .75; setTravel(center + Math.sin(phase) * center); }
   const delta = desiredExplosion - explosion;
   if (Math.abs(delta) > .001) explosion += delta * Math.min(1, dt * 7);
   else explosion = desiredExplosion;
@@ -165,9 +171,9 @@ function draw(now) {
     component.node.position.copy(component.base);
     const e = component.meta.explode || [0, 0, 0];
     component.node.position.addScaledVector(new THREE.Vector3(...e), explosion / 1000);
-    if (component.meta.moving) component.node.position.x += (travelMm - 125) / 1000;
+    if (component.meta.moving) component.node.position.x += (travelMm - center) / 1000;
   }
-  for (const pivot of movingPivots) pivot.rotation.x = -(travelMm - 125) / data.screwLead * Math.PI * 2;
+  for (const pivot of movingPivots) pivot.rotation.x = -(travelMm - center) / data.screwLead * Math.PI * 2;
   if (orbiting) {
     const offset = camera.position.clone().sub(controls.target);
     offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), dt * .2);
@@ -231,13 +237,15 @@ async function start() {
   softShadow.rotation.x = -Math.PI / 2; softShadow.position.y = -169; scene.add(softShadow);
 
   const [gltf, response] = await Promise.all([
-    new GLTFLoader().loadAsync('./model/omatiller-01.glb'),
-    fetch('./model/omatiller-01.json').then(r => { if (!r.ok) throw new Error('Missing model metadata'); return r.json(); }),
+    new GLTFLoader().loadAsync(`${MODEL}.glb`),
+    fetch(`${MODEL}.json`).then(r => { if (!r.ok) throw new Error('Missing model metadata'); return r.json(); }),
   ]);
   data = response;
+  center = data.stroke / 2;
+  travel.max = String(data.stroke);
   scene.add(gltf.scene);
   gltf.scene.scale.setScalar(1000);
-  root = gltf.scene.getObjectByName('omatiller_01');
+  root = gltf.scene.getObjectByName(data.root);
   if (!root) throw new Error('Missing assembly root');
   for (const [name, meta] of Object.entries(data.parts)) {
     const node = root.getObjectByName(name);
@@ -273,20 +281,24 @@ async function start() {
       mesh.castShadow = true; mesh.receiveShadow = true;
       mesh.userData.part = meta.group;
     });
-    if (name === 'screw_shaft' || name === 'screw_helix') {
+    if (['screw_shaft', 'screw_journal', 'screw_helix'].includes(name)) {
+      // Spin about the screw's own axis, not the assembly's.
+      const [axisY, axisZ] = data.screwAxis.map(v => v / 1000);
       const pivot = new THREE.Group();
-      pivot.position.z = .01;
-      root.add(pivot); pivot.add(node); node.position.z -= .01;
+      pivot.position.set(0, axisY, axisZ);
+      root.add(pivot); pivot.add(node);
+      node.position.y -= axisY; node.position.z -= axisZ;
       movingPivots.push(pivot);
     }
     components.push({ node, meta, base: node.position.clone() });
   }
-  label('omatiller', 'OPEN MARINE HARDWARE / 01', [-106, 0, 40], 108, 27);
+  const plate = data.presentation.label;
+  label(plate.text, plate.subtext, plate.position, ...plate.size);
   // Rubber power lead, presented separately from the dimensioned component solids.
-  const cablePoints = [[-294, 0, -17], [-310, 0, -20], [-326, 2, -45], [-352, 5, -64], [-380, 1, -62]].map(p => new THREE.Vector3(...p.map(v => v / 1000)));
+  const cablePoints = data.presentation.cable.map(p => new THREE.Vector3(...p.map(v => v / 1000)));
   const cable = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cablePoints), 40, .004, 10, false), new THREE.MeshStandardMaterial({ color: '#18232a', roughness: .65 }));
   root.add(cable);
-  components.push({ node: cable, base: cable.position.clone(), meta: { group: 'housing', material: 'rubber', explode: [-20, 0, -65] } });
+  components.push({ node: cable, base: cable.position.clone(), meta: { group: 'housing', material: 'rubber', explode: data.parts.power_gland.explode } });
 
   const raycaster = new THREE.Raycaster();
   let pointerStart = null;
@@ -336,7 +348,7 @@ async function start() {
   stage.classList.add('ready');
   stage.dataset.view = 'assembled';
   status.textContent = 'Interactive assembly ready.';
-  home(); size(); setTravel(125);
+  home(); size(); setTravel(center);
 }
 
 start().catch(error => {

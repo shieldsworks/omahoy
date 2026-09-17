@@ -10,11 +10,15 @@ with no config. Their recordings are in `media/`: an H.264 MP4 each, with a
 WebP poster of the same name.
 
 `omatiller/` is a hardware concept page with an interactive CAD assembly, exploded
-view, transparent housing view, and ram travel control. Its 69 named solids come
-from `../omatiller/cad/assembly.py` in the sibling repository. The generated GLB
-and component metadata live in `omatiller/model/`; copy them together after
-regenerating. `media/omatiller.webp` is a static render of the same model for
-fallback and link previews. This page makes no claim that the pilot is built.
+view, transparent housing view, and ram travel control. Concept 02's 105 named parts
+come from `../omatiller/cad/assembly.py` in the sibling repository. The generated
+GLB and component metadata (`omatiller-02.glb`, `omatiller-02.json`) live in
+`omatiller/model/`; copy them together after regenerating. The viewer reads the
+assembly root, stroke, screw axis, nameplate, cable path and camera target from
+that metadata, so a new revision only changes `MODEL` in `viewer.js` and the page
+copy. `media/omatiller.webp` is a static render of the same model for fallback and
+link previews, captured from headless Chromium at 1398 × 801. This page makes no
+claim that the pilot is built.
 
 Three.js r180 and its required modules are vendored with their MIT license under
 `vendor/three/`. The model and renderer are served locally, without a CDN. Serve
