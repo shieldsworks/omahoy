@@ -116,9 +116,9 @@
       ]
     ],
     "target": [
-      45,
+      90,
       -30,
-      -45
+      -30
     ]
   },
   "parts": {
@@ -139,7 +139,7 @@
       "explode": [
         0,
         0,
-        110
+        70
       ],
       "moving": false,
       "volume_mm3": 61.743
@@ -161,7 +161,7 @@
       "explode": [
         0,
         0,
-        110
+        70
       ],
       "moving": false,
       "volume_mm3": 61.743
@@ -183,7 +183,7 @@
       "explode": [
         0,
         0,
-        110
+        70
       ],
       "moving": false,
       "volume_mm3": 61.743
@@ -205,7 +205,7 @@
       "explode": [
         0,
         0,
-        110
+        70
       ],
       "moving": false,
       "volume_mm3": 61.743
@@ -216,7 +216,7 @@
       "explode": [
         0,
         0,
-        -70
+        -55
       ],
       "moving": false,
       "volume_mm3": 714841.527
@@ -227,7 +227,7 @@
       "explode": [
         0,
         0,
-        110
+        70
       ],
       "moving": false,
       "volume_mm3": 253136.564
@@ -238,7 +238,7 @@
       "explode": [
         0,
         0,
-        65
+        40
       ],
       "moving": false,
       "volume_mm3": 3373.087
@@ -249,7 +249,7 @@
       "explode": [
         0,
         0,
-        110
+        70
       ],
       "moving": false,
       "volume_mm3": 4876.498
@@ -260,7 +260,7 @@
       "explode": [
         0,
         0,
-        110
+        70
       ],
       "moving": false,
       "volume_mm3": 482.549
@@ -271,7 +271,7 @@
       "explode": [
         0,
         0,
-        110
+        70
       ],
       "moving": false,
       "volume_mm3": 482.549
@@ -282,7 +282,7 @@
       "explode": [
         0,
         0,
-        110
+        70
       ],
       "moving": false,
       "volume_mm3": 23.888
@@ -293,7 +293,7 @@
       "explode": [
         -25,
         0,
-        -70
+        -55
       ],
       "moving": false,
       "volume_mm3": 2412.743
@@ -560,7 +560,7 @@
         0
       ],
       "moving": false,
-      "volume_mm3": 102466.946
+      "volume_mm3": 108195.898
     },
     "fixed_bearing": {
       "material": "silver",
@@ -659,7 +659,7 @@
         -30
       ],
       "moving": false,
-      "volume_mm3": 2670.354
+      "volume_mm3": 3141.593
     },
     "screw_pulley": {
       "material": "bronze",
@@ -975,7 +975,7 @@
       "explode": [
         0,
         0,
-        -25
+        -29
       ],
       "moving": false,
       "volume_mm3": 799.158

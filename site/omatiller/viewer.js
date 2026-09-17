@@ -132,7 +132,7 @@ function size() {
   const width = stage.clientWidth, height = stage.clientHeight;
   renderer.setSize(width, height, false);
   // Keep the tiller in frame at full travel and in the exploded view, at any width.
-  const halfWidth = Math.max(480, 250 * width / height);
+  const halfWidth = Math.max(500, 255 * width / height);
   camera.left = -halfWidth; camera.right = halfWidth;
   camera.top = halfWidth * height / width; camera.bottom = -camera.top;
   camera.updateProjectionMatrix();
