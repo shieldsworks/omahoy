@@ -60,34 +60,39 @@
         51
       ],
       "source": "provisional envelope; confirm against ODrive S1 drawings"
-    },
-    "goproMount": {
-      "mm": [
-        3.0,
-        3.2,
-        5.0
-      ],
-      "source": "commonly published prong thickness, gap and M5 bolt; verify before printing"
-    },
-    "mountBall": {
-      "mm": 25.4,
-      "source": "1-inch ball, as used by B-size ball mounts"
     }
   },
   "presentation": {
-    "label": {
-      "text": "omatiller",
-      "subtext": "OPEN MARINE HARDWARE / 02",
-      "position": [
-        -150,
-        0,
-        57.6
-      ],
-      "size": [
-        112,
-        28
-      ]
-    },
+    "labels": [
+      {
+        "text": "omatiller",
+        "subtext": "OPEN MARINE HARDWARE / 02",
+        "position": [
+          -200,
+          0,
+          57.6
+        ],
+        "size": [
+          112,
+          28
+        ],
+        "explodeAs": "nameplate"
+      },
+      {
+        "text": "245\u00b0",
+        "subtext": "AUTO \u00b7 LOCKED HEADING",
+        "position": [
+          -78,
+          0,
+          57.2
+        ],
+        "size": [
+          76,
+          19
+        ],
+        "explodeAs": "display_window"
+      }
+    ],
     "cable": [
       [
         -314,
@@ -254,31 +259,20 @@
       "moving": false,
       "volume_mm3": 4876.498
     },
-    "standby_button": {
-      "material": "orange",
-      "group": "cover",
+    "display_window": {
+      "material": "black",
+      "group": "keypad",
       "explode": [
         0,
         0,
         70
       ],
       "moving": false,
-      "volume_mm3": 482.549
-    },
-    "auto_button": {
-      "material": "rubber",
-      "group": "cover",
-      "explode": [
-        0,
-        0,
-        70
-      ],
-      "moving": false,
-      "volume_mm3": 482.549
+      "volume_mm3": 2384.84
     },
     "status_light": {
       "material": "orange",
-      "group": "cover",
+      "group": "keypad",
       "explode": [
         0,
         0,
@@ -286,6 +280,72 @@
       ],
       "moving": false,
       "volume_mm3": 23.888
+    },
+    "key_minus_1": {
+      "material": "rubber",
+      "group": "keypad",
+      "explode": [
+        0,
+        0,
+        70
+      ],
+      "moving": false,
+      "volume_mm3": 369.451
+    },
+    "key_minus_10": {
+      "material": "rubber",
+      "group": "keypad",
+      "explode": [
+        0,
+        0,
+        70
+      ],
+      "moving": false,
+      "volume_mm3": 369.451
+    },
+    "key_standby": {
+      "material": "orange",
+      "group": "keypad",
+      "explode": [
+        0,
+        0,
+        70
+      ],
+      "moving": false,
+      "volume_mm3": 369.451
+    },
+    "key_auto": {
+      "material": "ceramic",
+      "group": "keypad",
+      "explode": [
+        0,
+        0,
+        70
+      ],
+      "moving": false,
+      "volume_mm3": 369.451
+    },
+    "key_plus_1": {
+      "material": "rubber",
+      "group": "keypad",
+      "explode": [
+        0,
+        0,
+        70
+      ],
+      "moving": false,
+      "volume_mm3": 369.451
+    },
+    "key_plus_10": {
+      "material": "rubber",
+      "group": "keypad",
+      "explode": [
+        0,
+        0,
+        70
+      ],
+      "moving": false,
+      "volume_mm3": 369.451
     },
     "power_gland": {
       "material": "graphite",
@@ -399,7 +459,7 @@
     },
     "pin_head": {
       "material": "steel",
-      "group": "boat",
+      "group": "ram",
       "explode": [
         100,
         0,
@@ -410,7 +470,7 @@
     },
     "pin_shoulder": {
       "material": "steel",
-      "group": "boat",
+      "group": "ram",
       "explode": [
         100,
         0,
@@ -421,7 +481,7 @@
     },
     "pin_shank": {
       "material": "steel",
-      "group": "boat",
+      "group": "ram",
       "explode": [
         100,
         0,
@@ -429,17 +489,6 @@
       ],
       "moving": true,
       "volume_mm3": 706.858
-    },
-    "tiller_section": {
-      "material": "wood",
-      "group": "boat",
-      "explode": [
-        100,
-        0,
-        -60
-      ],
-      "moving": true,
-      "volume_mm3": 191648.944
     },
     "screw_shaft": {
       "material": "steel",
@@ -990,292 +1039,6 @@
       ],
       "moving": false,
       "volume_mm3": 1747.707
-    },
-    "cockpit_seat": {
-      "material": "gelcoat",
-      "group": "boat",
-      "explode": [
-        0,
-        0,
-        -30
-      ],
-      "moving": false,
-      "volume_mm3": 1181875.21
-    },
-    "remote_body": {
-      "material": "graphite",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 110050.406
-    },
-    "remote_display": {
-      "material": "black",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 662.609
-    },
-    "remote_key_0_0": {
-      "material": "rubber",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 190.066
-    },
-    "remote_key_0_1": {
-      "material": "rubber",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 190.066
-    },
-    "remote_key_1_0": {
-      "material": "rubber",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 190.066
-    },
-    "remote_key_1_1": {
-      "material": "orange",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 190.066
-    },
-    "remote_key_2_0": {
-      "material": "rubber",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 190.066
-    },
-    "remote_key_2_1": {
-      "material": "rubber",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 190.066
-    },
-    "remote_finger_near": {
-      "material": "graphite",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 878.787
-    },
-    "remote_finger_far": {
-      "material": "graphite",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 878.787
-    },
-    "mount_prong_near": {
-      "material": "ceramic",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 878.787
-    },
-    "mount_prong_middle": {
-      "material": "ceramic",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 878.787
-    },
-    "mount_prong_far": {
-      "material": "ceramic",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 878.787
-    },
-    "mount_adapter": {
-      "material": "ceramic",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 1386.0
-    },
-    "thumbscrew": {
-      "material": "steel",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 431.969
-    },
-    "thumbscrew_knob": {
-      "material": "orange",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 1231.504
-    },
-    "upper_ball_stem": {
-      "material": "ceramic",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 471.239
-    },
-    "upper_ball": {
-      "material": "rubber",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 8580.247
-    },
-    "upper_ball_socket": {
-      "material": "graphite",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 9500.176
-    },
-    "lower_ball": {
-      "material": "rubber",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 8580.247
-    },
-    "lower_ball_socket": {
-      "material": "graphite",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 9500.176
-    },
-    "ball_arm": {
-      "material": "graphite",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 18200.0
-    },
-    "arm_knob": {
-      "material": "orange",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 3769.911
-    },
-    "lower_ball_stem": {
-      "material": "ceramic",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 1060.288
-    },
-    "mount_base": {
-      "material": "graphite",
-      "group": "remote",
-      "explode": [
-        0,
-        -40,
-        -10
-      ],
-      "moving": false,
-      "volume_mm3": 12315.043
     }
   }
 }
