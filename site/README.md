@@ -10,13 +10,14 @@ with no config. Their recordings are in `media/`: an H.264 MP4 each, with a
 WebP poster of the same name.
 
 `omatiller/` is a hardware concept page with an interactive CAD assembly, exploded
-view, transparent housing view, and ram travel control. Concept 02's 105 named parts
+view, transparent housing view, and ram travel control. Concept 02's 83 named parts
 come from `../omatiller/cad/assembly.py` in the sibling repository. The generated
 GLB and component metadata (`omatiller-02.glb`, `omatiller-02.json`) live in
 `omatiller/model/`; copy them together after regenerating. The viewer reads the
 assembly root, stroke, screw axis, nameplate, cable path and camera target from
-that metadata. A new revision that keeps the part names (`screw_shaft`,
-`screw_journal`, `screw_helix`, `nameplate`, `power_gland`) changes `MODEL` in
+that metadata, including the text drawn on the nameplate and heading display. A
+new revision that keeps the part names (`screw_shaft`, `screw_journal`,
+`screw_helix`, `power_gland`) and the group names changes `MODEL` in
 `viewer.js` and the page copy; one with a new size may also need the camera
 positions and the ground height (y −170) adjusted. `media/omatiller.webp` is a
 static render of the same model for fallback and link previews, captured from

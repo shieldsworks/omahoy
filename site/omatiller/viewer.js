@@ -17,11 +17,11 @@ const descriptions = {
   drive: ['02 / THE BALL SCREW', 'A turn becomes a correction.', 'A 16 mm ball screw with a 5 mm lead: every turn moves the ram 5 mm, so 300 rpm makes 25 mm a second. The ball nut rides a carriage on two guide rails. Unlike a worm gear, a ball screw can be back-driven, and the tiller fitting lifts off its pin whatever the drive is doing.', '1605 ball screw · twin guide rails · limit sensors at both ends'],
   motor: ['03 / THE BRUSHLESS DRIVE', 'Power, tucked beneath.', 'A 200 W-class brushless gearmotor sits under the screw, bolted to the bulkhead. Behind it, a 1:1 timing belt turns the screw; the planetary gearbox already brings the speed down. The motor outline is provisional until the part is in hand.', 'Brushless planetary · 1:1 belt · provisional envelope'],
   electronics: ['04 / THE CONTROLLER', 'The loop stays aboard.', 'The plan: an ESP32 runs the steering loop in Rust and commands an ODrive S1 over CAN. The ODrive measures motor current, which will let the firmware stop the drive on a stall or a jammed rudder. A 12 to 24 V converter keeps it in range on a sagging battery. The goal is a heading held with the laptop closed.', 'ESP32 · ODrive S1 · 12→24 V converter · heat spreader'],
-  ram: ['05 / THE CONNECTION', 'The tiller is still yours.', 'The fitting drops over a pin in the tiller, 589 mm from the seat socket at mid-travel and 460 mm from the rudder stock, the spacing common tiller pilots use. The pin shoulder sits 12.5 mm above the tiller. Lift the fitting off the pin and you are steering.', '589 mm socket to pin · 250 mm travel, provisional · lift-off fitting'],
-  remote: ['06 / THE REMOTE', 'Steer from anywhere in the cockpit.', 'A keypad pod for AUTO, STBY and ±1° and ±10° changes. GoPro-style fingers and a 1-inch ball arm let it clip wherever your hand falls; here its base is screwed to the seat beside the pilot. Mounts like these hold accessories only; the ram and the compass get solid fittings.', 'GoPro-style fingers · 1-inch balls · M5 thumbscrew'],
+  ram: ['05 / THE CONNECTION', 'The tiller is still yours.', 'The fitting drops over a pin set in the tiller, 589 mm from the seat socket at mid-travel and 460 mm from the rudder stock, the spacing common tiller pilots use. The pin shoulder sits 12.5 mm above the tiller, and the other end pivots on a pin in a socket set into the seat. Lift the fitting off the pin and you are steering.', '589 mm socket to pin · 250 mm travel, provisional · lift-off fitting'],
+  keypad: ['06 / THE KEYPAD', 'Everything within reach.', 'The controls sit on top of the unit, wired straight to the controller underneath. A display shows the locked heading and a light shows the mode. AUTO locks the course you are on, STBY hands the tiller back, and four keys nudge the course by 1° or 10° either way.', 'AUTO · STBY · ±1° · ±10° · heading display'],
 };
 // Groups that share a story with another group.
-const family = { cover: 'housing', guide: 'drive', transmission: 'motor', mount: 'ram', boat: 'ram' };
+const family = { cover: 'housing', guide: 'drive', transmission: 'motor', mount: 'ram' };
 
 let renderer, scene, camera, controls, root, data;
 let running = false, orbiting = false, visible = true, frame = 0, previous = 0;
@@ -84,7 +84,7 @@ function setView(name) {
 function updateMaterials() {
   for (const component of components) {
     const { group, material: materialName } = component.meta;
-    const ghost = view === 'inside' && ['housing', 'cover'].includes(group);
+    const ghost = view === 'inside' && ['housing', 'cover', 'keypad'].includes(group);
     const chosen = selected && (family[group] || group) === selected;
     component.node.traverse(mesh => {
       if (!mesh.isMesh) return;
@@ -108,7 +108,7 @@ function selectPart(name, changeView = true) {
   const text = descriptions[name];
   ['part-kicker', 'part-title', 'part-description', 'part-note'].forEach((id, i) => document.getElementById(id).textContent = text[i]);
   document.querySelectorAll('[data-part]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.part === name)));
-  if (root && changeView) setView(['housing', 'ram', 'remote'].includes(name) ? 'assembled' : 'exploded');
+  if (root && changeView) setView(['housing', 'ram', 'keypad'].includes(name) ? 'assembled' : 'exploded');
   if (root) updateMaterials();
   requestDraw();
 }
@@ -132,14 +132,14 @@ function size() {
   const width = stage.clientWidth, height = stage.clientHeight;
   renderer.setSize(width, height, false);
   // Keep the tiller in frame at full travel and in the exploded view, at any width.
-  const halfWidth = Math.max(520, 255 * width / height);
+  const halfWidth = Math.max(470, 255 * width / height);
   camera.left = -halfWidth; camera.right = halfWidth;
   camera.top = halfWidth * height / width; camera.bottom = -camera.top;
   camera.updateProjectionMatrix();
   requestDraw();
 }
 
-function label(text, subtext, position, width, height) {
+function label(text, subtext, position, width, height, explode) {
   const canvas = document.createElement('canvas');
   canvas.width = 1024; canvas.height = 256;
   const context = canvas.getContext('2d');
@@ -156,7 +156,7 @@ function label(text, subtext, position, width, height) {
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width / 1000, height / 1000), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 }));
   mesh.position.set(...position.map(v => v / 1000));
   root.add(mesh);
-  components.push({ node: mesh, base: mesh.position.clone(), meta: { group: 'cover', material: 'label', explode: data.parts.nameplate.explode } });
+  components.push({ node: mesh, base: mesh.position.clone(), meta: { group: 'cover', material: 'label', explode } });
 }
 
 function draw(now) {
@@ -292,8 +292,9 @@ async function start() {
     }
     components.push({ node, meta, base: node.position.clone() });
   }
-  const plate = data.presentation.label;
-  label(plate.text, plate.subtext, plate.position, ...plate.size);
+  for (const plate of data.presentation.labels) {
+    label(plate.text, plate.subtext, plate.position, ...plate.size, data.parts[plate.explodeAs].explode);
+  }
   // Rubber power lead, presented separately from the dimensioned component solids.
   const cablePoints = data.presentation.cable.map(p => new THREE.Vector3(...p.map(v => v / 1000)));
   const cable = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cablePoints), 40, .004, 10, false), new THREE.MeshStandardMaterial({ color: '#18232a', roughness: .65 }));
@@ -307,7 +308,7 @@ async function start() {
     if (!pointerStart || Math.hypot(e.clientX - pointerStart[0], e.clientY - pointerStart[1]) > 5) return;
     const bounds = canvas.getBoundingClientRect();
     raycaster.setFromCamera(new THREE.Vector2((e.clientX - bounds.left) / bounds.width * 2 - 1, -(e.clientY - bounds.top) / bounds.height * 2 + 1), camera);
-    const hit = raycaster.intersectObject(root, true).find(h => h.object.userData.part && !(view === 'inside' && ['housing', 'cover'].includes(h.object.userData.part)));
+    const hit = raycaster.intersectObject(root, true).find(h => h.object.userData.part && !(view === 'inside' && ['housing', 'cover', 'keypad'].includes(h.object.userData.part)));
     if (hit) selectPart(hit.object.userData.part, false);
   });
   canvas.addEventListener('keydown', e => {
