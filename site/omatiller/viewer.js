@@ -18,7 +18,7 @@ const descriptions = {
   motor: ['03 / THE BRUSHLESS DRIVE', 'Power, tucked beneath.', 'A 200 W-class brushless gearmotor sits under the screw, bolted to the bulkhead. Behind it, a 1:1 timing belt turns the screw; the planetary gearbox already brings the speed down. The motor outline is provisional until the part is in hand.', 'Brushless planetary · 1:1 belt · provisional envelope'],
   electronics: ['04 / THE CONTROLLER', 'The loop stays aboard.', 'The plan: an ESP32 runs the steering loop in Rust and commands an ODrive S1 over CAN. The ODrive measures motor current, which will let the firmware stop the drive on a stall or a jammed rudder. A 12 to 24 V converter keeps it in range on a sagging battery. The goal is a heading held with the laptop closed.', 'ESP32 · ODrive S1 · 12→24 V converter · heat spreader'],
   ram: ['05 / THE CONNECTION', 'The tiller is still yours.', 'The fitting drops over a pin in the tiller, 589 mm from the seat socket at mid-travel and 460 mm from the rudder stock, the spacing common tiller pilots use. The pin shoulder sits 12.5 mm above the tiller. Lift the fitting off the pin and you are steering.', '589 mm socket to pin · 250 mm travel, provisional · lift-off fitting'],
-  remote: ['06 / THE REMOTE', 'Steer from anywhere in the cockpit.', 'A keypad pod for AUTO, STBY and ±1° and ±10° changes. GoPro-style fingers and a 1-inch ball arm let it clip wherever your hand falls. Mounts like these hold accessories only; the ram and the compass get solid fittings.', 'GoPro-style fingers · 1-inch balls · M5 thumbscrew'],
+  remote: ['06 / THE REMOTE', 'Steer from anywhere in the cockpit.', 'A keypad pod for AUTO, STBY and ±1° and ±10° changes. GoPro-style fingers and a 1-inch ball arm let it clip wherever your hand falls; here its base is screwed to the seat beside the pilot. Mounts like these hold accessories only; the ram and the compass get solid fittings.', 'GoPro-style fingers · 1-inch balls · M5 thumbscrew'],
 };
 // Groups that share a story with another group.
 const family = { cover: 'housing', guide: 'drive', transmission: 'motor', mount: 'ram', boat: 'ram' };
@@ -132,7 +132,7 @@ function size() {
   const width = stage.clientWidth, height = stage.clientHeight;
   renderer.setSize(width, height, false);
   // Keep the tiller in frame at full travel and in the exploded view, at any width.
-  const halfWidth = Math.max(500, 255 * width / height);
+  const halfWidth = Math.max(520, 255 * width / height);
   camera.left = -halfWidth; camera.right = halfWidth;
   camera.top = halfWidth * height / width; camera.bottom = -camera.top;
   camera.updateProjectionMatrix();
