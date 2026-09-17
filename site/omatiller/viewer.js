@@ -131,15 +131,15 @@ function size() {
   if (!renderer) return;
   const width = stage.clientWidth, height = stage.clientHeight;
   renderer.setSize(width, height, false);
-  // Keep the tiller in frame at full travel and in the exploded view, at any width.
-  const halfWidth = Math.max(470, 255 * width / height);
+  // Keep the tiller fitting in frame at full travel and in the exploded view, at any width.
+  const halfWidth = Math.max(490, 255 * width / height);
   camera.left = -halfWidth; camera.right = halfWidth;
   camera.top = halfWidth * height / width; camera.bottom = -camera.top;
   camera.updateProjectionMatrix();
   requestDraw();
 }
 
-function label(text, subtext, position, width, height, explode) {
+function label(text, subtext, position, width, height, part) {
   const canvas = document.createElement('canvas');
   canvas.width = 1024; canvas.height = 256;
   const context = canvas.getContext('2d');
@@ -156,7 +156,7 @@ function label(text, subtext, position, width, height, explode) {
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width / 1000, height / 1000), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 }));
   mesh.position.set(...position.map(v => v / 1000));
   root.add(mesh);
-  components.push({ node: mesh, base: mesh.position.clone(), meta: { group: 'cover', material: 'label', explode } });
+  components.push({ node: mesh, base: mesh.position.clone(), meta: { group: part.group, material: 'label', explode: part.explode } });
 }
 
 function draw(now) {
@@ -293,7 +293,10 @@ async function start() {
     components.push({ node, meta, base: node.position.clone() });
   }
   for (const plate of data.presentation.labels) {
-    label(plate.text, plate.subtext, plate.position, ...plate.size, data.parts[plate.explodeAs].explode);
+    // Each label moves and fades with the part it is printed on.
+    const part = data.parts[plate.explodeAs];
+    if (!part) throw new Error(`Missing label part: ${plate.explodeAs}`);
+    label(plate.text, plate.subtext, plate.position, ...plate.size, part);
   }
   // Rubber power lead, presented separately from the dimensioned component solids.
   const cablePoints = data.presentation.cable.map(p => new THREE.Vector3(...p.map(v => v / 1000)));
