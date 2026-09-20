@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>omahelm · Omahoy</title>
-<meta name="description" content="omahelm is the Omahoy chartplotter. It reads NOAA charts from scratch in Rust, draws them in your Omarchy theme, and puts your boat, AIS traffic and the wind on them.">
+<meta name="description" content="omahelm is the Omahoy chartplotter. It reads NOAA charts from scratch in Rust, draws them in your Omarchy theme, and puts your boat, AIS traffic, the wind and the tidal stream on them.">
 <meta property="og:title" content="omahelm · Omahoy">
 <meta property="og:description" content="A chartplotter for Omarchy. NOAA charts read and drawn from scratch in Rust.">
 <meta property="og:url" content="https://omahoy.org/omahelm/">
@@ -27,6 +27,7 @@
       <a href="../omahelm/" aria-current="page">omahelm</a>
       <a href="../omalookout/">omalookout</a>
       <a href="../omalogbook/">omalogbook</a>
+      <a href="../omatide/">omatide</a>
       <a href="../omawind/">omawind</a>
       <a href="../omatiller/">omatiller</a>
     </nav>
@@ -36,7 +37,7 @@
   <div class="hero">
     <p class="tagline"><span>Chartplotter</span><span class="early">early · v0.1</span><span>MIT</span></p>
     <h1 class="app-name">omahelm</h1>
-    <p class="lede">NOAA's charts, in your Omarchy theme, with your boat on them. Soundings, contours and shading, buoys and beacons labeled the way a paper chart labels them, lights and their sectors, rocks and wrecks, traffic lanes and anchorages. The boat, its track and the AIS traffic come from <a href="../omakeel/">omakeel</a>; the wind comes from <a href="../omawind/">omawind</a>.</p>
+    <p class="lede">NOAA's charts, in your Omarchy theme, with your boat on them. Soundings, contours and shading, buoys and beacons labeled the way a paper chart labels them, lights and their sectors, rocks and wrecks, traffic lanes and anchorages. The boat, its track and the AIS traffic come from <a href="../omakeel/">omakeel</a>, the wind from <a href="../omawind/">omawind</a>, and the tidal stream from <a href="../omatide/">omatide</a>.</p>
   </div>
 
   <figure class="window clip">
@@ -52,9 +53,32 @@
       <li><b>Follows the boat.</b> It opens following, and panning stops it. <kbd>f</kbd> follows again, <kbd>c</kbd> centers once.</li>
       <li><b>Says what's there.</b> Click the chart for what's charted at that spot. With the wind on, the card leads with the forecast for that very spot and the nearest station within 10 nm.</li>
       <li><b>Wind, forecast and measured.</b> HRRR barbs from omawind, and the wind NOAA's piers and buoys measured, drawn as accent barbs labeled like <code>7g11</code>. The time bar shows when the breeze builds.</li>
+      <li><b>The stream, where you are looking.</b> <kbd>s</kbd> draws the tidal current over the chart from <a href="../omatide/">omatide</a> — flood, ebb and slack at each of NOAA's stations, at whatever moment the time bar is on.</li>
       <li><b>A waypoint.</b> Right-click, or <kbd>w</kbd>, for bearing, range and ETA from the boat.</li>
       <li><b>Night Watch.</b> <kbd>n</kbd> turns the window red on black, chart and all. Marks keep their meaning by brightness, shape and label.</li>
     </ul>
+  </section>
+
+  <section>
+    <h2>The stream over the chart</h2>
+    <figure class="window clip">
+      <div class="bar top"><span class="me">omahelm</span><span class="hint">press <kbd>s</kbd></span></div>
+      <img src="../media/omahelm-stream.webp" alt="The chart of the central bay with a tidal current arrow at each of NOAA's stations, each labeled with its speed in knots, one station drawn as a slack ring. The boat is under way off Berkeley with an AIS target, BAY RUNNER, north of her." width="1600" height="1128" loading="lazy">
+      <figcaption>The stream where you are actually looking, on the sample sail. Red ebbs, blue floods, and a ring is slack — there is no way to a stream that isn't running. The chip reads <b>48 of 96 stations</b>: NOAA surveyed the bay in clusters, a dozen of them inside a mile off Angel Island, so the arrows are thinned by how close they land on screen and the strongest wins the room. Point at one that wasn't drawn and it still answers.</figcaption>
+    </figure>
+    <div class="two">
+      <div>
+        <p>The arrows come from <a href="../omatide/">omatide</a> over a socket, worked out from NOAA's harmonic constants on this machine. Nothing about tides lives in the chartplotter, and omahelm draws no arrows when omatide isn't running.</p>
+        <p>One bar drives both layers. Drag the time bar and the wind barbs and the stream arrows move together, hour by hour; the graph along it shades the flood above slack water and the ebb below, with a tick at each turn. Past the end of the wind forecast the barbs stop and the arrows keep going — a tide is arithmetic, so it answers for any moment you ask.</p>
+      </div>
+      <dl class="facts">
+        <dt>On</dt><dd><kbd>s</kbd>, with omatide running</dd>
+        <dt>When</dt><dd><kbd>t</kbd>, then drag, or <kbd>[</kbd> <kbd>]</kbd> by the hour</dd>
+        <dt>Flood</dt><dd>The theme's accent</dd>
+        <dt>Ebb</dt><dd>The theme's red</dd>
+        <dt>Slack</dt><dd>A ring</dd>
+      </dl>
+    </div>
   </section>
 
   <section>
@@ -84,8 +108,9 @@
           <tr><td>Click, <kbd>i</kbd></td><td>What's charted there, or at the center</td></tr>
           <tr><td><kbd>w</kbd>, right-click</td><td>Set a waypoint; <kbd>W</kbd> clears it</td></tr>
           <tr><td><kbd>b</kbd></td><td>Wind barbs, forecast and measured</td></tr>
-          <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>The wind an hour earlier, later</td></tr>
-          <tr><td><kbd>t</kbd></td><td>The time bar: the forecast at the boat, hour by hour</td></tr>
+          <tr><td><kbd>s</kbd></td><td>The tidal stream, from omatide</td></tr>
+          <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>The wind and the stream an hour earlier, later</td></tr>
+          <tr><td><kbd>t</kbd></td><td>The time bar: the wind at the boat and the stream on the chart, hour by hour</td></tr>
           <tr><td><kbd>space</kbd></td><td>Play the wind hour by hour</td></tr>
           <tr><td><kbd>n</kbd></td><td>Night Watch</td></tr>
           <tr><td><kbd>?</kbd></td><td>Every key</td></tr>
