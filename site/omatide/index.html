@@ -147,7 +147,7 @@
 <span class="prompt">$ </span>cargo build --release --locked
 <span class="prompt">$ </span>target/release/omatide fetch   <span class="note"># NOAA's stations, once, a few minutes</span>
 <span class="prompt">$ </span>./run.sh                       <span class="note"># the window</span></pre>
-    <p><code>fetch</code> writes about 380 KB to <code>~/.local/share/omatide/</code> and is the only thing that needs the network. <code>scripts/link-plugin.sh</code> puts the bar widget in the Omarchy shell. Which waters to carry, where home is with no GPS, and which bin down the water column the bay's arrows read are in <code>~/.config/omatide/config.toml</code>; the <a href="https://github.com/shieldsworks/omatide#readme">README</a> covers them.</p>
+    <p><code>fetch</code> writes about 380 KB to <code>~/.local/share/omatide/</code> and is the only thing that needs the network. <code>scripts/link-plugin.sh</code> puts the bar widget in the Omarchy shell. Which waters to carry, where home is with no GPS, and which bin down the water column to read are in <code>~/.config/omatide/config.toml</code>; the <a href="https://github.com/shieldsworks/omatide#readme">README</a> covers them.</p>
     <p>There is a command line for all of it, which is how the predictions are checked:</p>
     <pre class="cmd"><span class="prompt">$ </span>target/release/omatide current 37.8663,-122.3148
 <span class="prompt">$ </span>target/release/omatide bay --at 2026-09-21T05:40:00Z</pre>
