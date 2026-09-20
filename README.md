@@ -44,6 +44,19 @@ the others read from; the rest are Omarchy plugins.
 - **Honest.** Stale data says it's stale.
 - **Any Omarchy machine.** Builds for both x86_64 and aarch64.
 
+## Window chrome
+
+Every Omahoy window names itself, so a workspace of them is read at a glance.
+The name goes top left, in the theme's accent color, bold, uppercase, one pixel
+under the shell's base font size, and it is always on show. Windows laid out
+like a document (omalookout, omawind) set it bare in the top margin; windows
+whose content runs to the edge (omahelm) put it on the same chip the rest of
+their chrome uses, so it holds up over the chart.
+
+That is the whole of it: no mark beside the name, no letter-spacing, no rule
+under it, no light or badge. Liveness belongs in the status bar, where each app
+already says what its data is doing.
+
 ## Not for navigation
 
 Omahoy is not a primary means of navigation. Carry a backup.
