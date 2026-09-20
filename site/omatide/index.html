@@ -49,12 +49,12 @@
   <section>
     <h2>What it does</h2>
     <ul class="points">
-      <li><b>The tide where the boat is.</b> The height above chart datum now, which way it is going, and the highs and lows to come, from the nearest of NOAA's stations to the fix <a href="../omakeel/">omakeel</a> reports. With no GPS it works from a home position you set.</li>
+      <li><b>The tide where the boat is.</b> The height above chart datum now, which way it is going, and the highs and lows to come, from the nearest of NOAA's stations to the fix <a href="../omakeel/">omakeel</a> reports. With no boat position at all it works from a home position you set; if the fix drops away it keeps using the last one it had.</li>
       <li><b>The stream where the boat is.</b> Set and drift now, and the slacks and maximums to come — the thing that decides whether you leave at four or at six.</li>
-      <li><b>San Francisco Bay, all of it.</b> 122 tide stations and 295 current bins, drawn as the old tidal current chart: an arrow at each of the bay's narrows, over the bay's own shore.</li>
-      <li><b>Any moment, at once.</b> Drag the bar under the map, or step an hour with <kbd>[</kbd> and <kbd>]</kbd>. The answer is arithmetic, so it arrives as fast as you can drag.</li>
+      <li><b>San Francisco Bay, all of it.</b> It carries every station NOAA has in the bay — 122 tide stations and 295 current bins — and draws the bay's narrows as the old tidal current chart: an arrow at each of 22 named places, over the bay's own shore, with the height at 13 more.</li>
+      <li><b>Any hour of the day, at a drag.</b> The bar under the map runs twelve hours either side of now, and <kbd>[</kbd> and <kbd>]</kbd> step it an hour. The answer is arithmetic, so it arrives as fast as you can drag — and <code>omatide bay --at</code> will do any moment at all, years out.</li>
       <li><b>A bar widget</b> with the height, which way it is going, and the next turn, for the Omarchy shell.</li>
-      <li><b>Nothing to fetch again.</b> One download of about 380 KB, once, and then no network for years.</li>
+      <li><b>Nothing to fetch again.</b> One fetch of NOAA's catalog, a few minutes, about 380 KB of it kept on disk — and then no network for years.</li>
     </ul>
   </section>
 
@@ -76,7 +76,7 @@
 
   <section>
     <h2>How right it is</h2>
-    <p>Checked against NOAA's own published tables, over seven years spread across the moon's 18.6-year nodal cycle. <code>cargo test</code> checks it on every commit; the fixtures are NOAA's published predictions.</p>
+    <p>Checked against NOAA's own published tables, over seven years spread across the moon's 18.6-year nodal cycle. These are the measured worst errors against those tables; <code>cargo test</code> holds them to a looser bound on every commit — 3 mm, 0.4 cm/s, and ninety seconds at a turn — because a turn is flat and the minute either side rounds differently.</p>
     <div class="keys-wrap">
       <table class="keys">
         <thead><tr><th>What</th><th>Worst error against NOAA</th></tr></thead>
@@ -88,7 +88,7 @@
         </tbody>
       </table>
     </div>
-    <p>That is NOAA's own rounding: the tables are not published finer than omatide matches them.</p>
+    <p>Which is about the size of NOAA's own rounding: heights are published to the millimeter, and a current station's constants to a hundredth of a centimeter a second.</p>
   </section>
 
   <section>
@@ -97,7 +97,7 @@
     <ul class="points">
       <li><b>Schureman's epoch is 1900 January 1 at 0h</b>, not the Julian Day 2415020.0 it is usually written as. Half a day is 6.6° of lunar motion, and getting it wrong costs 24 cm of tide.</li>
       <li><b>NOAA holds the node factors constant for a whole calendar year</b>, worked out at mid-year. Varying them properly with time is a better model of the ocean and a worse match to the tables everyone actually reads.</li>
-      <li><b>M1, L2, 2MK3, M3 and S1 do not take the node factors the textbook gives them.</b> What NOAA uses is in the source, each one marked and each one checked across the nodal cycle.</li>
+      <li><b>M1, L2, 2MK3, M3 and S1 do not take the nodal corrections the textbook gives them</b> — and for S1 and M3 what is missing is a phase the tables leave out altogether. What NOAA uses is in the source, each one marked and each one checked across the nodal cycle.</li>
     </ul>
     <p>Most of the places a sailor names — Red Rock, Point Blunt, Sausalito — are subordinate stations with no constants of their own, only offsets against one that has. omatide warps the reference station's own curve onto the subordinate's turns rather than replacing it with a plain cosine, which keeps the shallow-water lopsidedness that is everywhere in this bay.</p>
   </section>
@@ -116,7 +116,7 @@
       </figure>
       <div>
         <p>omatide takes its colors from the active Omarchy theme and redraws when you switch. <kbd>n</kbd> turns this one window red on black, curves and all, and leaves the rest of the desktop alone — the same key, and the same window's own choice, as in omahelm and omalookout.</p>
-        <p>Nothing in the window depends on color alone: an ebb arrow points the way it sets whatever the palette says, and slack is a ring rather than an arrow, because there is no way to it.</p>
+        <p>Nothing in the window depends on color alone: an ebb arrow points the way it sets whatever the palette says, and a ring stands where there is no way to draw — slack water, or a bin NOAA publishes no direction for.</p>
       </div>
     </div>
   </section>
@@ -147,10 +147,10 @@
 <span class="prompt">$ </span>cargo build --release --locked
 <span class="prompt">$ </span>target/release/omatide fetch   <span class="note"># NOAA's stations, once, a few minutes</span>
 <span class="prompt">$ </span>./run.sh                       <span class="note"># the window</span></pre>
-    <p><code>fetch</code> writes about 380 KB to <code>~/.local/share/omatide/</code> and is the only thing that needs the network. <code>scripts/link-plugin.sh</code> puts the bar widget in the Omarchy shell. Which waters to carry, where home is with no GPS, and which bin down the water column to read are in <code>~/.config/omatide/config.toml</code>; the <a href="https://github.com/shieldsworks/omatide#readme">README</a> covers them.</p>
+    <p><code>fetch</code> writes about 380 KB to <code>~/.local/share/omatide/</code> and is the only thing that needs the network. <code>scripts/link-plugin.sh</code> puts the bar widget in the Omarchy shell. Which waters to carry, where home is with no GPS, and which bin down the water column the bay's arrows read are in <code>~/.config/omatide/config.toml</code>; the <a href="https://github.com/shieldsworks/omatide#readme">README</a> covers them.</p>
     <p>There is a command line for all of it, which is how the predictions are checked:</p>
-    <pre class="cmd"><span class="prompt">$ </span>omatide current 37.8663,-122.3148
-<span class="prompt">$ </span>omatide bay --at 2026-09-21T05:40:00Z</pre>
+    <pre class="cmd"><span class="prompt">$ </span>target/release/omatide current 37.8663,-122.3148
+<span class="prompt">$ </span>target/release/omatide bay --at 2026-09-21T05:40:00Z</pre>
   </section>
 
   <section>
@@ -164,8 +164,8 @@
   </section>
 
   <nav class="pager" aria-label="More apps">
-    <span>← <a href="../omawind/">omawind</a> · wind</span>
-    <span><a href="../omakeel/">omakeel</a> · the hub →</span>
+    <span>← <a href="../omalogbook/">omalogbook</a> · the ship's log</span>
+    <span><a href="../omawind/">omawind</a> · wind →</span>
   </nav>
 
   <div class="themes" id="themes">

@@ -63,20 +63,20 @@
     <h2>The stream over the chart</h2>
     <figure class="window clip">
       <div class="bar top"><span class="me">omahelm</span><span class="hint">press <kbd>s</kbd></span></div>
-      <img src="../media/omahelm-stream.webp" alt="The chart of the central bay with a tidal current arrow at each of NOAA's stations, each labeled with its speed in knots, one station drawn as a slack ring. The boat is under way off Berkeley with an AIS target, BAY RUNNER, north of her." width="1600" height="1128" loading="lazy">
-      <figcaption>The stream where you are actually looking, on the sample sail. Red ebbs, blue floods, and a ring is slack — there is no way to a stream that isn't running. The chip reads <b>48 of 96 stations</b>: NOAA surveyed the bay in clusters, a dozen of them inside a mile off Angel Island, so the arrows are thinned by how close they land on screen and the strongest wins the room. Point at one that wasn't drawn and it still answers.</figcaption>
+      <img src="../media/omahelm-stream.webp" alt="The chart of the central bay with a thinned selection of tidal current arrows, each labeled with its speed in knots, one station drawn as a ring. The boat is under way off Berkeley with an AIS target, BAY RUNNER, north of her." width="1600" height="1128" loading="lazy">
+      <figcaption>The stream where you are actually looking, on the sample sail. Red ebbs, blue floods, and a ring stands where there is no way to draw — slack water, or a bin NOAA publishes no direction for. The chip reads <b>48 of 96 stations</b>: NOAA surveyed the bay in clusters, a dozen of them inside a mile off Angel Island, so the arrows are thinned by how close they land on screen and the strongest wins the room. Point at one that wasn't drawn and it still answers.</figcaption>
     </figure>
     <div class="two">
       <div>
         <p>The arrows come from <a href="../omatide/">omatide</a> over a socket, worked out from NOAA's harmonic constants on this machine. Nothing about tides lives in the chartplotter, and omahelm draws no arrows when omatide isn't running.</p>
-        <p>One bar drives both layers. Drag the time bar and the wind barbs and the stream arrows move together, hour by hour; the graph along it shades the flood above slack water and the ebb below, with a tick at each turn. Past the end of the wind forecast the barbs stop and the arrows keep going — a tide is arithmetic, so it answers for any moment you ask.</p>
+        <p>One bar drives both layers. Drag the time bar and the wind barbs and the stream arrows move together, hour by hour, out to a day with the stream on. The graph along it ticks each slack; with the stream on its own it shades the flood above slack water and the ebb below, and alongside the wind it stays a line, because two shaded bands fight. Past the end of the wind forecast the barbs stop and the arrows keep going — a tide is arithmetic, so it answers for any moment you ask.</p>
       </div>
       <dl class="facts">
         <dt>On</dt><dd><kbd>s</kbd>, with omatide running</dd>
         <dt>When</dt><dd><kbd>t</kbd>, then drag, or <kbd>[</kbd> <kbd>]</kbd> by the hour</dd>
         <dt>Flood</dt><dd>The theme's accent</dd>
         <dt>Ebb</dt><dd>The theme's red</dd>
-        <dt>Slack</dt><dd>A ring</dd>
+        <dt>A ring</dt><dd>Slack, or no direction published</dd>
       </dl>
     </div>
   </section>
