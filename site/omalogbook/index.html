@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>omalogbook · Omahoy</title>
+<meta name="description" content="omalogbook is the ship's log for Omahoy: a day at a time in plain markdown, with a GPX track for every passage, notes at the boat's position, and a git repo you own.">
+<meta property="og:title" content="omalogbook · Omahoy">
+<meta property="og:description" content="The ship's log, in plain markdown and GPX.">
+<meta property="og:url" content="https://omahoy.org/omalogbook/">
+<meta property="og:image" content="https://omahoy.org/media/omalogbook.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1b26">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../style.css">
+<script src="../theme.js"></script>
+</head>
+<body>
+<main>
+  <div class="row">
+    <a href="../">omahoy.org</a>
+    <nav aria-label="Apps">
+      <a href="../omakeel/">omakeel</a>
+      <a href="../omahelm/">omahelm</a>
+      <a href="../omalookout/">omalookout</a>
+      <a href="../omalogbook/" aria-current="page">omalogbook</a>
+      <a href="../omawind/">omawind</a>
+      <a href="../omatiller/">omatiller</a>
+    </nav>
+    <span class="right"><a href="https://github.com/shieldsworks/omalogbook">github</a></span>
+  </div>
+
+  <div class="hero">
+    <p class="tagline"><span>The ship's log</span><span class="early">early</span><span>MIT</span></p>
+    <h1 class="app-name">omalogbook</h1>
+    <p class="lede">It keeps the watch while you sail: a position every hour, the day's run, and a GPX track for every passage. Write a note and it lands with the time and the spot on the chart. The whole log is a folder of markdown you own — no database, no server, and no need for omalogbook to read it again.</p>
+  </div>
+
+  <figure class="window clip">
+    <div class="bar top"><span class="me">omalogbook</span><span class="hint">a note, a mark, and putting one right</span></div>
+    <video src="../media/omalogbook.mp4" poster="../media/omalogbook.webp" width="1600" height="948" autoplay muted loop playsinline preload="metadata" aria-label="The ship's log window. A note is typed and filed with the boat's position. Then a slash brings up the marks, anchor is chosen, and the entry lands with the wind and the barometer. Finally the first note is clicked and its wording corrected."></video>
+    <figcaption>An evening on the sample sail. The note lands at the boat's position; <b>/anchor</b> files a mark with the wind and the barometer beside it; then the note is clicked and put right. The positions and the day are invented.</figcaption>
+  </figure>
+
+  <section>
+    <h2>What it writes</h2>
+    <div class="two">
+      <ul class="points">
+        <li><b>A day at a time</b>, one markdown note each, with the day's run, fastest speed and time under way in the front matter.</li>
+        <li><b>A GPX track</b> for every passage — the format every chartplotter and mapping site already reads.</li>
+        <li><b>Your notes, where you wrote them.</b> An entry carries the time and the boat's position, from the same GPS the chartplotter draws.</li>
+        <li><b>Your writing, left alone.</b> omalogbook owns one block in each note. Your prose, your headings and any front matter you add are copied through untouched, and a total you correct by hand stands.</li>
+        <li><b>Committed as it goes</b>, and pushed when there's a connection. Offshore there won't be one for weeks, which is not an error.</li>
+      </ul>
+      <dl class="facts">
+        <dt>The log</dt><dd><code>~/Logbook/2026/09/2026-09-19.md</code></dd>
+        <dt>A note</dt><dd>23:08 · 37°52.0′N 122°18.9′W — Dolphins off the port bow</dd>
+        <dt>Under way</dt><dd>above 1.0 kn; still below 0.5 for 5 min</dd>
+        <dt>Keys</dt><dd>Enter files, <kbd>Tab</kbd> takes a mark, <kbd>n</kbd> Night Watch, <kbd>Esc</kbd> backs out</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <h2>Marks</h2>
+    <p>Some moments are worth more than prose. A line that opens with a mark is filed as an event, with the course and speed you were making and what it was blowing at the time.</p>
+    <figure class="window clip">
+      <div class="bar top"><span class="me">omalogbook</span><span class="hint">type <kbd>/</kbd></span></div>
+      <img src="../media/omalogbook-marks.webp" alt="The note field showing a list of marks: depart, sail, motor, reef, shake, anchor, aweigh, moor, berth and watch, each with a short description. Tab takes the first." width="1600" height="948" loading="lazy">
+      <figcaption>Ten marks, filtered as you type. <code>/anchor 25 ft, 5:1 scope</code> keeps the words you add after it.</figcaption>
+    </figure>
+    <p>A mark says what the log can't work out for itself. <b>under way</b> and <b>stopped</b> come from a speed threshold, and a threshold can't tell anchored from moored from tied up alongside. You can.</p>
+    <p>The weather on a mark is two different things, and the log never blurs them. <b>wind … (HRRR)</b> is <a href="../omawind/">omawind</a>'s forecast worked out at the boat — a model's opinion, and the only source of a barometer reading. <b>measured …</b> is an anemometer that really measured that wind, at a named NOAA station within 10 nautical miles, with the age of its report. Reading a log back, the difference matters.</p>
+  </section>
+
+  <section>
+    <h2>Putting an entry right</h2>
+    <p>Click an entry and its words come up in the line for editing. <b>STRIKE</b> rules through it instead, which is what a paper log does: the entry happened and was withdrawn, and that reads back as more honest than a line that was quietly never there. <code>omalogbook strike 3 --erase</code> takes one out altogether, for when that is truly what you mean.</p>
+    <p>The clock and the fix are never rewritten. A log is a record of where the boat was and when, and omalogbook will not put different numbers there.</p>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <p>omalogbook writes; <a href="../omakeel/">omakeel</a> listens. The hub decodes the GPS and keeps the boat's fix; omalogbook follows its socket, works out when a passage starts and ends, and writes the note and the track. The window is a second face on the same thing — it reads the day through omalogbook itself and files by calling it, so a note typed on watch and one typed in a terminal are the same note.</p>
+    <p>Nothing here needs a database or a server. The vault is an ordinary folder, so Obsidian opens it as a vault and Neovim opens it as files, and <code>omalogbook path</code> prints today's note for a keybinding.</p>
+  </section>
+
+  <section>
+    <h2>Install</h2>
+    <p>Omarchy on x86_64 or aarch64, with <a href="../omakeel/">omakeel</a> running on your GPS:</p>
+    <pre class="cmd"><span class="prompt">$ </span>cargo install --git https://github.com/shieldsworks/omalogbook --locked
+<span class="prompt">$ </span>omalogbook run</pre>
+    <p>Settings live in <code>~/.config/omalogbook/config.toml</code> and every one is optional: where the vault is, the boat's name, how often to log a position, and what counts as under way. Make the vault a git repo and omalogbook commits as it writes.</p>
+  </section>
+
+  <section>
+    <h2>Not yet</h2>
+    <ul class="points">
+      <li>It has not kept a log at sea for a season. The recording above is an invented day.</li>
+      <li>Weather beyond wind and pressure: no air or water temperature, sky, visibility or sea state, until the boat has instruments to read them from.</li>
+      <li>Routes, which <a href="../omahelm/">omahelm</a> doesn't have yet. Tracks are recorded now.</li>
+      <li>Engine hours, fuel and tanks belong to omabosun; an anchor watch will come from omanchor rather than be guessed at from speed.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>A log is a record of where you were</h2>
+    <p>Night by night, at what time, for as long as you keep it. Keep your own vault private, and think before you publish a track.</p>
+  </section>
+
+  <nav class="pager" aria-label="More apps">
+    <span>← <a href="../omalookout/">omalookout</a> · AIS and collision alarms</span>
+    <span><a href="../omawind/">omawind</a> · wind →</span>
+  </nav>
+
+  <div class="themes" id="themes">
+    <span class="label">Theme</span>
+    <span class="hint">press <kbd>T</kbd></span>
+  </div>
+</main>
+
+<footer>
+  <span>MIT · Not for navigation. Keep a lookout.</span>
+  <span>The sample sail's positions are invented · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
+</footer>
+</body>
+</html>
