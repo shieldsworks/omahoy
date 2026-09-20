@@ -99,6 +99,14 @@ pre.cmd { margin: 0; padding: 12px 14px; background: var(--well); border-left: 2
 pre.cmd .prompt { color: var(--green); user-select: none; }
 pre.cmd .note { color: var(--soft); }
 
+/* A file, rather than something you type: no prompt, and its path above it. */
+figure.file { margin: 0; }
+figure.file figcaption { padding: 0 0 6px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--soft); }
+pre.file { margin: 0; padding: 12px 14px; background: var(--well); border-left: 2px solid var(--line); overflow-x: auto; color: var(--fg); }
+pre.file .key { color: var(--soft); }
+pre.file .mark { color: var(--dim); }
+pre.file b { color: var(--bright); font-weight: 400; }
+
 footer { max-width: 1100px; margin: 72px auto 0; border-top: 1px solid var(--line); padding-top: 14px; font-size: 12px; color: var(--soft); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; }
 
 /* App pages */

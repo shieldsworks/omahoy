@@ -65,6 +65,60 @@
   </section>
 
   <section>
+    <h2>It's just markdown</h2>
+    <p>One file a day, in year and month folders, and that is the whole storage layer. Nothing reads it back but a text editor.</p>
+    <figure class="file">
+      <figcaption>~/Logbook/2026/09/2026-09-19.md</figcaption>
+      <pre class="file"><span class="mark">---</span>
+<span class="key">date:</span> 2026-09-19
+<span class="key">boat:</span> Dash
+<span class="key">distance_nm:</span> 11.8
+<span class="key">max_sog_kn:</span> 6.2
+<span class="key">hours_underway:</span> 3.45
+<span class="key">tracks:</span> ["tracks/2026-09-19-194806.gpx"]
+<span class="key">crew:</span> <span class="mark">← yours, and left alone</span>
+<span class="mark">---</span>
+
+<span class="mark">#</span> 2026-09-19 · Dash
+
+Wind filled in off the Berkeley pier. Reefed in the slot.
+
+<span class="mark">&lt;!-- omalogbook:begin --&gt;</span>
+
+<span class="mark">##</span> The watch
+
+- <b>19:52</b> (02:52 UTC) · 37°51.8′N 122°18.9′W · 268° · 4.4 kn — under way
+- <b>23:14</b> (06:14 UTC) · 37°52.0′N 122°18.9′W — Dolphins off the port bow
+
+<b>Day's run</b> 11.8 nm · <b>fastest</b> 6.2 kn · <b>under way</b> 3 h 27 min
+
+<b>Track</b> [tracks/2026-09-19-194806.gpx](tracks/2026-09-19-194806.gpx)
+
+<span class="mark">&lt;!-- omalogbook:end --&gt;</span></pre>
+    </figure>
+    <div class="two">
+      <ul class="points">
+        <li><b>Obsidian opens it as a vault</b> with nothing to convert. The front matter becomes properties, so a day's run and fastest speed are there to sort and query.</li>
+        <li><b>Your own front matter stands.</b> Add <code>tags</code>, <code>crew</code>, anything — omalogbook owns six keys and copies the rest through untouched, every save.</li>
+        <li><b>Neovim opens it as files.</b> <code>omalogbook-open</code> starts your editor with the vault as its working directory, so <code>:Telescope live_grep</code> sees the whole log and not one day.</li>
+        <li><b>Grep is the search.</b> Every entry is one line that opens with its time, so <code>rg "dolphins" ~/Logbook</code> is the whole query language.</li>
+        <li><b>Nothing here is Obsidian-flavoured.</b> No wikilinks, no tags, no plugin syntax — CommonMark and YAML, so any editor that reads markdown reads your log.</li>
+      </ul>
+      <div>
+        <p>Today's note, from anywhere:</p>
+        <pre class="cmd"><span class="prompt">$ </span>omalogbook path
+<span class="note">~/Logbook/2026/09/2026-09-19.md</span></pre>
+        <p>Every setting is optional, and the vault can live wherever your notes already do.</p>
+      </div>
+    </div>
+    <p>Which is all a keybinding needs:</p>
+    <pre class="cmd"><span class="note">-- Neovim: &lt;leader&gt;ol opens today's log</span>
+vim.keymap.set("n", "&lt;leader&gt;ol", function()
+  vim.cmd.edit(vim.fn.system("omalogbook path"):gsub("%s+$", ""))
+end, { desc = "Today's log" })</pre>
+  </section>
+
+  <section>
     <h2>Marks</h2>
     <p>Some moments are worth more than prose. A line that opens with a mark is filed as an event, with the course and speed you were making and what it was blowing at the time.</p>
     <figure class="window clip">
@@ -85,7 +139,7 @@
   <section>
     <h2>How it works</h2>
     <p>omalogbook writes; <a href="../omakeel/">omakeel</a> listens. The hub decodes the GPS and keeps the boat's fix; omalogbook follows its socket, works out when a passage starts and ends, and writes the note and the track. The window is a second face on the same thing — it reads the day through omalogbook itself and files by calling it, so a note typed on watch and one typed in a terminal are the same note.</p>
-    <p>Nothing here needs a database or a server. The vault is an ordinary folder, so Obsidian opens it as a vault and Neovim opens it as files, and <code>omalogbook path</code> prints today's note for a keybinding.</p>
+    <p>Nothing here needs a database or a server, and nothing needs omalogbook to read the log again.</p>
   </section>
 
   <section>
