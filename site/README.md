@@ -5,10 +5,12 @@ Static, no build step: `index.html`, `bay.js` (the chart data), `favicon.svg`,
 and `theme.js` (the palettes, the picker and the T key).
 
 Each app that runs today has a page: `omakeel/`, `omahelm/`, `omalookout/`,
-`omalogbook/` and `omawind/`, each an `index.html`, so Vercel serves them as
-`/omahelm/` with no config. Their recordings are in `media/`: an H.264 MP4
-each, with a WebP poster of the same name. `omalogbook/` also has a still,
-`omalogbook-marks.webp`, of the marks list.
+`omalogbook/`, `omatide/` and `omawind/`, each an `index.html`, so Vercel serves
+them as `/omahelm/` with no config. Their recordings are in `media/`: an H.264
+MP4 each, with a WebP poster of the same name. Some pages also have stills:
+`omalogbook-marks.webp` (the marks list), `omatide-bay.webp` (the whole bay),
+`omatide-night.webp` (Night Watch) and `omahelm-stream.webp` (the tidal stream
+drawn over the chart, for omahelm's stream layer).
 
 `omatiller/` is a hardware concept page with an interactive CAD assembly, exploded
 view, transparent housing view, and ram travel control. Concept 02's 83 named parts
@@ -40,9 +42,12 @@ unavailable.
 
 The recordings are of the real apps, on omakeel's sample sail out of Berkeley
 Marina (a replay, not a real track, and its vessels are invented), never on
-the boat's real GPS. The wind is live HRRR and NDBC over the Bay. They were
-captured with `grim` at 15 fps from a headless Hyprland output, so nothing
-had to be on screen, then encoded with ffmpeg at CRF 26. The theme clip is
+the boat's real GPS. omatide's clip is the exception, and needs no boat: it was
+recorded with no GPS connected at all, so the window shows the tide at the home
+position from `~/.config/omatide/config.toml`. The wind is live HRRR and NDBC
+over the Bay, and the tide is a real prediction for the day it was recorded.
+They were captured with `grim` at 15 fps from a headless Hyprland output, so
+nothing had to be on screen, then encoded with ffmpeg at CRF 26. The theme clip is
 each theme once its tiles were drawn, crossfaded, so the redraw isn't shown.
 
 `bay.js` and `wordmark.svg` are generated. Regenerate them with:

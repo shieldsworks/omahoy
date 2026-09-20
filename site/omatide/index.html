@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>omatide · Omahoy</title>
+<meta name="description" content="omatide predicts the tide and the stream aboard, from NOAA's harmonic constants, with no connection. The height where the boat is, the stream where the boat is, and the whole of San Francisco Bay at any moment.">
+<meta property="og:title" content="omatide · Omahoy">
+<meta property="og:description" content="Tides and currents for Omarchy, predicted on the boat with the dish off.">
+<meta property="og:url" content="https://omahoy.org/omatide/">
+<meta property="og:image" content="https://omahoy.org/media/omatide.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1b26">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../style.css">
+<script src="../theme.js"></script>
+</head>
+<body>
+<main>
+  <div class="row">
+    <a href="../">omahoy.org</a>
+    <nav aria-label="Apps">
+      <a href="../omakeel/">omakeel</a>
+      <a href="../omahelm/">omahelm</a>
+      <a href="../omalookout/">omalookout</a>
+      <a href="../omalogbook/">omalogbook</a>
+      <a href="../omatide/" aria-current="page">omatide</a>
+      <a href="../omawind/">omawind</a>
+      <a href="../omatiller/">omatiller</a>
+    </nav>
+    <span class="right"><a href="https://github.com/shieldsworks/omatide">github</a></span>
+  </div>
+
+  <div class="hero">
+    <p class="tagline"><span>Tides and currents</span><span class="early">early · v0.1</span><span>MIT</span></p>
+    <h1 class="app-name">omatide</h1>
+    <p class="lede">A tide is not fetched, it is predicted. NOAA measured the harmonic constants at each station over years; from them the height and the stream follow by arithmetic, for as far ahead as you like. omatide downloads those constants once and then works at sea, with the dish off, for years — the tide where the boat is, the stream where the boat is, and the whole of San Francisco Bay at any moment you drag it to.</p>
+  </div>
+
+  <figure class="window clip">
+    <div class="bar top"><span class="me">omatide</span><span class="hint"><kbd>]</kbd> an hour on · <kbd>+</kbd> zoom · drag to pan</span></div>
+    <video src="../media/omatide.mp4" poster="../media/omatide.webp" width="1600" height="1128" autoplay muted loop playsinline preload="metadata" aria-label="The tide window. The bay's arrows swing from flood to ebb as the hours are stepped through, then the map zooms into the central bay, where Point Bonita, the Golden Gate, Alcatraz, Raccoon Strait and Yerba Buena Island are each named with their speed."></video>
+    <figcaption>The stream everywhere in the bay, stepped through half a day an hour at a time, then zoomed into the narrows. Blue floods, red ebbs — and they are not the same everywhere at once. No GPS was connected here, so the numbers at the top are the tide at home, the berth in Berkeley.</figcaption>
+  </figure>
+
+  <section>
+    <h2>What it does</h2>
+    <ul class="points">
+      <li><b>The tide where the boat is.</b> The height above chart datum now, which way it is going, and the highs and lows to come, from the nearest of NOAA's stations to the fix <a href="../omakeel/">omakeel</a> reports. With no GPS it works from a home position you set.</li>
+      <li><b>The stream where the boat is.</b> Set and drift now, and the slacks and maximums to come — the thing that decides whether you leave at four or at six.</li>
+      <li><b>San Francisco Bay, all of it.</b> 122 tide stations and 295 current bins, drawn as the old tidal current chart: an arrow at each of the bay's narrows, over the bay's own shore.</li>
+      <li><b>Any moment, at once.</b> Drag the bar under the map, or step an hour with <kbd>[</kbd> and <kbd>]</kbd>. The answer is arithmetic, so it arrives as fast as you can drag.</li>
+      <li><b>A bar widget</b> with the height, which way it is going, and the next turn, for the Omarchy shell.</li>
+      <li><b>Nothing to fetch again.</b> One download of about 380 KB, once, and then no network for years.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The bay is not one tide</h2>
+    <div class="two">
+      <div>
+        <p>High water at the Golden Gate reaches Port Chicago an hour and three quarters later and a third of a meter lower. The stream that is slack off Alcatraz is still ebbing through Raccoon Strait, which turns before either of them. A table of one station cannot tell you that; a chart of the whole bay can.</p>
+        <p>A dozen of the bay's named places sit within two miles of Angel Island, so the map goes in: scroll or <kbd>+</kbd> and <kbd>-</kbd> to zoom, drag to pan, double-click for the whole bay. At about five times, every place in the central bay is named, with its speed, on a shore you can recognize. The view is kept over the bay, so the water under the arrows is never ocean.</p>
+        <p>The shore is a schematic, simplified from the OpenStreetMap coastline to about ninety meters: it is there to say which water an arrow is in. <a href="../omahelm/">omahelm</a> is the thing you navigate by.</p>
+      </div>
+      <figure class="window clip">
+        <div class="bar top"><span class="me">omatide</span><span class="hint">the whole bay</span></div>
+        <img src="../media/omatide-bay.webp" alt="The whole of San Francisco Bay, from the bar outside the Golden Gate to Dumbarton Bridge and up to Carquinez Strait, with a red ebb arrow at each of the narrows and blue flood arrows still running in Carquinez Strait." width="1600" height="1128" loading="lazy">
+        <figcaption>Ebbing everywhere but Carquinez Strait, which is still flooding.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>How right it is</h2>
+    <p>Checked against NOAA's own published tables, over seven years spread across the moon's 18.6-year nodal cycle. <code>cargo test</code> checks it on every commit; the fixtures are NOAA's published predictions.</p>
+    <div class="keys-wrap">
+      <table class="keys">
+        <thead><tr><th>What</th><th>Worst error against NOAA</th></tr></thead>
+        <tbody>
+          <tr><td>Tide heights</td><td>1.3 mm</td></tr>
+          <tr><td>High and low water</td><td>To the minute</td></tr>
+          <tr><td>Stream speed</td><td>0.2 cm/s — four thousandths of a knot</td></tr>
+          <tr><td>Slack and maximum stream</td><td>To the minute</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>That is NOAA's own rounding: the tables are not published finer than omatide matches them.</p>
+  </section>
+
+  <section>
+    <h2>Written from scratch</h2>
+    <p>The arithmetic is Schureman's, in Rust, with no tide library. Three things in it are worth knowing, because none of them is in the textbook, and each was worth a mistake:</p>
+    <ul class="points">
+      <li><b>Schureman's epoch is 1900 January 1 at 0h</b>, not the Julian Day 2415020.0 it is usually written as. Half a day is 6.6° of lunar motion, and getting it wrong costs 24 cm of tide.</li>
+      <li><b>NOAA holds the node factors constant for a whole calendar year</b>, worked out at mid-year. Varying them properly with time is a better model of the ocean and a worse match to the tables everyone actually reads.</li>
+      <li><b>M1, L2, 2MK3, M3 and S1 do not take the node factors the textbook gives them.</b> What NOAA uses is in the source, each one marked and each one checked across the nodal cycle.</li>
+    </ul>
+    <p>Most of the places a sailor names — Red Rock, Point Blunt, Sausalito — are subordinate stations with no constants of their own, only offsets against one that has. omatide warps the reference station's own curve onto the subordinate's turns rather than replacing it with a plain cosine, which keeps the shallow-water lopsidedness that is everywhere in this bay.</p>
+  </section>
+
+  <section>
+    <h2>On the chart, too</h2>
+    <p>The same arrows draw over the chartplotter. Press <kbd>s</kbd> in <a href="../omahelm/">omahelm</a> and the stream comes on where you are actually looking, thinned so the arrows don't tangle, and the time bar drags the wind and the stream together. omahelm asks omatide for it over a socket; nothing about the tide lives in the chartplotter.</p>
+  </section>
+
+  <section>
+    <h2>After dark</h2>
+    <div class="two">
+      <figure class="window clip">
+        <div class="bar top"><span class="me">omatide</span><span class="hint">press <kbd>n</kbd></span></div>
+        <img src="../media/omatide-night.webp" alt="The same tide window in Night Watch: the curves, the arrows, the labels and the scrubber all red on black." width="1600" height="1128" loading="lazy">
+      </figure>
+      <div>
+        <p>omatide takes its colors from the active Omarchy theme and redraws when you switch. <kbd>n</kbd> turns this one window red on black, curves and all, and leaves the rest of the desktop alone — the same key, and the same window's own choice, as in omahelm and omalookout.</p>
+        <p>Nothing in the window depends on color alone: an ebb arrow points the way it sets whatever the palette says, and slack is a ring rather than an arrow, because there is no way to it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Keys</h2>
+    <div class="keys-wrap">
+      <table class="keys">
+        <thead><tr><th>Key</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>The bay an hour earlier, later; the bar under it drags</td></tr>
+          <tr><td><kbd>0</kbd></td><td>Back to now</td></tr>
+          <tr><td><kbd>+</kbd> <kbd>-</kbd></td><td>Zoom the bay; so does scrolling</td></tr>
+          <tr><td>Drag</td><td>Pan the bay; double-click for the whole of it</td></tr>
+          <tr><td>Hover</td><td>What that place is, and what to know about it</td></tr>
+          <tr><td><kbd>n</kbd></td><td>Night Watch</td></tr>
+          <tr><td><kbd>q</kbd>, Escape</td><td>Close</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Install</h2>
+    <p>Rust and the Omarchy shell. Build it, fetch the constants once, then open the window:</p>
+    <pre class="cmd"><span class="prompt">$ </span>git clone https://github.com/shieldsworks/omatide ~/.local/share/omatide/src
+<span class="prompt">$ </span>cd ~/.local/share/omatide/src
+<span class="prompt">$ </span>cargo build --release --locked
+<span class="prompt">$ </span>target/release/omatide fetch   <span class="note"># NOAA's stations, once, a few minutes</span>
+<span class="prompt">$ </span>./run.sh                       <span class="note"># the window</span></pre>
+    <p><code>fetch</code> writes about 380 KB to <code>~/.local/share/omatide/</code> and is the only thing that needs the network. <code>scripts/link-plugin.sh</code> puts the bar widget in the Omarchy shell. Which waters to carry, where home is with no GPS, and which bin down the water column to read are in <code>~/.config/omatide/config.toml</code>; the <a href="https://github.com/shieldsworks/omatide#readme">README</a> covers them.</p>
+    <p>There is a command line for all of it, which is how the predictions are checked:</p>
+    <pre class="cmd"><span class="prompt">$ </span>omatide current 37.8663,-122.3148
+<span class="prompt">$ </span>omatide bay --at 2026-09-21T05:40:00Z</pre>
+  </section>
+
+  <section>
+    <h2>Not yet</h2>
+    <ul class="points">
+      <li>No sun or moon, so no rise, set or phase beside the tide.</li>
+      <li>The drawn bay is San Francisco Bay. Tides and currents work at any NOAA station in the region you fetch; the current chart itself knows this one bay.</li>
+      <li>No routes through the bay — no "leave at 09:20 and carry the flood to Benicia" yet.</li>
+      <li>It has not been checked against a real tide gauge from the boat, only against NOAA's published predictions.</li>
+    </ul>
+  </section>
+
+  <nav class="pager" aria-label="More apps">
+    <span>← <a href="../omawind/">omawind</a> · wind</span>
+    <span><a href="../omakeel/">omakeel</a> · the hub →</span>
+  </nav>
+
+  <div class="themes" id="themes">
+    <span class="label">Theme</span>
+    <span class="hint">press <kbd>T</kbd></span>
+  </div>
+</main>
+
+<footer>
+  <span>MIT · Not for navigation. A prediction is not a tide gauge; carry the official tables.</span>
+  <span>Harmonic constants: NOAA CO-OPS · Coastline © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
+</footer>
+</body>
+</html>
