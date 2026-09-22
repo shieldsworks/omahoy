@@ -141,6 +141,7 @@ end, { desc = "Today's log" })</pre>
     <h2>How it works</h2>
     <p>omalogbook writes; <a href="../omakeel/">omakeel</a> listens. The hub decodes the GPS and keeps the boat's fix; omalogbook follows its socket, works out when a passage starts and ends, and writes the note and the track. The window is a second face on the same thing — it reads the day through omalogbook itself and files by calling it, so a note typed on watch and one typed in a terminal are the same note.</p>
     <p>Nothing here needs a database or a server, and nothing needs omalogbook to read the log again.</p>
+    <p>The tracks are plain GPX in a folder, so anything can read them. <a href="../omahelm/">omahelm</a> does: it draws the days on the chart, each one joined into the trip it was.</p>
   </section>
 
   <section>

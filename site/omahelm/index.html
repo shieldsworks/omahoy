@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>omahelm · Omahoy</title>
-<meta name="description" content="omahelm is the Omahoy chartplotter. It reads NOAA charts from scratch in Rust, draws them in your Omarchy theme, and puts your boat, AIS traffic, the wind and the tidal stream on them.">
+<meta name="description" content="omahelm is the Omahoy chartplotter. It reads NOAA charts from scratch in Rust, draws them in your Omarchy theme, and puts your boat, AIS traffic, the wind, the tidal stream and every day you have sailed on them.">
 <meta property="og:title" content="omahelm · Omahoy">
 <meta property="og:description" content="A chartplotter for Omarchy. NOAA charts read and drawn from scratch in Rust.">
 <meta property="og:url" content="https://omahoy.org/omahelm/">
@@ -37,7 +37,7 @@
   <div class="hero">
     <p class="tagline"><span>Chartplotter</span><span class="early">early · v0.1</span><span>MIT</span></p>
     <h1 class="app-name">omahelm</h1>
-    <p class="lede">NOAA's charts, in your Omarchy theme, with your boat on them. Soundings, contours and shading, buoys and beacons labeled the way a paper chart labels them, lights and their sectors, rocks and wrecks, traffic lanes and anchorages. The boat, its track and the AIS traffic come from <a href="../omakeel/">omakeel</a>, the wind from <a href="../omawind/">omawind</a>, and the tidal stream from <a href="../omatide/">omatide</a>.</p>
+    <p class="lede">NOAA's charts, in your Omarchy theme, with your boat on them. Soundings, contours and shading, buoys and beacons labeled the way a paper chart labels them, lights and their sectors, rocks and wrecks, traffic lanes and anchorages. The boat, its track and the AIS traffic come from <a href="../omakeel/">omakeel</a>, the wind from <a href="../omawind/">omawind</a>, the tidal stream from <a href="../omatide/">omatide</a>, and every day you have sailed from <a href="../omalogbook/">omalogbook</a>.</p>
   </div>
 
   <figure class="window clip">
@@ -54,6 +54,7 @@
       <li><b>Says what's there.</b> Click the chart for what's charted at that spot. With the wind on, the card leads with the forecast for that very spot and the nearest station within 10 nm.</li>
       <li><b>Wind, forecast and measured.</b> HRRR barbs from omawind, and the wind NOAA's piers and buoys measured, drawn as accent barbs labeled like <code>7g11</code>. The time bar shows when the breeze builds.</li>
       <li><b>The stream, where you are looking.</b> <kbd>s</kbd> draws the tidal current over the chart from <a href="../omatide/">omatide</a> — flood, ebb and slack at each of NOAA's stations, at whatever moment the time bar is on.</li>
+      <li><b>Every day you have sailed.</b> <kbd>p</kbd> draws the tracks <a href="../omalogbook/">omalogbook</a> kept, each day joined into the one trip it was. <kbd>d</kbd> opens a calendar to pick a day out of them.</li>
       <li><b>A waypoint.</b> Right-click, or <kbd>w</kbd>, for bearing, range and ETA from the boat.</li>
       <li><b>Night Watch.</b> <kbd>n</kbd> turns the window red on black, chart and all. Marks keep their meaning by brightness, shape and label.</li>
     </ul>
@@ -79,6 +80,30 @@
         <dt>A ring</dt><dd>Slack, or no direction published</dd>
       </dl>
     </div>
+  </section>
+
+  <section>
+    <h2>Where you've been</h2>
+    <figure class="window clip">
+      <div class="bar top"><span class="me">omahelm</span><span class="hint">press <kbd>p</kbd></span></div>
+      <img src="../media/omahelm-trips.webp" alt="The central bay with one day's track drawn across it: out of Berkeley Marina, west across the bay and down to the Golden Gate, then back. One leg of it is drawn as a dashed straight line." width="1600" height="968" loading="lazy">
+      <figcaption>One day out of the logbook: Berkeley Marina to the Gate and back. The receiver lost its fix for half an hour between Sausalito and the Gate, so the log closed that passage and opened another when it came back — four passages, three holes, two of them a few meters at the slip. They are drawn as the single trip they were, and the leg nobody sailed is dashed: <b>20.2 nm, 2.5 of it inferred</b>.</figcaption>
+    </figure>
+    <div class="two">
+      <figure class="window clip">
+        <div class="bar top"><span class="me">omahelm</span><span class="hint">press <kbd>d</kbd></span></div>
+        <img src="../media/omahelm-calendar.webp" alt="A calendar for September 2026 over the chart. The 21st carries a mark and is highlighted; below the grid it reads 4 passages, 20.2 nm, 2.5 inferred, 11:43 to 16:31, 4 h 48 min." width="1400" height="1000" loading="lazy">
+      </figure>
+      <div>
+        <p>omalogbook closes a passage whenever the fix is lost for long enough, so one afternoon can land on disk as several files with holes between them. omahelm reads them a day at a time and joins each day into the trip it was.</p>
+        <p>A run is solid, because that is track. A gap is dashed, because a straight line is not where the boat went — on a flood at the Gate it is nowhere near. They are counted apart, always, and the chip says how much of a day was which.</p>
+        <p>Every day draws at once, faintly, so a season is one picture of your waters. The day you pick out is drawn over the rest, with a ring where it began and a dot where it ended.</p>
+        <p><kbd>d</kbd> opens the calendar on the last day you sailed. The arrows move a day, <kbd>[</kbd> <kbd>]</kbd> a month, and <kbd>{</kbd> <kbd>}</kbd> jump to the next day there is a track for. Enter shows it; <kbd>x</kbd> goes back to all of them.</p>
+      </div>
+    </div>
+    <p>omahelm only reads. The vault is <a href="../omalogbook/">omalogbook</a>'s, and the chartplotter follows wherever that is kept — or a <code>logbook</code> setting of its own, if your tracks live somewhere else. A day can come out as one file too, its holes closed, for anything else that reads GPX:</p>
+    <pre class="cmd"><span class="prompt">$ </span>target/release/omahelm trips                                  <span class="note"># every day, with its run</span>
+<span class="prompt">$ </span>target/release/omahelm trip --date 2026-09-21 --out day.gpx   <span class="note"># that day, as one track</span></pre>
   </section>
 
   <section>
@@ -109,6 +134,8 @@
           <tr><td><kbd>w</kbd>, right-click</td><td>Set a waypoint; <kbd>W</kbd> clears it</td></tr>
           <tr><td><kbd>b</kbd></td><td>Wind barbs, forecast and measured</td></tr>
           <tr><td><kbd>s</kbd></td><td>The tidal stream, from omatide</td></tr>
+          <tr><td><kbd>p</kbd></td><td>Your trips, from omalogbook</td></tr>
+          <tr><td><kbd>d</kbd></td><td>The calendar: a day you sailed, and go there</td></tr>
           <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>The wind and the stream an hour earlier, later</td></tr>
           <tr><td><kbd>t</kbd></td><td>The time bar: the wind at the boat and the stream on the chart, hour by hour</td></tr>
           <tr><td><kbd>space</kbd></td><td>Play the wind hour by hour</td></tr>
@@ -135,7 +162,7 @@
     <h2>Not yet</h2>
     <ul class="points">
       <li>No routes yet. One waypoint at a time.</li>
-      <li>The track is kept for the session only, until omalogbook.</li>
+      <li>The line the boat draws as you sail is this session's own. The days behind it come from omalogbook, and today's joins them as the log writes it.</li>
       <li>Labels can crowd each other near busy harbor entrances.</li>
       <li>No touch gestures.</li>
     </ul>
