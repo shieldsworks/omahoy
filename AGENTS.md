@@ -36,14 +36,23 @@ its feature map in `.cursor/skills/verify/features/`.
 ## The gates are not yours to move
 
 These files set the rules and are changed only in a PR whose whole purpose
-is changing them, reviewed by a human:
+is changing them:
 
 - `.github/workflows/`
 - `scripts/verify.sh`, `scripts/verify.py`, `scripts/check-comments.sh`
 
+Such a PR merges only after review by someone other than its author. The
+reviewer is either Casey or Casey's delegated reviewer Dev.
+
 Adding a check is such a PR: one `@check` function in `scripts/verify.py`
-and its test class in `scripts/test_verify.py`. Relaxing a check needs a
-human.
+and its test class in `scripts/test_verify.py`. Relaxing a check is such a
+PR.
+
+Dev's review means all three. An independent agent verifies the PR head on
+a clean checkout. That agent runs the repo's checks and drives the changed
+behavior. An adversarial review challenges the change. CI is green on the
+exact head SHA merged. The author agent never approves or merges its own
+PR.
 
 ## Every behavior change has a test or a golden
 
