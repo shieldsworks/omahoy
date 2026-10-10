@@ -232,3 +232,86 @@ class Comments(unittest.TestCase):
         self.assertEqual(done.returncode, 2)
         self.assertEqual(done.stdout, "")
         self.assertEqual(done.stderr, "grep: src/dangling.py: No such file or directory\n")
+
+    def test_a_glob_in_the_script_path_does_not_hide_a_hit(self):
+        root = self.repo({
+            "keep/clean.py": "# ok\n",
+            "scan/notes.py": "# TODO\n",
+        })
+        dest = root / "scan" / "*.py"
+        dest.write_text(SCRIPT.read_text())
+        dest.chmod(0o755)
+        subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+        done = self.check(root, script=dest)
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stdout, "scan/notes.py:1:# TODO\n")
+        self.assertEqual(done.stderr, MESSAGE)
+
+    def test_a_redirected_git_directory_does_not_hide_a_hit(self):
+        root = self.repo({"src/notes.py": "# TODO\n"})
+        other = self.repo({})
+        env = os.environ.copy()
+        env["GIT_DIR"] = str(other / ".git")
+        done = self.check(root, env=env)
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stdout, "src/notes.py:1:# TODO\n")
+        self.assertEqual(done.stderr, MESSAGE)
+
+    def test_an_empty_index_file_does_not_hide_a_hit(self):
+        root = self.repo({"src/notes.py": "# TODO\n"})
+        env = os.environ.copy()
+        env["GIT_INDEX_FILE"] = str(root / "empty-index")
+        subprocess.run(["git", "-C", str(root), "read-tree", "--empty"], check=True, env=env)
+        done = self.check(root, env=env)
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stdout, "src/notes.py:1:# TODO\n")
+        self.assertEqual(done.stderr, MESSAGE)
+
+    def test_shell_functions_do_not_hide_a_hit(self):
+        root = self.repo({"src/notes.py": "# TODO\n"})
+        hook = root / "fn.sh"
+        hook.write_text("git() { return 0; }\ngrep() { return 1; }\nread() { return 1; }\n")
+        env = os.environ.copy()
+        env["BASH_ENV"] = str(hook)
+        done = self.check(root, env=env)
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stdout, "src/notes.py:1:# TODO\n")
+        self.assertEqual(done.stderr, MESSAGE)
+
+    def test_a_startup_exit_trap_cannot_pass_a_failed_scan(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        hook = Path(tmp.name) / "trap.sh"
+        hook.write_text("trap 'exit 0' EXIT\n")
+        env = os.environ.copy()
+        env["BASH_ENV"] = str(hook)
+        done = self.check(Path(tmp.name), env=env)
+        self.assertEqual(done.returncode, 128)
+        self.assertEqual(done.stdout, "")
+        self.assertIn("not a git repository", done.stderr)
+
+    def test_a_file_named_dash_is_read(self):
+        root = self.repo({"src/ok.py": "# ok\n"})
+        (root / "-").write_text("# TODO\n")
+        subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+        done = self.check(root, ".")
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stdout, "./-:1:# TODO\n")
+        self.assertEqual(done.stderr, MESSAGE)
+
+    def test_an_active_submodule_file_is_scanned(self):
+        root = self.repo({"src/clean.py": "# ok\n"})
+        sub = self.repo({"src/bad.py": "# TODO\n"})
+        for repo in (root, sub):
+            subprocess.run(["git", "-C", str(repo), "config", "user.email", "t@example.com"], check=True)
+            subprocess.run(["git", "-C", str(repo), "config", "user.name", "t"], check=True)
+            subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", "init"], check=True)
+        subprocess.run(
+            ["git", "-C", str(root), "-c", "protocol.file.allow=always",
+             "submodule", "add", str(sub), "lib"],
+            check=True,
+        )
+        done = self.check(root)
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stdout, "lib/src/bad.py:1:# TODO\n")
+        self.assertEqual(done.stderr, MESSAGE)

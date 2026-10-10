@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
+trap - EXIT ERR DEBUG RETURN
+listing=
+trap 'rm -f -- "$listing"' EXIT
 set -euo pipefail
 
-unset GIT_LITERAL_PATHSPECS GIT_GLOB_PATHSPECS GIT_NOGLOB_PATHSPECS GIT_ICASE_PATHSPECS
+builtin unset GIT_LITERAL_PATHSPECS GIT_GLOB_PATHSPECS GIT_NOGLOB_PATHSPECS GIT_ICASE_PATHSPECS \
+  GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_NAMESPACE \
+  GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES
 
-root=$(git rev-parse --show-toplevel)
-rel=$(realpath --relative-to="$root" -- "$0")
-cd "$root"
+root=$(command -p git rev-parse --show-toplevel)
+rel=$(command -p realpath --relative-to="$root" -- "$0")
+builtin cd "$root"
 
 prefixes='(^[[:space:]]*(#|\*|/\*|<!--)|//)'
 banned=(
@@ -38,15 +43,18 @@ fi
 # git ls-files rejects a pathspec that leaves the repository.
 case $rel in
   ..*) ;;
-  *) pathspec+=(":!:$rel") ;;
+  *) pathspec+=(":(exclude,literal)$rel") ;;
 esac
 
-listing=$(mktemp)
-trap 'rm -f "$listing"' EXIT
-git ls-files -z -- "${pathspec[@]}" >"$listing"
+listing=$(command -p mktemp)
+command -p git ls-files -z --recurse-submodules -- "${pathspec[@]}" >"$listing"
 files=()
-while IFS= read -r -d '' path; do
-  files+=("$path")
+while IFS= builtin read -r -d '' path; do
+  if [[ $path == - ]]; then
+    files+=("./-")
+  else
+    files+=("$path")
+  fi
 done <"$listing"
 
 if ((${#files[@]} == 0)); then
@@ -54,7 +62,7 @@ if ((${#files[@]} == 0)); then
 fi
 
 set +e
-hits=$(grep -HnE "$pattern" -- "${files[@]}")
+hits=$(command -p grep -HnE "$pattern" -- "${files[@]}")
 status=$?
 set -e
 if ((status > 1)); then
