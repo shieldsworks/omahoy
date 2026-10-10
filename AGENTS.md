@@ -45,8 +45,8 @@ Such a PR merges only after review by someone other than its author. The
 reviewer is either Casey or Casey's delegated reviewer Dev.
 
 Adding a check is such a PR: one `@check` function in `scripts/verify.py`
-and its test class in `scripts/test_verify.py`. Relaxing a check is such a
-PR.
+and its test class in `scripts/test_verify.py`. Relaxing a check also
+needs Casey.
 
 Dev's review means all three. An independent agent verifies the PR head on
 a clean checkout. That agent runs the repo's checks and drives the changed
