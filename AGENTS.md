@@ -81,10 +81,11 @@ written as the fact: what the outside thing does and what this code does
 about it.
 
 The script reads tracked `.rs`, `.qml`, `.js`, `.sh`, `.py`, `.toml` and
-`.yml` files. It skips `tests/fixtures/` and `**/vendor/**`. The vendor
-pathspec does not match a top-level `vendor/` directory, so those files
-are scanned. It does not read HTML, CSS or Markdown, and the rule holds
-there too, including the scripts inline in the pages.
+`.yml` files, including files in active submodules. It skips
+`tests/fixtures/` and `**/vendor/**`. The vendor pathspec does not match
+a top-level `vendor/` directory, so those files are scanned. It does not
+read HTML, CSS or Markdown, and the rule holds there too, including the
+scripts inline in the pages.
 
 "for now" and "temporary file" are not in the pattern. The apps use "for
 now" for the current time.
@@ -94,7 +95,7 @@ that file byte for byte. The pin is this sha256. A copy with any other
 hash is not this rule.
 
 ```
-09908163dcf2afb3bc65cc28017a8fad3d1dc7a0920fe9292010a11b621d73de  scripts/check-comments.sh
+f3ec8a2d07e8f1e7c50770d0bb93579fc7bb0d60fc8e359a22607ba55cebc6c6  scripts/check-comments.sh
 ```
 
 From the repo root, pipe that line to `sha256sum -c`. Run the script
@@ -106,6 +107,19 @@ scripts/check-comments.sh
 
 Pass git pathspecs to scan a different set. Those arguments replace the
 default set. The script still excludes its own path.
+
+The script clears shell traps, then unsets `GIT_LITERAL_PATHSPECS`,
+`GIT_GLOB_PATHSPECS`, `GIT_NOGLOB_PATHSPECS`, `GIT_ICASE_PATHSPECS`,
+`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_COMMON_DIR`,
+`GIT_NAMESPACE`, `GIT_OBJECT_DIRECTORY`, and
+`GIT_ALTERNATE_OBJECT_DIRECTORIES` before it lists files. `git`, `grep`,
+`realpath`, and `mktemp` are the commands on the default `PATH`, so a
+shell function or an earlier `PATH` entry cannot replace them. Names come
+from `git ls-files -z --recurse-submodules`. The script's own path is
+excluded as a literal pathspec. A listed path that is exactly `-` is read
+as `./-`, because grep treats `-` as standard input. A search error fails
+the run. An empty selection passes only when that listing has no file for
+this scan to read.
 
 ## Copy the right pattern
 
