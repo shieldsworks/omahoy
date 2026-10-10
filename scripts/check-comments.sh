@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+unset GIT_LITERAL_PATHSPECS GIT_GLOB_PATHSPECS GIT_NOGLOB_PATHSPECS GIT_ICASE_PATHSPECS
+
 root=$(git rev-parse --show-toplevel)
 rel=$(realpath --relative-to="$root" -- "$0")
 cd "$root"
@@ -39,10 +41,29 @@ case $rel in
   *) pathspec+=(":!:$rel") ;;
 esac
 
-mapfile -t files < <(git ls-files -- "${pathspec[@]}")
-((${#files[@]})) || exit 0
+listing=$(mktemp)
+trap 'rm -f "$listing"' EXIT
+git ls-files -z -- "${pathspec[@]}" >"$listing"
+files=()
+while IFS= read -r -d '' path; do
+  files+=("$path")
+done <"$listing"
 
-if hits=$(grep -HnE "$pattern" -- "${files[@]}"); then
+if ((${#files[@]} == 0)); then
+  exit 0
+fi
+
+set +e
+hits=$(grep -HnE "$pattern" -- "${files[@]}")
+status=$?
+set -e
+if ((status > 1)); then
+  if [[ -n $hits ]]; then
+    printf '%s\n' "$hits"
+  fi
+  exit "$status"
+fi
+if ((status == 0)); then
   printf '%s\n' "$hits"
   printf '\nApologetic or deferred-work comments are not allowed (see AGENTS.md).\n' >&2
   exit 1

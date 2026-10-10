@@ -206,13 +206,12 @@ class Comments(unittest.TestCase):
             self.assertEqual(done.stderr, "", var)
 
     def test_slash_comments_are_findings(self):
-        # The markers are split so this line is not itself a finding.
-        line = "/" + "/ TODO"
-        block = "/" + "* FIXME */"
-        root = self.repo({"src/notes.js": line + "\n" + block + "\n"})
+        text = (ROOT / "tests" / "fixtures" / "slash-comments.txt").read_text()
+        root = self.repo({"src/notes.js": text})
         done = self.check(root)
+        want = "".join(f"src/notes.js:{number}:{line}\n" for number, line in enumerate(text.splitlines(), 1))
         self.assertEqual(done.returncode, 1)
-        self.assertEqual(done.stdout, "src/notes.js:1:" + line + "\nsrc/notes.js:2:" + block + "\n")
+        self.assertEqual(done.stdout, want)
         self.assertEqual(done.stderr, MESSAGE)
 
     def test_a_search_error_does_not_hide_a_hit(self):

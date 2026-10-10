@@ -94,7 +94,7 @@ that file byte for byte. The pin is this sha256. A copy with any other
 hash is not this rule.
 
 ```
-09908163dcf2afb3bc65cc28017a8fad3d1dc7a0920fe9292010a11b621d73de  scripts/check-comments.sh
+a99328b47039b6c83516797934f888ff6ecd3e6480a12c675898b67c11790d16  scripts/check-comments.sh
 ```
 
 From the repo root, pipe that line to `sha256sum -c`. Run the script
@@ -106,6 +106,12 @@ scripts/check-comments.sh
 
 Pass git pathspecs to scan a different set. Those arguments replace the
 default set. The script still excludes its own path.
+
+The script unsets `GIT_LITERAL_PATHSPECS`, `GIT_GLOB_PATHSPECS`,
+`GIT_NOGLOB_PATHSPECS`, and `GIT_ICASE_PATHSPECS` before it lists files,
+so those variables cannot change which files match. Names come from
+`git ls-files -z`. A search error fails the run. An empty selection
+passes only when that listing has no file for this scan to read.
 
 ## Copy the right pattern
 
