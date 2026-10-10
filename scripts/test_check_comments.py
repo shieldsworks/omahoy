@@ -1,3 +1,4 @@
+import hashlib
 import subprocess
 import tempfile
 import unittest
@@ -6,7 +7,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "check-comments.sh"
 
-# Each alternative in the comment pattern, in a comment line.
 PHRASES = (
     "# TODO",
     "# FIXME",
@@ -27,7 +27,6 @@ PHRASES = (
     "# bandaid",
 )
 
-# Phrases the pattern leaves alone, plus non-comments and longer words.
 CLEAN = (
     "# for now",
     "# temporary file",
@@ -55,6 +54,14 @@ class Comments(unittest.TestCase):
 
     def check(self, root: Path, *args: str, script: Path = SCRIPT) -> subprocess.CompletedProcess[str]:
         return subprocess.run([str(script), *args], cwd=root, capture_output=True, text=True)
+
+    def planted(self, root: Path) -> Path:
+        dest = root / "tools" / "check-comments.sh"
+        dest.parent.mkdir(parents=True)
+        dest.write_text(SCRIPT.read_text() + "# TODO planted\n")
+        dest.chmod(0o755)
+        subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+        return dest
 
     def test_each_banned_phrase_is_a_finding(self):
         text = "\n".join(PHRASES) + "\n"
@@ -88,9 +95,37 @@ class Comments(unittest.TestCase):
         self.assertEqual(done.returncode, 1)
         self.assertEqual(done.stdout, "vendor/bad.js:1:# TODO\n")
 
+    def test_the_agents_pin_matches_the_script(self):
+        digest = hashlib.sha256(SCRIPT.read_bytes()).hexdigest()
+        line = f"{digest}  scripts/check-comments.sh"
+        self.assertIn(line, (ROOT / "AGENTS.md").read_text().splitlines())
+
     def test_an_empty_tree_passes(self):
         root = self.repo({})
         done = self.check(root)
         self.assertEqual(done.returncode, 0)
         self.assertEqual(done.stdout, "")
         self.assertEqual(done.stderr, "")
+
+    def test_pathspecs_replace_the_default_set(self):
+        root = self.repo({
+            "notes.md": "<!-- TODO -->\n",
+            "src/bad.py": "# FIXME\n",
+        })
+        done = self.check(root, "*.md")
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stdout, "notes.md:1:<!-- TODO -->\n")
+        self.assertEqual(done.stderr, MESSAGE)
+
+    def test_the_script_excludes_itself_at_any_path(self):
+        root = self.repo({})
+        done = self.check(root, script=self.planted(root))
+        self.assertEqual(done.returncode, 0)
+        self.assertEqual(done.stdout, "")
+        self.assertEqual(done.stderr, "")
+
+    def test_a_hit_is_reported_when_the_script_lives_in_the_repo(self):
+        root = self.repo({"src/bad.py": "# FIXME\n"})
+        done = self.check(root, script=self.planted(root))
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stdout, "src/bad.py:1:# FIXME\n")

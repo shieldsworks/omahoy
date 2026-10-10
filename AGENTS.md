@@ -71,9 +71,32 @@ open an issue and leave the code honest. A workaround for an outside bug is
 written as the fact: what the outside thing does and what this code does
 about it.
 
-The script reads tracked `.js`, `.py`, `.sh` and `.yml` files outside
-`vendor/`. It does not read HTML, CSS or Markdown, and the rule holds there
-too, including the scripts inline in the pages.
+The script reads tracked `.rs`, `.qml`, `.js`, `.sh`, `.py`, `.toml` and
+`.yml` files. It skips `tests/fixtures/` and `**/vendor/**`. The vendor
+pathspec does not match a top-level `vendor/` directory, so those files
+are scanned. It does not read HTML, CSS or Markdown, and the rule holds
+there too, including the scripts inline in the pages.
+
+"for now" and "temporary file" are not in the pattern. The apps use "for
+now" for the current time.
+
+`scripts/check-comments.sh` is the canonical copy. Downstream repos carry
+that file byte for byte. The pin is this sha256. A copy with any other
+hash is not this rule.
+
+```
+09908163dcf2afb3bc65cc28017a8fad3d1dc7a0920fe9292010a11b621d73de  scripts/check-comments.sh
+```
+
+From the repo root, pipe that line to `sha256sum -c`. Run the script
+with no arguments to scan the default set.
+
+```sh
+scripts/check-comments.sh
+```
+
+Pass git pathspecs to scan a different set. Those arguments replace the
+default set. The script still excludes its own path.
 
 ## Copy the right pattern
 
@@ -141,7 +164,9 @@ You will copy what you see. Before copying, check that what you copy passes
   link-preview image, and the notes on every page and asset (served too).
 - `scripts/verify.sh`, `scripts/verify.py`, `scripts/test_verify.py`: the
   done command, its checks, and their tests.
-- `scripts/check-comments.sh`: the suite's comment rule, copied verbatim.
+- `scripts/check-comments.sh`: the canonical comment rule. Downstream
+  repos carry a byte-identical copy and check it against the sha256 pin
+  in No apologetic comments.
 - `scripts/site-data.py`: regenerates `bay.js` and `wordmark.svg`, run by
   hand.
 - `.github/workflows/site.yml`: CI.
