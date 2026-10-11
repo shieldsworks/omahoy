@@ -108,14 +108,15 @@ scripts/check-comments.sh
 Pass git pathspecs to scan a different set. Those arguments replace the
 default set. The script still excludes its own path.
 
-The script clears shell traps, then unsets `GIT_LITERAL_PATHSPECS`,
-`GIT_GLOB_PATHSPECS`, `GIT_NOGLOB_PATHSPECS`, `GIT_ICASE_PATHSPECS`,
-`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_COMMON_DIR`,
-`GIT_NAMESPACE`, `GIT_OBJECT_DIRECTORY`, and
-`GIT_ALTERNATE_OBJECT_DIRECTORIES` before it lists files. `git`, `grep`,
-`realpath`, and `mktemp` are the commands on the default `PATH`, so a
-shell function or an earlier `PATH` entry cannot replace them. Names come
-from `git ls-files -z --recurse-submodules`. The script's own path is
+The script's first command is `trap - EXIT ERR DEBUG RETURN`. It then
+unsets `GIT_LITERAL_PATHSPECS`, `GIT_GLOB_PATHSPECS`,
+`GIT_NOGLOB_PATHSPECS`, `GIT_ICASE_PATHSPECS`, `GIT_DIR`,
+`GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_COMMON_DIR`, `GIT_NAMESPACE`,
+`GIT_OBJECT_DIRECTORY`, and `GIT_ALTERNATE_OBJECT_DIRECTORIES` before
+it lists files. `git`, `grep`, `realpath`, and `mktemp` are run with
+`command -p`, which uses the default `PATH` and does not call a function
+named `git`, `grep`, `realpath`, or `mktemp`. Names come from
+`git ls-files -z --recurse-submodules`. The script's own path is
 excluded as a literal pathspec. A listed path that is exactly `-` is read
 as `./-`, because grep treats `-` as standard input. A search error fails
 the run. An empty selection passes only when that listing has no file for
