@@ -33,6 +33,10 @@ To prove a change from a visitor's side (the pages rendering and behaving
 in a browser), use the verify skill: `.cursor/skills/verify/SKILL.md` and
 its feature map in `.cursor/skills/verify/features/`.
 
+To prove the suite gate the way a reviewer does, use
+`.cursor/skills/verify-omahoy/SKILL.md` and its feature map in
+`.cursor/skills/verify-omahoy/features/`.
+
 ## The gates are not yours to move
 
 These files set the rules and are changed only in a PR whose whole purpose
@@ -194,6 +198,7 @@ You will copy what you see. Before copying, check that what you copy passes
 - `scripts/site-data.py`: regenerates `bay.js` and `wordmark.svg`, run by
   hand.
 - `.github/workflows/site.yml`: CI.
-- `.cursor/skills/verify/`: the reviewer's drive recipe and feature map.
+- `.cursor/skills/verify/`: the visitor drive of the pages, and its feature map.
+- `.cursor/skills/verify-omahoy/`: the reviewer drive of the suite gate, the comment pin, and `scripts/check-comments.sh`.
 - `README.md`: the suite README on GitHub. Not served.
 - `LICENSE`: MIT.
