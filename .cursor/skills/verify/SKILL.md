@@ -1,17 +1,18 @@
 ---
-name: verify-omahoy
-description: "Drive omahoy.org the way a visitor does (the static site over local HTTP, in headless Chromium) and capture proof. Use before calling a visible site change done, when reviewing someone else's site change, or when asked to verify omahoy."
+name: verify
+description: "Drive omahoy.org the way a visitor does (the static site over local HTTP, in headless Chromium) and capture proof. Use before calling a visible site change done, when reviewing someone else's site change, or when asked to verify the pages."
 ---
 
-# Verify omahoy
+# Verify the pages
 
 `scripts/verify.sh` proves the tree is sound: every local URL resolves,
 every recording has its poster, the inline wordmark matches its file,
 `theme.js` loads first, and the app navs agree. `scripts/verify.sh --list`
 names each check. This skill proves the pages render and behave in a
 browser, served from this checkout. It does not re-check what verify
-checks. Run both. The agent that built a change does not sign off on this
-run.
+checks. Run both. Drive the gate with
+`.cursor/skills/verify-omahoy/SKILL.md`. The agent that built a change
+does not sign off on this run.
 
 ## Launch
 
