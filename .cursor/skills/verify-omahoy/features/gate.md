@@ -5,9 +5,7 @@ whether that run created or changed a file.
 
 ## Sub-features
 
-- `gate-all` runs every check, then `clean`.
-- `gate-pass` exits 0 and prints the pass line.
-- `gate-unchanged` the `clean` section names no path.
+- `gate` runs every check, then `clean`, exits 0, prints the pass line, and names no path under `clean`.
 
 ## How to get to it (user POV)
 
@@ -21,7 +19,7 @@ Preconditions:
 - Launch and Doctor passed.
 - No other command is writing this work tree.
 
-- **All checks.** Run `drive gate scripts/verify.sh`. `exit.txt` is `0`. `stdout.txt` lists each check as `== <name>` with no finding under it, then a blank line, then `All verification steps passed.`
+- **All checks.** Run `drive_gate gate scripts/verify.sh`. `exit.txt` is `0`. `stdout.txt` lists each check as `== <name>` with no finding under it, then a blank line, then `All verification steps passed.`
 - **Unchanged tree.** Same transcript. The `== clean` section has no path under it. `stderr.txt` is empty.
 - **Proof.** Keep `command.txt`, `stdout.txt`, `stderr.txt`, and `exit.txt`.
 

@@ -5,8 +5,7 @@ It is a maintainer command. It is not a gate.
 
 ## Sub-features
 
-- `site-data-refuse` when `logo.txt` is missing, the script is not run.
-- `site-data-write` when `logo.txt` exists, the script writes both files and prints a summary.
+- `site-data` when `logo.txt` is missing, record `unreachable.txt` and do not run the script. When `logo.txt` exists, the script writes both files and prints a summary.
 
 ## How to get to it (user POV)
 
@@ -20,8 +19,8 @@ Preconditions:
 - Launch and Doctor passed.
 - This drive does not overlap a `scripts/verify.sh` run.
 
-- **Logo missing.** Run `test -f "$HOME/.local/share/omarchy/logo.txt"`. When that exits 1, write `python3 scripts/site-data.py` and `logo missing` into `$run/artifacts/verify/site-data/unreachable.txt`. Do not run the script.
-- **Logo present.** Run `drive site-data python3 scripts/site-data.py`. stdout is one line. It starts with `bay.js 192x` and contains `wordmark.svg`. The work tree is dirty after the run. Do not commit that output from this skill.
+- **Logo missing.** Run `test -f "$HOME/.local/share/omarchy/logo.txt"`. When that exits 1, run `mkdir -p "$run/artifacts/verify/site-data"` and write `python3 scripts/site-data.py` and `logo missing` into `$run/artifacts/verify/site-data/unreachable.txt`. Do not run the script.
+- **Logo present.** Run `drive_gate site-data python3 scripts/site-data.py`. stdout is one line. It starts with `bay.js 192x` and contains `wordmark.svg`. The work tree is dirty after the run. Do not commit that output from this skill.
 
 ## Gotchas
 

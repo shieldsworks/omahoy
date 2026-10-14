@@ -19,7 +19,7 @@ reads `.cursor/skills/verify/features/` only.
 
 - Start every recipe from the baseline unless its preconditions say otherwise.
 - Commands are literal. Keep the quoted text unchanged.
-- Call `drive` from `../SKILL.md`. The first argument is the feature id.
+- Call `drive_gate` from `../SKILL.md`. The first argument is the feature id.
 - Do not delete proof during cleanup.
 
 ## Proof and skip reporting

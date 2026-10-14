@@ -12,8 +12,8 @@ and adding them here is not a planned follow-up.
 
 ## Toolchain
 
-`git`, `bash` and `python3` 3.10 or newer, standard library only. Chromium
-or Google Chrome for the verify skill. Nothing to install.
+`git`, `bash`, `tmux`, and `python3` 3.10 or newer, standard library only.
+Chromium or Google Chrome for the verify skill. Nothing to install.
 
 ## Done means verified
 
@@ -148,8 +148,10 @@ You will copy what you see. Before copying, check that what you copy passes
 
 - The agent that wrote a change does not approve, merge, or mark it
   verified. A different agent (fresh context, clean checkout) or Casey
-  reviews it and runs `scripts/verify.sh` plus the verify skill for the
-  features the change touches.
+  reviews it and runs `scripts/verify.sh`. For the features the change
+  touches, that agent drives the pages with
+  `.cursor/skills/verify/SKILL.md` and the suite gate with
+  `.cursor/skills/verify-omahoy/SKILL.md`.
 - The PR description lists: what changed, the tests or goldens that prove
   it, which feature-map entries were driven, and what was not checked.
 - The reviewer reports what it ran and saw, not what it assumes.

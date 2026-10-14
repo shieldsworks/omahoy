@@ -5,9 +5,9 @@ rule names. Arguments replace that set.
 
 ## Sub-features
 
-- `scan-default` exits 0 with empty stdout and stderr.
-- `scan-path` one path replaces the default set.
-- `scan-empty` a pathspec that lists no file exits 0.
+- `comment-scan` exits 0 with empty stdout and stderr.
+- `comment-scan-file` one path replaces the default set.
+- `comment-scan-empty` a pathspec that lists no file exits 0.
 
 ## How to get to it (user POV)
 
@@ -21,9 +21,9 @@ Preconditions:
 
 - Launch and Doctor passed.
 
-- **Default.** Run `drive comment-scan scripts/check-comments.sh`. `exit.txt` is `0`. `stdout.txt` and `stderr.txt` are empty.
-- **One file.** Run `drive comment-scan-file scripts/check-comments.sh scripts/verify.py`. `exit.txt` is `0`. Both streams are empty.
-- **No file.** Run `drive comment-scan-empty scripts/check-comments.sh 'no-such-*.qqq'`. `exit.txt` is `0`. Both streams are empty.
+- **Default.** Run `drive_gate comment-scan scripts/check-comments.sh`. `exit.txt` is `0`. `stdout.txt` and `stderr.txt` are empty.
+- **One file.** Run `drive_gate comment-scan-file scripts/check-comments.sh scripts/verify.py`. `exit.txt` is `0`. Both streams are empty.
+- **No file.** Run `drive_gate comment-scan-empty scripts/check-comments.sh 'no-such-*.qqq'`. `exit.txt` is `0`. Both streams are empty.
 
 ## Gotchas
 
