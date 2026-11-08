@@ -11,7 +11,10 @@ use crate::place::{Area, Position, coverage};
 use crate::sys::{Cmd, Dirs, Runner, Terminal, confirm};
 use std::path::PathBuf;
 
-pub const STOPPED: &str = "Setup stopped. Nothing changed.";
+/// omakeel may already be built by then, so this claims only what holds:
+/// nothing was saved and no plan ran.
+pub const STOPPED: &str =
+    "Setup stopped before anything was saved or applied. Run omahoy again to continue.";
 
 pub struct Ask<'a> {
     pub t: &'a mut dyn Terminal,
@@ -91,7 +94,7 @@ impl Ask<'_> {
     /// Every section in order, from defaults to a whole boat.
     pub fn first_run(&mut self, mut p: Partial) -> Result<Boat, String> {
         self.t
-            .say("Omahoy. A few questions about your boat; nothing changes until you say so.\n");
+            .say("Omahoy. A few questions about your boat. Past getting omakeel ready, setup saves and changes nothing until you say Go.\n");
         self.boat(&mut p)?;
         self.t.say("");
         let fix = self.hardware(&mut p)?;
@@ -1071,6 +1074,22 @@ serial:/dev/serial/by-id/usb-dAISy-if00  denied
         let got = Partial::from_existing(&dirs).name;
         std::fs::remove_dir_all(&tmp).unwrap();
         assert_eq!(got.as_deref(), Some("Salt"));
+    }
+
+    #[test]
+    fn the_words_do_not_promise_a_machine_that_setup_may_already_have_built_on() {
+        let mut t = Script::new(&["Dash"]);
+        let mut r = Commands::default();
+        let _ = ask(&mut t, &mut r, Partial::default());
+        assert!(
+            t.shown.starts_with(
+                "Omahoy. A few questions about your boat. Past getting omakeel ready, setup saves and changes nothing until you say Go.\n"
+            ),
+            "{}",
+            t.shown
+        );
+        assert!(!STOPPED.contains("Nothing changed"));
+        assert!(!t.shown.contains("nothing changes until you say so"));
     }
 
     #[test]
