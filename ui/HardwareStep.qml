@@ -151,6 +151,7 @@ Column {
             Btn {
                 theme: step.s.theme
                 text: step.s.netProbe && step.s.netProbe.verdict === "ok" ? "Use" : "Use anyway"
+                enabled: step.s.netProbe !== null && !!step.s.netProbe.source
                 onClicked: step.s.chooseNet("use")
             }
             Btn {

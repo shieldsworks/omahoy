@@ -15,6 +15,7 @@ JSON. The contract lives in `omahoy/docs/gui.md` in the omahoy repo.
 - `ui/*Step.qml`: one file per step. `Btn`, `Field`, `Tick`, `Words`: widgets.
 - `ui/Theme.qml`: the Omarchy theme, read from colors.toml.
 - `scripts/fake-omahoy`: contract-shaped answers, for driving the panel.
+- `scripts/check-panel.sh`: drives the panel through its IPC handler.
 - `scripts/verify.sh`: the gate.
 
 ## Done means verified
@@ -24,7 +25,8 @@ scripts/verify.sh
 ```
 
 It runs qmllint on `ui/*.qml`, the comment check, `bash -n` on the scripts,
-and a check that verification changed no file. Fix what it reports; never
+`scripts/check-panel.sh` (the panel driven headless against the fake), and a
+check that verification changed no file. Fix what it reports; never
 weaken the check that reported it.
 
 To drive the panel without the real binary:
@@ -44,7 +46,7 @@ check: that is the live desktop.
   pinned in `verify.sh`. Comments say why, and never mark deferred work or
   apologize.
 - Boat text is composed by the panel and sent on stdin. A value with a
-  newline, control character, `"` or `#` is refused in the form, never sent.
+  newline, control character (C0, DEL, C1, U+2028/2029), `"` or `#` is refused in the form, never sent.
 - Never stop a running `gui probe` or `gui apply`: they stop and restart
   the hub's service, and apply changes the machine.
 - Commit messages: `<scope>: <imperative summary>`, a body that says why.

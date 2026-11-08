@@ -20,6 +20,9 @@ scripts/check-comments.sh
 echo "bash -n"
 for f in run.sh scripts/*.sh scripts/fake-omahoy; do bash -n "$f"; done
 
+echo "panel"
+scripts/check-panel.sh
+
 echo "json"
 jq -e . manifest.json >/dev/null
 

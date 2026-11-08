@@ -21,8 +21,15 @@ Item {
     function close() {
         opened = false;
     }
+    // Closing never stops a running probe or apply: while one runs the
+    // window stays and says so. As a panel, the shell keeps this loaded
+    // (keepLoaded in manifest.json), so hiding it leaves the work running.
     function dismiss() {
-        if (standalone) Qt.quit();
+        if (app.setup.busy) {
+            app.setup.closeRefused = true;
+            opened = true;
+            Qt.callLater(() => win.visible = true);
+        } else if (standalone) Qt.quit();
         else if (shell) shell.hide("org.omahoy.setup");
         else opened = false;
     }
@@ -33,7 +40,7 @@ Item {
     // Quickshell keeps a process alive after its last window closes.
     Connections {
         target: Quickshell
-        function onLastWindowClosed() { if (app.standalone) Qt.quit(); }
+        function onLastWindowClosed() { if (app.standalone && !app.setup.busy) Qt.quit(); }
     }
 
     readonly property bool onReview: setup.step === "review"
@@ -50,7 +57,7 @@ Item {
         if (e.modifiers & Qt.AltModifier && e.key === Qt.Key_Right) setup.next();
         else if (e.modifiers & Qt.AltModifier && e.key === Qt.Key_Left) setup.back();
         else if (e.modifiers & Qt.ControlModifier && (e.key === Qt.Key_Return || e.key === Qt.Key_Enter)) app.advance();
-        else if (e.key === Qt.Key_Escape) { if (!setup.busy) dismiss(); }
+        else if (e.key === Qt.Key_Escape) app.dismiss();
         else return;
         e.accepted = true;
     }
@@ -64,11 +71,20 @@ Item {
                 step: app.setup.step,
                 stepIndex: app.setup.stepIndex,
                 complete: app.setup.complete,
+                ready: app.setup.ready,
+                units: app.setup.units,
+                draft: app.setup.draft,
+                clearance: app.setup.clearance,
+                closeRefused: app.setup.closeRefused,
+                refusing: app.setup.refusing,
+                useUucp: app.setup.useUucp,
+                planCurrent: app.setup.planCurrent,
                 busy: app.setup.busy,
                 loaded: app.setup.loaded,
                 sources: app.setup.sources(),
                 apps: app.setup.apps,
                 problems: app.setup.report ? app.setup.report.problems.length : -1,
+                problemList: app.setup.report ? app.setup.report.problems : [],
                 applyState: app.setup.applyState,
                 opened: app.opened
             });
@@ -84,6 +100,11 @@ Item {
         function probe(): void { app.setup.listen(); }
         function skipHardware(): void { app.setup.skipHardware(); }
         function go(): void { app.setup.go(); }
+        function close(): void { app.dismiss(); }
+        function allowSerial(): void { app.setup.allowSerial(); }
+        function chooseDevice(i: int, choice: string): void { app.setup.chooseDevice(i, choice); }
+        function testNet(hostPort: string): void { app.setup.testNet(hostPort); }
+        function chooseNet(choice: string): void { app.setup.chooseNet(choice); }
     }
 
     FloatingWindow {
@@ -213,7 +234,8 @@ Item {
                     elide: Text.ElideRight
                     wrapMode: Text.NoWrap
                     dim: true
-                    text: app.setup.busy ? "Working..." : app.setup.checking ? "Checking..."
+                    text: app.setup.closeRefused ? "Setup is working and can't be closed until it finishes."
+                        : app.setup.busy ? "Working..." : app.setup.checking ? "Checking..."
                         : app.onReview && !app.setup.complete ? "Fix the problems above to go on." : ""
                 }
                 Btn {
@@ -223,7 +245,7 @@ Item {
                     primary: true
                     text: app.lastStep ? "Go" : "Next"
                     enabled: app.lastStep
-                        ? app.setup.complete && !app.setup.busy && app.setup.applyState !== "done"
+                        ? app.setup.ready && !app.setup.busy && app.setup.applyState !== "done"
                         : true
                     onClicked: app.advance()
                 }
