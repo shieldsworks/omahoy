@@ -47,7 +47,8 @@ pub enum Step {
     },
     /// `systemctl --user enable --now`.
     Start(App),
-    /// Planned only when a running daemon's managed keys changed.
+    /// Planned when a running daemon started before its binary or its
+    /// config file was last written.
     Restart(App),
     /// `git init`, only when boat.toml says git and the vault isn't a repo.
     InitVault(PathBuf),
@@ -111,7 +112,7 @@ impl Step {
                 app.unit().unwrap_or(app.name())
             ),
             Step::Restart(app) => format!(
-                "restart {} for its new settings",
+                "restart {} to run its new binary and settings",
                 app.unit().unwrap_or(app.name())
             ),
             Step::InitVault(p) => format!("start a git repo in {}", show(p)),
@@ -170,7 +171,8 @@ pub fn plan(boat: &Boat, m: &Machine) -> Vec<Step> {
                 (dir, app.binary().map(|_| Build::NotBuilt), true)
             }
         };
-        if matches!(build, Some(Build::NotBuilt | Build::Stale)) {
+        let building = matches!(build, Some(Build::NotBuilt | Build::Stale));
+        if building {
             steps.push(Step::Build {
                 app,
                 dir: dir.clone(),
@@ -218,8 +220,16 @@ pub fn plan(boat: &Boat, m: &Machine) -> Vec<Step> {
             let (enabled, active) = state.map_or((false, false), |u| (u.enabled, u.active));
             if !(enabled && active) {
                 steps.push(Step::Start(app));
-            } else if wrote {
-                steps.push(Step::Restart(app));
+            }
+            // `enable --now` leaves an active unit running as it was, so
+            // a unit that is active but not enabled needs the restart too.
+            if active {
+                let started = state.and_then(|u| u.since);
+                let newer = |t: Option<u64>| matches!((t, started), (Some(t), Some(s)) if t > s);
+                let built_at = m.checkout(app).and_then(|c| c.built_at);
+                if building || wrote || newer(built_at) || newer(m.config_at.get(&app).copied()) {
+                    steps.push(Step::Restart(app));
+                }
             }
         }
     }
@@ -354,6 +364,7 @@ pub mod tests {
                     dir,
                     dev: false,
                     build: app.binary().map(|_| Build::Fresh),
+                    built_at: Some(100),
                     unit_file: app.unit().is_some(),
                 }),
             );
@@ -373,6 +384,7 @@ pub mod tests {
                         file: Link::Ours,
                         enabled: true,
                         active: true,
+                        since: Some(200),
                     },
                 );
             }
@@ -387,6 +399,7 @@ pub mod tests {
             bins,
             omahoy: None,
             plugins: Some(plugins),
+            config_at: configs.keys().map(|a| (*a, 150)).collect(),
             configs,
             units,
             fetched: Fetched::default()
@@ -429,6 +442,7 @@ pub mod tests {
                     file: Link::Missing,
                     enabled: false,
                     active: false,
+                    since: None,
                 };
             }
         }
@@ -506,8 +520,96 @@ pub mod tests {
             vec![
                 "write ~/.config/omakeel/config.toml:\n      source is serial:/dev/ttyACM0:38400; boat.toml says serial:/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0:4800, serial:/dev/serial/by-id/usb-dAISy_AIS_Receiver_0001-if00:38400",
                 "write ~/.config/omatide/config.toml:\n      region is 36.8,-123.8,38.8,-121.6; boat.toml says 46.687,-123.513,48.687,-121.313",
-                "restart omakeel.service for its new settings",
+                "restart omakeel.service to run its new binary and settings",
             ]
+        );
+    }
+
+    fn restarts(b: &Boat, m: &Machine) -> Vec<String> {
+        lines(b, m)
+            .into_iter()
+            .filter(|l| l.starts_with("restart") || l.starts_with("start"))
+            .collect()
+    }
+
+    #[test]
+    fn a_daemon_restarts_when_its_binary_or_config_is_newer_than_its_start() {
+        let b = wavelength();
+        let mut m = healthy(&b);
+        assert_eq!(restarts(&b, &m), Vec::<String>::new());
+
+        if let Some(OnDisk::Checkout(c)) = m.apps.get_mut(&App::Keel) {
+            c.built_at = Some(300);
+        }
+        assert_eq!(
+            restarts(&b, &m),
+            vec!["restart omakeel.service to run its new binary and settings"],
+            "rebuilt after it started, with no config change this run"
+        );
+
+        let mut m = healthy(&b);
+        m.config_at.insert(App::Logbook, 250);
+        assert_eq!(
+            restarts(&b, &m),
+            vec!["restart omalogbook.service to run its new binary and settings"],
+            "an earlier apply wrote the config and was interrupted before the restart"
+        );
+
+        let mut m = healthy(&b);
+        m.config_at.insert(App::Logbook, 200);
+        if let Some(OnDisk::Checkout(c)) = m.apps.get_mut(&App::Logbook) {
+            c.built_at = Some(200);
+        }
+        assert_eq!(
+            restarts(&b, &m),
+            Vec::<String>::new(),
+            "written in the second it started is not newer"
+        );
+    }
+
+    #[test]
+    fn a_rebuild_planned_now_restarts_the_daemon_that_runs_the_old_binary() {
+        let b = wavelength();
+        let mut m = healthy(&b);
+        if let Some(OnDisk::Checkout(c)) = m.apps.get_mut(&App::Keel) {
+            c.build = Some(Build::Stale);
+        }
+        assert_eq!(
+            restarts(&b, &m),
+            vec!["restart omakeel.service to run its new binary and settings"]
+        );
+    }
+
+    #[test]
+    fn enable_now_does_not_restart_an_active_unit_so_a_stale_one_gets_both() {
+        let b = wavelength();
+        let mut m = healthy(&b);
+        if let Some(u) = m.units.get_mut(&App::Keel) {
+            u.enabled = false;
+        }
+        assert_eq!(
+            restarts(&b, &m),
+            vec!["start omakeel.service now and at every login"],
+            "up to date: enabling is enough"
+        );
+        m.config_at.insert(App::Keel, 250);
+        assert_eq!(
+            restarts(&b, &m),
+            vec![
+                "start omakeel.service now and at every login",
+                "restart omakeel.service to run its new binary and settings"
+            ]
+        );
+        let mut off = healthy(&b);
+        if let Some(u) = off.units.get_mut(&App::Keel) {
+            u.active = false;
+            u.since = None;
+        }
+        off.config_at.insert(App::Keel, 250);
+        assert_eq!(
+            restarts(&b, &off),
+            vec!["start omakeel.service now and at every login"],
+            "a stopped unit starts on the new files"
         );
     }
 
@@ -537,6 +639,7 @@ pub mod tests {
                 dir: "/work/omahelm".into(),
                 dev: true,
                 build: Some(Build::Stale),
+                built_at: Some(100),
                 unit_file: false,
             }),
         );

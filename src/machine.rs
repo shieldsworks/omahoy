@@ -6,6 +6,7 @@ use crate::place::Area;
 use crate::sys::{Cmd, Dirs, Runner};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::time::UNIX_EPOCH;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Build {
@@ -41,6 +42,8 @@ pub struct Checkout {
     pub dev: bool,
     /// None for omalookout, which has no binary.
     pub build: Option<Build>,
+    /// When the binary was last written, in Unix seconds.
+    pub built_at: Option<u64>,
     /// The checkout ships `dist/<unit>`.
     pub unit_file: bool,
 }
@@ -68,6 +71,9 @@ pub struct Unit {
     pub file: Link,
     pub enabled: bool,
     pub active: bool,
+    /// When the running unit started, in Unix seconds. None when it isn't
+    /// running or systemd gave no usable time.
+    pub since: Option<u64>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
@@ -146,6 +152,8 @@ pub struct Machine {
     /// Plugin id to enabled; None when the shell didn't answer.
     pub plugins: Option<BTreeMap<String, bool>>,
     pub configs: BTreeMap<App, String>,
+    /// When each app's config file was last written, in Unix seconds.
+    pub config_at: BTreeMap<App, u64>,
     pub units: BTreeMap<App, Unit>,
     pub fetched: Fetched,
     pub charts_on_disk: bool,
@@ -194,6 +202,7 @@ impl Machine {
         let mut apps = BTreeMap::new();
         let mut bins = BTreeMap::new();
         let mut configs = BTreeMap::new();
+        let mut config_at = BTreeMap::new();
         let mut units = BTreeMap::new();
         for app in App::ALL {
             let on_disk = find(r, dirs, app);
@@ -205,6 +214,9 @@ impl Machine {
                 bins.insert(app, link_state(&dirs.bin.join(bin), &target, Some(bin)));
             }
             if let Some(p) = app.config(dirs) {
+                if let Some(t) = mtime(&p) {
+                    config_at.insert(app, t);
+                }
                 configs.insert(app, std::fs::read_to_string(p).unwrap_or_default());
             }
             if let Some(unit) = app.unit() {
@@ -217,12 +229,33 @@ impl Machine {
                     r.read(&Cmd::new("systemctl", &["--user", verb, unit]))
                         .is_ok()
                 };
+                let enabled = ask(r, "is-enabled");
+                let active = ask(r, "is-active");
+                let since = if active {
+                    r.read(&Cmd::new(
+                        "systemctl",
+                        &[
+                            "--user",
+                            "--timestamp=unix",
+                            "show",
+                            "-p",
+                            "ActiveEnterTimestamp",
+                            "--value",
+                            unit,
+                        ],
+                    ))
+                    .ok()
+                    .and_then(|out| parse_since(&out))
+                } else {
+                    None
+                };
                 units.insert(
                     app,
                     Unit {
                         file,
-                        enabled: ask(r, "is-enabled"),
-                        active: ask(r, "is-active"),
+                        enabled,
+                        active,
+                        since,
                     },
                 );
             }
@@ -269,6 +302,7 @@ impl Machine {
             omahoy,
             plugins,
             configs,
+            config_at,
             units,
             fetched,
             charts_on_disk,
@@ -284,6 +318,21 @@ impl Machine {
         }
         m
     }
+}
+
+/// `ActiveEnterTimestamp` printed with `--timestamp=unix`: `@1762567029`.
+/// Empty for a unit that never started; anything else is not a time.
+pub fn parse_since(out: &str) -> Option<u64> {
+    let t = out.trim();
+    t.strip_prefix('@').unwrap_or(t).parse().ok()
+}
+
+fn mtime(p: &Path) -> Option<u64> {
+    std::fs::metadata(p)
+        .and_then(|m| m.modified())
+        .ok()
+        .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
 }
 
 /// In the uucp group in /etc/group, and in this login's groups.
@@ -326,6 +375,9 @@ pub fn find(r: &mut dyn Runner, dirs: &Dirs, app: App) -> OnDisk {
             }
         },
     };
+    let built_at = app
+        .binary()
+        .and_then(|bin| mtime(&dir.join("target/release").join(bin)));
     let build = app.binary().map(|bin| {
         let binary = dir.join("target/release").join(bin).exists();
         let record = std::fs::read_to_string(dir.join(BUILT)).ok();
@@ -339,6 +391,7 @@ pub fn find(r: &mut dyn Runner, dirs: &Dirs, app: App) -> OnDisk {
         dir,
         dev,
         build,
+        built_at,
         unit_file,
     })
 }
@@ -515,6 +568,47 @@ mod tests {
             OnDisk::Checkout(c) => c.build,
             OnDisk::Absent => None,
         }
+    }
+
+    #[test]
+    fn systemd_start_times_parse_from_unix_timestamps() {
+        assert_eq!(parse_since("@1762567029\n"), Some(1_762_567_029));
+        assert_eq!(parse_since("1762567029"), Some(1_762_567_029));
+        assert_eq!(parse_since("\n"), None, "never started");
+        assert_eq!(parse_since("Sat 2026-11-07 18:17:09 PST"), None);
+    }
+
+    #[test]
+    fn survey_reads_when_the_unit_started_and_when_its_files_were_written() {
+        use std::time::Duration;
+        let (dirs, _) = built_helm("since");
+        let keel = Machine::home_of(&dirs, App::Keel);
+        std::fs::create_dir_all(keel.join("target/release")).unwrap();
+        let bin = keel.join("target/release/omakeel");
+        let set = |p: &Path, secs: u64| {
+            let f = std::fs::OpenOptions::new().write(true).open(p).unwrap();
+            f.set_modified(UNIX_EPOCH + Duration::from_secs(secs))
+                .unwrap();
+        };
+        std::fs::write(&bin, "").unwrap();
+        set(&bin, 1000);
+        let conf = dirs.config.join("omakeel/config.toml");
+        std::fs::create_dir_all(conf.parent().unwrap()).unwrap();
+        std::fs::write(&conf, "source = demo\n").unwrap();
+        set(&conf, 2000);
+        let mut r = Commands::default()
+            .on("systemctl --user is-active omakeel.service", Ok(""))
+            .on(
+                "systemctl --user --timestamp=unix show -p ActiveEnterTimestamp --value omakeel.service",
+                Ok("@1500\n"),
+            );
+        let b = crate::boat::tests::wavelength();
+        let m = Machine::survey(&mut r, &dirs, &b, None);
+        let _ = std::fs::remove_dir_all(&dirs.home);
+        assert_eq!(m.units[&App::Keel].since, Some(1500));
+        assert_eq!(m.checkout(App::Keel).and_then(|c| c.built_at), Some(1000));
+        assert_eq!(m.config_at.get(&App::Keel), Some(&2000));
+        assert_eq!(m.units[&App::Logbook].since, None, "not running");
     }
 
     #[test]
