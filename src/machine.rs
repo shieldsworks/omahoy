@@ -6,14 +6,31 @@ use crate::place::Area;
 use crate::sys::{Cmd, Dirs, Runner};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::time::UNIX_EPOCH;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Build {
     NotBuilt,
-    /// The binary is older than the checkout's last commit.
+    /// The binary was built from a commit other than the checkout's HEAD,
+    /// or setup has no record of what it was built from.
     Stale,
     Fresh,
+}
+
+/// Under the checkout: the HEAD commit the last successful build started
+/// from. A binary's mtime can't say this, because a docs-only commit
+/// moves HEAD and leaves the binary untouched.
+pub const BUILT: &str = "target/release/.omahoy-built";
+
+/// Fresh when the record names HEAD. A binary with no record is stale
+/// once, until the next build writes one. When git can't name HEAD there
+/// is nothing to compare, so the binary stands.
+pub fn build_state(binary: bool, record: Option<&str>, head: Option<&str>) -> Build {
+    match (binary, head) {
+        (false, _) => Build::NotBuilt,
+        (true, None) => Build::Fresh,
+        (true, Some(h)) if record.map(str::trim) == Some(h.trim()) => Build::Fresh,
+        (true, Some(_)) => Build::Stale,
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -310,20 +327,10 @@ pub fn find(r: &mut dyn Runner, dirs: &Dirs, app: App) -> OnDisk {
         },
     };
     let build = app.binary().map(|bin| {
-        let built = std::fs::metadata(dir.join("target/release").join(bin))
-            .and_then(|m| m.modified())
-            .ok()
-            .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-            .map(|d| d.as_secs());
-        let committed = r
-            .read(&Cmd::new("git", &["log", "-1", "--format=%ct"]).in_dir(&dir))
-            .ok()
-            .and_then(|s| s.trim().parse::<u64>().ok());
-        match (built, committed) {
-            (None, _) => Build::NotBuilt,
-            (Some(b), Some(c)) if b < c => Build::Stale,
-            _ => Build::Fresh,
-        }
+        let binary = dir.join("target/release").join(bin).exists();
+        let record = std::fs::read_to_string(dir.join(BUILT)).ok();
+        let head = head_of(r, &dir);
+        build_state(binary, record.as_deref(), head.as_deref())
     });
     let unit_file = app
         .unit()
@@ -334,6 +341,14 @@ pub fn find(r: &mut dyn Runner, dirs: &Dirs, app: App) -> OnDisk {
         build,
         unit_file,
     })
+}
+
+/// The commit the checkout is at.
+pub fn head_of(r: &mut dyn Runner, dir: &Path) -> Option<String> {
+    r.read(&Cmd::new("git", &["rev-parse", "HEAD"]).in_dir(dir))
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 /// A ~/.local/bin link into some checkout's target/release is that
@@ -481,6 +496,71 @@ pub fn parse_watch(text: &str) -> Vec<SourceStatus> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::plan::Step;
+    use crate::sys::fake::Commands;
+
+    /// A home in the temp dir, with omahelm checked out and built.
+    fn built_helm(name: &str) -> (Dirs, PathBuf) {
+        let tmp = std::env::temp_dir().join(format!("omahoy-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        let dirs = Dirs::resolve(Some(tmp.clone().into()), None, None, None, None).unwrap();
+        let dir = dirs.plugins.join("org.omahoy.helm");
+        std::fs::create_dir_all(dir.join("target/release")).unwrap();
+        std::fs::write(dir.join("target/release/omahelm"), "").unwrap();
+        (dirs, dir)
+    }
+
+    fn build_of(r: &mut Commands, dirs: &Dirs) -> Option<Build> {
+        match find(r, dirs, App::Helm) {
+            OnDisk::Checkout(c) => c.build,
+            OnDisk::Absent => None,
+        }
+    }
+
+    #[test]
+    fn a_build_is_stale_only_when_head_moved_since_it_was_made() {
+        assert_eq!(build_state(false, None, Some("a")), Build::NotBuilt);
+        assert_eq!(build_state(true, None, Some("a")), Build::Stale);
+        assert_eq!(build_state(true, Some("a\n"), Some("a")), Build::Fresh);
+        assert_eq!(build_state(true, Some("a"), Some("b")), Build::Stale);
+        assert_eq!(build_state(true, None, None), Build::Fresh);
+    }
+
+    #[test]
+    fn a_docs_only_commit_is_rebuilt_once_and_then_settles() {
+        let (dirs, dir) = built_helm("settle");
+        let at = |head: &str| Commands::default().on("git rev-parse HEAD", Ok(head));
+        let build = |head: &str| {
+            let mut r = at(head)
+                .on(&format!("mise trust --quiet {}", dir.display()), Ok(""))
+                .on("mise install", Ok(""))
+                .on("mise exec -- cargo build --release --locked", Ok(""));
+            Step::Build {
+                app: App::Helm,
+                dir: dir.clone(),
+            }
+            .run(&mut r, &dirs)
+        };
+        assert_eq!(
+            build_of(&mut at("c1\n"), &dirs),
+            Some(Build::Stale),
+            "a binary with no record is rebuilt once"
+        );
+        build("c1\n").unwrap();
+        assert_eq!(build_of(&mut at("c1\n"), &dirs), Some(Build::Fresh));
+        assert_eq!(
+            build_of(&mut at("c2\n"), &dirs),
+            Some(Build::Stale),
+            "a new commit"
+        );
+        build("c2\n").unwrap();
+        assert_eq!(
+            build_of(&mut at("c2\n"), &dirs),
+            Some(Build::Fresh),
+            "the binary is older than the commit's date, and still current"
+        );
+        let _ = std::fs::remove_dir_all(&dirs.home);
+    }
 
     #[test]
     fn plugin_states_read_the_top_level_of_each_plugin() {

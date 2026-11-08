@@ -3,7 +3,7 @@
 //! harmless.
 
 use crate::conf;
-use crate::machine::Fetched;
+use crate::machine::{BUILT, Fetched, head_of};
 use crate::plan::Step;
 use crate::sys::{Cmd, Dirs, Runner, symlink_atomic, write_atomic};
 use std::path::Path;
@@ -50,6 +50,7 @@ impl Step {
                 }
             }
             Step::Build { dir, .. } => {
+                let head = head_of(r, dir);
                 r.run(&Cmd::new("mise", &["trust", "--quiet"]).path_arg(dir))?;
                 r.run(&Cmd::new("mise", &["install"]).in_dir(dir))?;
                 r.run(
@@ -58,7 +59,11 @@ impl Step {
                         &["exec", "--", "cargo", "build", "--release", "--locked"],
                     )
                     .in_dir(dir),
-                )
+                )?;
+                match head {
+                    Some(h) => write_atomic(&dir.join(BUILT), &format!("{h}\n")),
+                    None => Ok(()),
+                }
             }
             Step::Link { link, target } => link_over(target, link),
             Step::EnablePlugin(app) => match app.plugin_id() {
