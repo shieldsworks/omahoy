@@ -136,15 +136,16 @@ fn converge(e: &mut Env<'_>, boat: &Boat, yes: bool) -> Result<i32, String> {
     let steps = plan(boat, &m);
     if steps.is_empty() {
         e.t.say("Everything matches boat.toml.");
-        needs_you(e.t, &findings(boat, &m));
-        return Ok(0);
+        let found = findings(boat, &m);
+        needs_you(e.t, &found);
+        return Ok(i32::from(!found.is_empty()));
     }
     e.t.say("Here is what setup will do:");
     for s in &steps {
         e.t.say(&format!("  {}", s.describe(e.dirs)));
     }
     if !yes && !confirm(e.t, "Go?", true) {
-        e.t.say("Nothing changed. Run omahoy apply when you're ready.");
+        e.t.say("Stopped before applying. Run omahoy apply when you're ready.");
         return Ok(0);
     }
     for s in &steps {
@@ -156,14 +157,29 @@ fn converge(e: &mut Env<'_>, boat: &Boat, yes: bool) -> Result<i32, String> {
             )
         })?;
     }
-    e.t.say("\nDone.");
-    if boat.apps.has(App::Helm) {
+    let after = Machine::survey(e.r, e.dirs, boat, e.own.as_deref());
+    let left = plan(boat, &after);
+    let found = findings(boat, &after);
+    if left.is_empty() && found.is_empty() {
+        e.t.say("\nDone.");
+    } else if left.is_empty() {
+        e.t.say("\nApplied.");
+    } else {
+        e.t.say("\nNot finished. Still to do:");
+        for s in &left {
+            e.t.say(&format!("  {}", s.describe(e.dirs)));
+        }
+    }
+    if left.is_empty() && boat.apps.has(App::Helm) {
         e.t.say("Open the chart: omarchy-shell shell toggle org.omahoy.helm {}");
     }
-    e.t.say("Run omahoy doctor any time to check on things.");
-    let after = Machine::survey(e.r, e.dirs, boat, e.own.as_deref());
-    needs_you(e.t, &findings(boat, &after));
-    Ok(0)
+    needs_you(e.t, &found);
+    if left.is_empty() {
+        e.t.say("Run omahoy doctor any time to check on things.");
+    } else {
+        e.t.say("Run omahoy apply to try again, or omahoy doctor to see why.");
+    }
+    Ok(i32::from(!(left.is_empty() && found.is_empty())))
 }
 
 fn needs_you(t: &mut dyn Terminal, found: &[String]) {
@@ -238,6 +254,116 @@ mod tests {
             "{:?}",
             r.log
         );
+    }
+
+    /// A tmp home with only omakeel on it, built and linked, for a boat
+    /// that has the demo hub and no apps. Everything matches unless the
+    /// unit is stopped.
+    fn keel_only(name: &str, active: bool, plugins_listed: bool) -> (Dirs, Boat, Commands) {
+        let dirs = tmp_dirs(name);
+        let mut boat = crate::boat::tests::wavelength();
+        boat.hub = crate::hub::Hub::Demo;
+        boat.apps = crate::boat::Apps::choose(&[], boat.area).unwrap();
+        let keel = Machine::home_of(&dirs, App::Keel);
+        let bin = keel.join("target/release/omakeel");
+        std::fs::create_dir_all(bin.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(keel.join("dist")).unwrap();
+        std::fs::write(&bin, "").unwrap();
+        std::fs::write(keel.join(crate::machine::BUILT), "abc\n").unwrap();
+        std::fs::write(keel.join("dist/omakeel.service"), "").unwrap();
+        std::fs::create_dir_all(&dirs.bin).unwrap();
+        std::fs::create_dir_all(&dirs.units).unwrap();
+        std::os::unix::fs::symlink(&bin, dirs.bin.join("omakeel")).unwrap();
+        std::os::unix::fs::symlink(
+            keel.join("dist/omakeel.service"),
+            dirs.units.join("omakeel.service"),
+        )
+        .unwrap();
+        let conf = App::Keel.config(&dirs).unwrap();
+        std::fs::create_dir_all(conf.parent().unwrap()).unwrap();
+        std::fs::write(
+            &conf,
+            crate::conf::edit("", &crate::apps::managed(App::Keel, &boat)),
+        )
+        .unwrap();
+        let mut r = Commands::default()
+            .on("pacman -Q git", Ok(""))
+            .on("git rev-parse HEAD", Ok("abc\n"))
+            .on("systemctl --user is-enabled omakeel.service", Ok(""));
+        if plugins_listed {
+            r = r.on("omarchy plugin list --json", Ok("[]"));
+        }
+        if active {
+            r = r
+                .on("systemctl --user is-active omakeel.service", Ok(""))
+                .on(
+                    "systemctl --user --timestamp=unix show -p ActiveEnterTimestamp --value omakeel.service",
+                    Ok("@99999999999\n"),
+                )
+                .on(&format!("{} watch --once", bin.display()), Ok("fix none\n"));
+        }
+        (
+            dirs,
+            boat,
+            r.on("systemctl --user enable --now omakeel.service", Ok("")),
+        )
+    }
+
+    #[test]
+    fn apply_that_leaves_steps_undone_says_so_and_exits_1() {
+        let (dirs, boat, mut r) = keel_only("undone", false, true);
+        let mut t = Script::new(&[]);
+        let code = converge(
+            &mut Env {
+                t: &mut t,
+                r: &mut r,
+                dirs: &dirs,
+                own: None,
+            },
+            &boat,
+            true,
+        );
+        let _ = std::fs::remove_dir_all(&dirs.home);
+        assert_eq!(code, Ok(1));
+        assert!(
+            t.shown.contains(
+                "→ start omakeel.service now and at every login\n\nNot finished. Still to do:\n  start omakeel.service now and at every login\n"
+            ),
+            "{}",
+            t.shown
+        );
+        assert!(!t.shown.contains("Done."));
+    }
+
+    #[test]
+    fn a_machine_that_matches_exits_0_and_one_with_findings_exits_1() {
+        let (dirs, boat, mut r) = keel_only("matches", true, true);
+        let mut t = Script::new(&[]);
+        let mut env = Env {
+            t: &mut t,
+            r: &mut r,
+            dirs: &dirs,
+            own: None,
+        };
+        assert_eq!(converge(&mut env, &boat, true), Ok(0));
+        assert!(t.shown.contains("Everything matches boat.toml."));
+
+        let (dirs2, boat2, mut r2) = keel_only("findings", true, false);
+        let mut t2 = Script::new(&[]);
+        let code = converge(
+            &mut Env {
+                t: &mut t2,
+                r: &mut r2,
+                dirs: &dirs2,
+                own: None,
+            },
+            &boat2,
+            true,
+        );
+        let _ = std::fs::remove_dir_all(&dirs.home);
+        let _ = std::fs::remove_dir_all(&dirs2.home);
+        assert_eq!(code, Ok(1));
+        assert!(t2.shown.contains("Needs you:"), "{}", t2.shown);
     }
 
     #[test]
