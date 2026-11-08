@@ -5,7 +5,9 @@ cd "$(dirname "$0")/.."
 
 pin=f3ec8a2d07e8f1e7c50770d0bb93579fc7bb0d60fc8e359a22607ba55cebc6c6
 qmllint=${QMLLINT:-/usr/lib/qt6/bin/qmllint}
-before=$(git status --porcelain)
+# Contents, not status: a file that was already dirty can change again.
+fingerprint() { { git status --porcelain; git ls-files -z --cached --others --exclude-standard | xargs -0 sha256sum; } 2>&1; }
+before=$(fingerprint)
 
 echo "qmllint"
 "$qmllint" ui/*.qml
@@ -22,6 +24,6 @@ echo "json"
 jq -e . manifest.json >/dev/null
 
 echo "clean"
-after=$(git status --porcelain)
+after=$(fingerprint)
 [[ $before == "$after" ]] || { echo "verification changed files:" >&2; diff <(echo "$before") <(echo "$after") >&2 || true; exit 1; }
 echo "ok"
