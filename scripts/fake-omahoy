@@ -3,7 +3,7 @@
 # omahoy's docs/gui.md, so the panel can be driven without the real binary:
 #   OMAHOY_BIN=$PWD/scripts/fake-omahoy ./run.sh
 # It follows the contract's shape, not its rules: the real omahoy decides.
-# FAKE_OMAHOY_FAST=1 skips the sleeps. FAKE_OMAHOY_STATE names the file that
+# FAKE_OMAHOY_FAST=1 skips the sleeps; FAKE_OMAHOY_CHECK_SLEEP=N slows check. FAKE_OMAHOY_STATE names the file that
 # remembers join-uucp (default: in XDG_RUNTIME_DIR); delete it to start over.
 set -euo pipefail
 
@@ -89,7 +89,7 @@ report() {
         clearanceIn: (if $clearance == null then null else {feet: conv($clearance; $units; "feet"), meters: conv($clearance; $units; "meters"), fathoms: conv($clearance; $units; "fathoms")} end),
         defaultClearance: {feet: 2, meters: 0.6, fathoms: 0.5},
         apps: $apps,
-        appsAllowed: $allowed
+        appsAllowed: (($chosen // []) | map(select(. as $c | $allowed | index($c) != null)))
       }'
 }
 
@@ -99,6 +99,7 @@ case $cmd in
     jq -n --argjson r "$(report "$text")" '{exists: false, report: $r}'
     ;;
   check)
+    [[ -z ${FAKE_OMAHOY_CHECK_SLEEP:-} ]] || sleep "$FAKE_OMAHOY_CHECK_SLEEP"
     report "$(cat)"
     ;;
   probe)
@@ -128,7 +129,9 @@ case $cmd in
         case $s in
           tcp:*|[a-z0-9.-]*:[0-9]*)
             host=${s#tcp:}
-            if [[ $host == *unreachable* ]]; then
+            if [[ $host != *:[0-9]* ]]; then
+              d=$(jq -n --arg s "tcp:$host" '{spec:$s,name:$s,kind:"tcp",verdict:"error",describe:"not host:port",source:null,fix:null}')
+            elif [[ $host == *unreachable* ]]; then
               d=$(jq -n --arg s "tcp:$host" '{spec:$s,name:$s,kind:"tcp",verdict:"unreachable",describe:"connection refused",source:$s,fix:null}')
             else
               d=$(jq -n --arg s "tcp:$host" '{spec:$s,name:$s,kind:"tcp",verdict:"ok",describe:"AIS and GPS, 12 good sentences, fix 37°52.0′N 122°18.8′W",source:$s,fix:{lat:37.8667,lon:-122.3134}}')
