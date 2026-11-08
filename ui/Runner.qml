@@ -7,13 +7,16 @@ import Quickshell.Io
 // line at a time on `lines` and `errLines` as it happens, and whole in
 // `out` and `err` when the command exits. There is no stop: a probe stops
 // the hub's service and starts it again at the end, and an apply changes the
-// machine, so each runs to its end even if the window closes.
+// machine, so each runs to its end even if the window closes. The runner
+// stays busy until `finished` is delivered, so a second start can't reset
+// the output or code a pending completion is about to report.
 Item {
     id: runner
 
     property var argv: []
     property string input: ""
-    readonly property bool running: proc.running
+    readonly property bool running: proc.running || delivering
+    property bool delivering: false
     property var lines: []
     property var errLines: []
     property int code: -1
@@ -24,7 +27,7 @@ Item {
     signal finished(int code)
 
     function start() {
-        if (proc.running) return;
+        if (runner.running) return;
         lines = [];
         errLines = [];
         code = -1;
@@ -42,6 +45,7 @@ Item {
         }
         onExited: (exitCode, exitStatus) => {
             runner.code = exitCode;
+            runner.delivering = true;
             settle.restart();
         }
     }
@@ -50,6 +54,9 @@ Item {
     Timer {
         id: settle
         interval: 40
-        onTriggered: runner.finished(runner.code)
+        onTriggered: {
+            runner.delivering = false;
+            runner.finished(runner.code);
+        }
     }
 }

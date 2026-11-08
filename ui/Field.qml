@@ -42,7 +42,11 @@ Item {
                 clip: true
                 activeFocusOnTab: true
                 onTextEdited: field.edited(text)
-                Keys.onReturnPressed: nextItemInFocusChain().forceActiveFocus()
+                // Ctrl+Return goes on in the window, so it passes through.
+                Keys.onReturnPressed: e => {
+                    if (e.modifiers & Qt.ControlModifier) e.accepted = false;
+                    else nextItemInFocusChain().forceActiveFocus();
+                }
                 Binding on text { value: field.text }
                 Text {
                     anchors.fill: parent
