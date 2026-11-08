@@ -35,6 +35,22 @@ the others read from; the rest are Omarchy plugins.
 | [omatiller](https://github.com/shieldsworks/omatiller) | Tiller pilot control |
 | [omarig](https://github.com/shieldsworks/omarig) | Open sensor hardware and firmware |
 
+## Get started
+
+```sh
+git clone https://github.com/shieldsworks/omahoy && cd omahoy
+./omahoy
+```
+
+Setup asks about your boat, its GPS and AIS, where it sails and which apps you
+want. It saves the answers to `~/.config/omahoy/boat.toml`, shows what it will
+do, and on your word installs, configures and starts the apps. Run it again to
+change an answer.
+
+`omahoy doctor` checks the machine against `boat.toml` at any time. It changes
+nothing, and says what `omahoy apply` would put right.
+[docs/onboarding.md](docs/onboarding.md) has the details.
+
 ## Principles
 
 - **Rust from day one.** Engines, the hub, and the firmware.

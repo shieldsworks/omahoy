@@ -1,19 +1,23 @@
 # Working on omahoy
 
 omahoy is the umbrella repo of the Omahoy suite, small Omarchy apps for
-sailors, and the source of omahoy.org. Vercel serves `site/` as static
+sailors. It holds the source of omahoy.org and `omahoy`, the setup program
+that installs and configures the suite (`docs/onboarding.md`). Vercel serves `site/` as static
 files with no build step, and every push to `main` deploys, so anything
 under `site/` is public as soon as it lands. The apps live in their own
 repos under github.com/shieldsworks.
 
-There is no Rust in this repo. The suite's Rust rules (the Cargo `[lints]`
-table, clippy pedantic, `--locked`, `mise`, QML) are not part of this repo,
-and adding them here is not a planned follow-up.
+The `omahoy` crate at the root is the setup program. It keeps the apps' Rust
+rules: `mise` pins the toolchain, every cargo command is `--locked`, and the
+Cargo `[lints]` table and `clippy.toml` are gates. There is no QML here.
 
 ## Toolchain
 
 `git`, `bash`, `tmux`, and `python3` 3.10 or newer, standard library only.
-Chromium or Google Chrome for the verify skill. Nothing to install.
+Chromium or Google Chrome for the verify skill. For the crate, run `mise
+install` first: `mise.toml` pins Rust 1.98 with rustfmt and clippy.
+`Cargo.toml`'s `rust-version` is 1.89, and `clippy.toml`'s `msrv` must
+equal it.
 
 ## Done means verified
 
@@ -23,7 +27,9 @@ You are not done until this passes from the repo root:
 scripts/verify.sh
 ```
 
-`scripts/verify.sh --list` names each check and the rule it guards.
+`scripts/verify.sh --list` names each check and the rule it guards. The
+`crate` check runs rustfmt, clippy on all targets with warnings denied and
+`cargo test`, through `mise exec`, whenever `Cargo.toml` is at the root.
 `scripts/verify.sh <check>...` runs only the checks you name. Every run
 ends by checking that verification created or changed no file. CI runs the
 same command, then its own `git status` check. Fix what it reports; never
@@ -44,6 +50,7 @@ is changing them:
 
 - `.github/workflows/`
 - `scripts/verify.sh`, `scripts/verify.py`, `scripts/check-comments.sh`
+- `[lints]` in `Cargo.toml`, and `clippy.toml`
 
 Such a PR merges only after review by someone other than its author. The
 reviewer is either Casey or Casey's delegated reviewer Dev.
@@ -72,6 +79,34 @@ PR.
   says what changed visibly.
 - Checks read the checkout and write nothing to it. Tests write only to a
   temp dir.
+
+## The setup crate
+
+- std only. No crates; the answer to adding one is no.
+- No `unwrap()` outside tests, and `expect` only with the invariant that
+  makes it safe (clippy, `unwrap_used` and `expect_used`). No `unsafe`
+  (`unsafe_code = "forbid"`). A silenced lint says why.
+- Every behavior change lands with a test. The tested shapes are: `plan`
+  tables over a hand-built `Machine`, `conf::edit` goldens, `Boat`
+  parse/render round trips with line-numbered problems, coverage and
+  `Area::around` cases, depth math, probe-line parsing, and the questions
+  driven through `sys::fake::Script` with `sys::fake::Commands`.
+- Tests never run a real command. Commands go through the `Runner` trait,
+  the terminal through `Terminal`; the fakes fail any command they weren't
+  scripted with. Tests write only to a temp dir.
+- `Machine::survey` only reads. `plan` and `findings` are pure. `Step::run`
+  in `src/run.rs` is the only code that changes the machine.
+- Never replace what someone else made: a file in `~/.local/bin` that isn't
+  a link, a link to anything but a build of the same binary, a unit file
+  that isn't omahoy's link, or a dev symlink in
+  `~/.config/omarchy/plugins`, which is built where it points.
+- `docs/onboarding.md` is the contract for what setup asks, writes and
+  runs. Change it in the same commit as the behavior.
+- To prove a change, run `target/release/omahoy doctor` and a scripted
+  setup with `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME` and
+  `XDG_STATE_HOME` pointed at a temp dir and stub `omarchy`, `systemctl`,
+  `pacman`, `sudo` and `sg` first on `PATH`. Never run `apply` against a
+  real home to test it.
 
 ## No apologetic comments
 
@@ -178,6 +213,12 @@ You will copy what you see. Before copying, check that what you copy passes
   outside `site/`, so they are never served.
 
 ## Layout
+
+- `omahoy`: the bootstrap. It gets mise, the pinned Rust, builds the crate
+  and execs `target/release/omahoy`.
+- `Cargo.toml`, `Cargo.lock`, `mise.toml`, `clippy.toml`, `src/`: the
+  setup crate. `docs/onboarding.md` has its code map.
+- `docs/onboarding.md`: what setup asks, writes and runs.
 
 - `site/index.html`: the home page, with the inline wordmark, the Bay chart
   drawn from `bay.js`, the app list and the theme picker.
