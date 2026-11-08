@@ -66,10 +66,12 @@ pub struct Boat {
     pub git: bool,
 }
 
-/// One thing wrong with boat.toml. Line 0 is the file as a whole.
+/// One thing wrong with boat.toml. Line 0 is the file as a whole. `key` is
+/// the boat.toml key the problem is on, when it is on one.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Problem {
     pub line: usize,
+    pub key: Option<&'static str>,
     pub message: String,
 }
 
@@ -99,8 +101,15 @@ pub struct Partial {
     pub git: Option<bool>,
 }
 
-fn keep<T>(problems: &mut Vec<String>, r: Result<T, String>) -> Option<T> {
-    r.map_err(|e| problems.push(e)).ok()
+fn keep<T>(problems: &mut Vec<Problem>, key: &'static str, r: Result<T, String>) -> Option<T> {
+    r.map_err(|message| {
+        problems.push(Problem {
+            line: 0,
+            key: Some(key),
+            message,
+        });
+    })
+    .ok()
 }
 
 fn check_name(v: &str) -> Result<String, String> {
@@ -169,29 +178,86 @@ impl Partial {
 
     /// Every rule boat.toml has, applied to whole answers.
     pub fn finish(self) -> Result<Boat, Vec<String>> {
-        let mut missing = Vec::new();
-        macro_rules! need {
-            ($f:ident) => {
-                match self.$f {
-                    Some(v) => Some(v),
-                    None => {
-                        missing.push(format!("missing {}", stringify!($f)));
-                        None
-                    }
-                }
-            };
+        self.check()
+            .map_err(|ps| ps.into_iter().map(|p| p.message).collect())
+    }
+
+    /// The rules that span answers: the area holds home, and no chosen app
+    /// is refused in the area. Each applies once its answers are there.
+    pub fn cross_problems(&self) -> Vec<Problem> {
+        let mut out = Vec::new();
+        let at = |key, message| Problem {
+            line: 0,
+            key: Some(key),
+            message,
+        };
+        if let (Some(home), Some(area)) = (self.home, self.area)
+            && !area.contains(home)
+        {
+            out.push(at(
+                "area",
+                format!(
+                    "area {} doesn't contain home {}",
+                    area.to_config(),
+                    home.to_config()
+                ),
+            ));
         }
+        if let (Some(apps), Some(area)) = (&self.apps, self.area)
+            && let Err(refused) = Apps::choose(apps, area)
+        {
+            out.extend(refused.into_iter().map(|m| at("apps", m)));
+        }
+        out
+    }
+
+    /// One problem per answer not given yet, on that answer's key.
+    pub fn missing(&self) -> Vec<Problem> {
+        let mut out = Vec::new();
+        let mut need = |has: bool, key: &'static str, message: String| {
+            if !has {
+                out.push(Problem {
+                    line: 0,
+                    key: Some(key),
+                    message,
+                });
+            }
+        };
+        need(self.name.is_some(), "name", "missing name".into());
+        need(self.home.is_some(), "home", "missing home".into());
+        need(self.area.is_some(), "area", "missing area".into());
+        need(self.units.is_some(), "units", "missing units".into());
+        need(self.draft.is_some(), "draft", "missing draft".into());
+        need(
+            self.clearance.is_some(),
+            "clearance",
+            "missing clearance".into(),
+        );
+        need(
+            self.hub.is_some(),
+            "source",
+            "missing source (source = demo when there is no hardware)".into(),
+        );
+        need(self.apps.is_some(), "apps", "missing apps".into());
+        need(self.vault.is_some(), "vault", "missing vault".into());
+        need(self.git.is_some(), "git", "missing git".into());
+        out
+    }
+
+    /// `finish` with each problem's key. Line 0: the caller knows lines.
+    fn check(self) -> Result<Boat, Vec<Problem>> {
+        let missing = self.missing();
         let (name, home, area, units, draft, clearance, hub, apps, vault, git) = (
-            need!(name),
-            need!(home),
-            need!(area),
-            need!(units),
-            need!(draft),
-            need!(clearance),
-            need!(hub),
-            need!(apps),
-            need!(vault),
-            need!(git),
+            self.name.clone(),
+            self.home,
+            self.area,
+            self.units,
+            self.draft,
+            self.clearance,
+            self.hub.clone(),
+            self.apps.clone(),
+            self.vault.clone(),
+            self.git,
         );
         let (
             Some(name),
@@ -211,20 +277,16 @@ impl Partial {
             return Err(missing);
         };
         let mut problems = Vec::new();
-        let name = keep(&mut problems, check_name(&name));
-        let vault = keep(&mut problems, check_vault(&vault));
-        let draft = keep(&mut problems, check_depth(draft, "draft", false));
-        let clearance = keep(&mut problems, check_depth(clearance, "clearance", true));
-        if !area.contains(home) {
-            problems.push(format!(
-                "area {} doesn't contain home {}",
-                area.to_config(),
-                home.to_config()
-            ));
-        }
-        let apps = Apps::choose(&apps, area)
-            .map_err(|e| problems.extend(e))
-            .ok();
+        let name = keep(&mut problems, "name", check_name(&name));
+        let vault = keep(&mut problems, "vault", check_vault(&vault));
+        let draft = keep(&mut problems, "draft", check_depth(draft, "draft", false));
+        let clearance = keep(
+            &mut problems,
+            "clearance",
+            check_depth(clearance, "clearance", true),
+        );
+        problems.extend(self.cross_problems());
+        let apps = Apps::choose(&apps, area).ok();
         match (name, vault, draft, clearance, apps) {
             (Some(name), Some(vault), Some(draft), Some(clearance), Some(apps))
                 if problems.is_empty() =>
@@ -311,7 +373,11 @@ impl Partial {
     }
 }
 
-fn first_line(seen: &[(&str, usize)], key: &str) -> Option<usize> {
+/// The first line each key was set on. `source` repeats, so it holds its
+/// first line.
+pub type KeyLines = Vec<(&'static str, usize)>;
+
+fn first_line(seen: &[(&'static str, usize)], key: &str) -> Option<usize> {
     seen.iter().find(|(k, _)| *k == key).map(|(_, n)| *n)
 }
 
@@ -328,14 +394,17 @@ const KEYS: [&str; 10] = [
     "git",
 ];
 
-impl Boat {
-    /// Strict: every problem, each with its line number. No defaults.
-    pub fn parse(text: &str) -> Result<Boat, Vec<Problem>> {
+impl Partial {
+    /// Lenient: reads every line it can, so a key may be missing and a bad
+    /// line leaves its answer empty. Returns what parsed, each problem with
+    /// its line and key, and the line each key was set on. A missing key
+    /// is no problem here; `Boat::parse` and the gui report decide that.
+    pub fn parse(text: &str) -> (Partial, Vec<Problem>, KeyLines) {
         let mut problems = Vec::new();
-        let mut seen: Vec<(&str, usize)> = Vec::new();
+        let mut seen: KeyLines = Vec::new();
         let mut p = Partial::default();
         let mut sources: Vec<(usize, String)> = Vec::new();
-        let mut lines: Vec<(usize, &str, &str)> = Vec::new();
+        let mut lines: Vec<(usize, &'static str, &str)> = Vec::new();
         for (i, raw) in text.lines().enumerate() {
             let n = i + 1;
             let line = raw.split('#').next().unwrap_or("").trim();
@@ -345,33 +414,40 @@ impl Boat {
             let Some((k, v)) = line.split_once('=') else {
                 problems.push(Problem {
                     line: n,
+                    key: None,
                     message: "expected key = value".into(),
                 });
                 continue;
             };
             let (k, v) = (k.trim(), v.trim());
+            let known = KEYS.iter().find(|x| **x == k).copied();
             if v.starts_with('"') != v.ends_with('"') || v == "\"" {
                 problems.push(Problem {
                     line: n,
+                    key: known,
                     message: format!("{k}: unclosed quote (a # starts a comment)"),
                 });
                 continue;
             }
-            let Some(key) = KEYS.iter().find(|x| **x == k) else {
+            let Some(key) = known else {
                 problems.push(Problem {
                     line: n,
+                    key: None,
                     message: format!("unknown key {k}"),
                 });
                 continue;
             };
-            if *key != "source" {
+            if key != "source" {
                 if let Some(first) = first_line(&seen, key) {
                     problems.push(Problem {
                         line: n,
+                        key: Some(key),
                         message: format!("{key} is set again (first at line {first})"),
                     });
                     continue;
                 }
+                seen.push((key, n));
+            } else if first_line(&seen, key).is_none() {
                 seen.push((key, n));
             }
             lines.push((n, key, v));
@@ -381,6 +457,7 @@ impl Boat {
             let mut bad = |m: String| {
                 problems.push(Problem {
                     line: n,
+                    key: Some(key),
                     message: m,
                 })
             };
@@ -445,6 +522,7 @@ impl Boat {
             if sources.len() > 1 {
                 problems.push(Problem {
                     line: *n,
+                    key: Some("source"),
                     message: "source = demo must be the only source".into(),
                 });
             } else {
@@ -457,6 +535,7 @@ impl Boat {
                     Ok(x) => good.push(x),
                     Err(e) => problems.push(Problem {
                         line: *n,
+                        key: Some("source"),
                         message: e,
                     }),
                 }
@@ -465,27 +544,29 @@ impl Boat {
                 p.hub = Some(Hub::from_sources(good));
             }
         }
-        if sources.is_empty() {
+        (p, problems, seen)
+    }
+}
+
+impl Boat {
+    /// Strict: every problem, each with its line number. No defaults.
+    pub fn parse(text: &str) -> Result<Boat, Vec<Problem>> {
+        let (p, mut problems, seen) = Partial::parse(text);
+        if first_line(&seen, "source").is_none() {
             problems.push(Problem {
                 line: 0,
+                key: None,
                 message: "missing source (source = demo when there is no hardware)".into(),
             });
         }
         if !problems.is_empty() {
             return Err(problems);
         }
-        let line_of = |key: &str| first_line(&seen, key).unwrap_or(0);
-        p.finish().map_err(|errs| {
+        p.check().map_err(|errs| {
             errs.into_iter()
-                .map(|message| {
-                    let line = if message.starts_with("area ") {
-                        line_of("area")
-                    } else if message.contains("can't work here") {
-                        line_of("apps")
-                    } else {
-                        0
-                    };
-                    Problem { line, message }
+                .map(|e| Problem {
+                    line: e.key.and_then(|k| first_line(&seen, k)).unwrap_or(0),
+                    ..e
                 })
                 .collect()
         })
@@ -672,5 +753,48 @@ git       = true
                 "line 12: Logbook: the logbook folder starts with / or ~/",
             ]
         );
+    }
+
+    #[test]
+    fn a_partial_parse_keeps_what_it_can_and_names_each_problem_by_key_and_line() {
+        let text = "name = \"Dash\"\ndraft = deep\ndraft = 3\nunits = cubits\ncolour = red\nsource = demo\nsource = tcp:h:1\n";
+        let (p, problems, keys) = Partial::parse(text);
+        assert_eq!(p.name.as_deref(), Some("Dash"));
+        assert_eq!((p.draft, p.units, p.hub.is_some()), (None, None, false));
+        let got: Vec<(usize, Option<&str>, &str)> = problems
+            .iter()
+            .map(|p| (p.line, p.key, p.message.as_str()))
+            .collect();
+        assert_eq!(
+            got,
+            vec![
+                (3, Some("draft"), "draft is set again (first at line 2)"),
+                (5, None, "unknown key colour"),
+                (2, Some("draft"), "draft: deep is not a number"),
+                (
+                    4,
+                    Some("units"),
+                    "units: cubits is not feet, meters or fathoms"
+                ),
+                (6, Some("source"), "source = demo must be the only source"),
+            ]
+        );
+        assert_eq!(
+            keys,
+            vec![("name", 1), ("draft", 2), ("units", 4), ("source", 6)]
+        );
+        let (empty, none, _) = Partial::parse("");
+        assert_eq!((empty, none), (Partial::default(), vec![]));
+    }
+
+    #[test]
+    fn a_partial_reports_missing_and_cross_answer_problems_by_key() {
+        let (p, _, _) = Partial::parse("home = 37.8, -122.3\narea = 46,-124,48,-121\n");
+        let keys: Vec<_> = p.missing().iter().map(|m| m.key).collect();
+        assert_eq!(keys[0], Some("name"));
+        assert!(keys.contains(&Some("source")) && !keys.contains(&Some("home")));
+        let cross = p.cross_problems();
+        assert_eq!(cross.len(), 1);
+        assert_eq!(cross[0].key, Some("area"));
     }
 }
