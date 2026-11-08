@@ -25,10 +25,17 @@ Column {
                 required property string modelData
                 theme: step.s.theme
                 text: modelData
-                primary: step.s.units === modelData
+                primary: (step.s.wantUnits || step.s.units) === modelData
                 onClicked: step.s.edit("units", modelData)
             }
         }
+    }
+    Words {
+        theme: step.s.theme
+        visible: step.s.wantUnits !== ""
+        text: "The numbers below are still in " + step.s.units + ". They change to " + step.s.wantUnits
+            + (step.s.refusing ? " once the fields marked are fixed." : " once omahoy has checked them.")
+        dim: true
     }
     Field {
         theme: step.s.theme

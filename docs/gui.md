@@ -1,8 +1,9 @@
 # omahoy gui: the interface for graphical setup
 
 `omahoy gui ...` is how a graphical front end runs setup. The front end is
-the omahoy-setup Omarchy panel (github.com/shieldsworks/omahoy-setup). It
-holds the form; this crate keeps every rule. The front end never decides
+the Omarchy shell panel `org.omahoy.setup` in this repo's `panel/`, opened
+by `omahoy panel` (onboarding.md). It holds the form; this crate keeps
+every rule. The front end never decides
 what is valid, what an area is, which apps can work where, or what apply
 does. It asks.
 
@@ -173,11 +174,56 @@ the sailor, 1 when something is left (the lines say what), 2 on failure.
 
 ## Hardware choices
 
-The panel asks per device and per network source: Use, or Skip for now.
-Skip for now leaves the device out of this boat; `omahoy hardware` or the
-panel can add it later. The hardware step as a whole also has Skip for
-now, which keeps the boat's current sources (the demo on a first run).
-Sources in the current boat that the probe didn't hear are offered back:
-Keep, or Skip for now. The panel never offers `demo` back this way, and any
-live source chosen replaces `demo`. With no sources chosen, the boat gets
-`source = demo`.
+The panel keeps one entry per source, keyed by what the source is: a
+serial device by its path (the baud is not part of it), a tcp source by
+`tcp:HOST:PORT` with the host lowercased. Each entry holds the boat's own
+value, the value the last probe offered (`source` in a probe device), and
+the sailor's choice: Keep (the boat's value), Use (the offered value),
+Skip for now, or none yet. The boat's sources are read from the choices;
+`demo` is never an entry, and with no source chosen the boat gets `source
+= demo`.
+
+- The entries start from the boat's sources, each on Keep.
+- A listen, a reprobe after joining uucp, and a network test only add
+  entries and update what was offered and whether it was heard. They never
+  change a choice, so a receiver chosen and then unplugged, or skipped and
+  then rescanned, stays as the sailor left it.
+- A device heard at a different baud than the boat's is one entry: Keep
+  keeps the boat's baud, Use replaces it with the probe's.
+- A silent device offers Use as AIS at 38400; an unreachable network source
+  offers Use anyway. Skip for now leaves it out of this boat; `omahoy
+  hardware` or the panel can add it later.
+- The step's own Skip for now puts every entry back to the boat's sources
+  (the demo on a first run).
+
+## Unit changes
+
+Choosing other depth units converts draft and clearance with the report's
+`draftIn` and `clearanceIn`. The change waits until a report for the text
+as it stands, with no field refused, has a conversion for every number in
+it; until then units, draft and clearance stay as typed, and Go waits too.
+A clearance at the old units' default becomes the new units' default.
+
+## Apply outlives the panel
+
+The shell reloads every panel when a plugin is added, and apply adds
+plugins (`omarchy plugin add`), so the panel does not own the apply process.
+`panel/scripts/apply.sh start` runs `omahoy gui apply` in a transient user
+unit (`systemd-run --user --collect`, with the panel's environment), or under
+`setsid` where there is no user manager, with the boat text read from a file.
+Its files live in `$XDG_RUNTIME_DIR/omahoy-setup/`: `in` (the boat text),
+`out` and `err` (apply's stdout and stderr), `pid`, and `code` (the exit
+status, written last). A start while one runs is refused. The panel follows
+`out` while it runs; a panel that loads with an apply there, running or
+finished, shows that apply's answers on the review step and follows it to
+the end, then forgets the files. A worker that died without writing `code`
+is reported as stopped, with `omahoy apply` to finish. A probe is never
+started while an apply runs.
+
+## Which binary the panel runs
+
+The panel runs every command through one path. `omahoy panel` passes its
+own binary in the shell's open payload, `{"bin": "/…/target/release/omahoy"}`,
+because on a first run `omahoy` is not on PATH yet. Opened any other way (a
+keybinding with `{}`), the panel uses `omahoy` on PATH, which setup links to
+the bootstrap. Run standalone (`panel/run.sh`), it reads `OMAHOY_BIN`.

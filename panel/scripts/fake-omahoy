@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # A stand-in for `omahoy gui ...` that answers with the JSON shapes in
-# omahoy's docs/gui.md, so the panel can be driven without the real binary:
-#   OMAHOY_BIN=$PWD/scripts/fake-omahoy ./run.sh
+# docs/gui.md, so the panel can be driven without the real binary:
+#   OMAHOY_BIN=$PWD/panel/scripts/fake-omahoy panel/run.sh
 # It follows the contract's shape, not its rules: the real omahoy decides.
-# FAKE_OMAHOY_FAST=1 skips the sleeps; FAKE_OMAHOY_CHECK_SLEEP=N slows check. FAKE_OMAHOY_STATE names the file that
-# remembers join-uucp (default: in XDG_RUNTIME_DIR); delete it to start over.
+# FAKE_OMAHOY_FAST=1 skips the sleeps; FAKE_OMAHOY_CHECK_SLEEP=N slows check.
+# FAKE_OMAHOY_SOURCES, one source per line, is the draft's boat sources
+# (default demo). FAKE_OMAHOY_STATE names the file that remembers join-uucp
+# (default: in XDG_RUNTIME_DIR); delete it to start over. While a file of
+# that name plus .unplugged exists, the scan doesn't hear the GPS.
 set -euo pipefail
 
 member=${FAKE_OMAHOY_STATE:-${XDG_RUNTIME_DIR:-/tmp}/fake-omahoy-member}
@@ -95,7 +98,9 @@ report() {
 
 case $cmd in
   draft)
-    text=$'name = "Dash"\nunits = feet\ndraft = 3.5\nclearance = 2\nhome = 37.8667, -122.3134\nsource = demo\napps = helm, lookout, logbook, tide, wind\nvault = "~/Logbook"\ngit = true'
+    sources=
+    while IFS= read -r src; do sources+="source = $src"$'\n'; done <<< "${FAKE_OMAHOY_SOURCES:-demo}"
+    text=$'name = "Dash"\nunits = feet\ndraft = 3.5\nclearance = 2\nhome = 37.8667, -122.3134\n'"$sources"$'apps = helm, lookout, logbook, tide, wind\nvault = "~/Logbook"\ngit = true'
     jq -n --argjson r "$(report "$text")" '{exists: false, report: $r}'
     ;;
   check)
@@ -122,7 +127,7 @@ case $cmd in
     denied_ok='{"spec":"serial:/dev/serial/by-id/usb-FTDI_FT232-if00","name":"usb-FTDI_FT232-if00","kind":"serial","verdict":"ok","describe":"AIS, 38400 baud, 6 vessels heard","source":"serial:/dev/serial/by-id/usb-FTDI_FT232-if00:38400","fix":null}'
     silent='{"spec":"serial:/dev/serial/by-id/usb-dAISy_AIS_Receiver-if00","name":"usb-dAISy_AIS_Receiver-if00","kind":"serial","verdict":"silent","describe":"nothing heard at any baud","source":"serial:/dev/serial/by-id/usb-dAISy_AIS_Receiver-if00:38400","fix":null}'
     if ((${#specs[@]} == 0)); then
-      devices="[$gps,$denied,$silent]"
+      if [[ -e $member.unplugged ]]; then devices="[$denied,$silent]"; else devices="[$gps,$denied,$silent]"; fi
     else
       devices=
       for s in "${specs[@]}"; do

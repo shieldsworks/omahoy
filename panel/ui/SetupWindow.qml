@@ -14,7 +14,12 @@ Item {
     property bool standalone: true
     property bool opened: standalone
 
+    // The shell hands open() the payload JSON it was summoned with:
+    // {"bin": PATH} from `omahoy panel`, or "{}".
     function open(payload) {
+        let p = null;
+        try { p = JSON.parse(payload || "{}"); } catch (e) { p = null; }
+        setup.begin(p && typeof p.bin === "string" ? p.bin : "");
         opened = true;
         Qt.callLater(() => surface.forceActiveFocus());
     }
@@ -24,17 +29,25 @@ Item {
     // Closing never stops a running probe or apply: while one runs the
     // window stays and says so. As a panel, the shell keeps this loaded
     // (keepLoaded in manifest.json), so hiding it leaves the work running.
+    // A window closed from outside (its close button) turns visible off;
+    // the refusal shows it again by binding visible to opened afresh, which
+    // keeps the shell's hide working after.
     function dismiss() {
         if (app.setup.busy) {
             app.setup.closeRefused = true;
             opened = true;
-            Qt.callLater(() => win.visible = true);
+            Qt.callLater(() => win.visible = Qt.binding(() => app.opened));
         } else if (standalone) Qt.quit();
         else if (shell) shell.hide("org.omahoy.setup");
         else opened = false;
     }
 
-    property Setup setup: Setup {}
+    // The shell names the plugin's folder in manifest.__sourceDir;
+    // standalone, the folder is the one above ui/shell.qml.
+    property Setup setup: Setup {
+        applyScript: app.manifest && app.manifest.__sourceDir ? app.manifest.__sourceDir + "/scripts/apply.sh"
+            : Quickshell.shellPath("../scripts/apply.sh")
+    }
     readonly property Theme theme: setup.theme
 
     // Quickshell keeps a process alive after its last window closes.
@@ -72,7 +85,9 @@ Item {
                 stepIndex: app.setup.stepIndex,
                 complete: app.setup.complete,
                 ready: app.setup.ready,
+                name: app.setup.name,
                 units: app.setup.units,
+                wantUnits: app.setup.wantUnits,
                 draft: app.setup.draft,
                 clearance: app.setup.clearance,
                 closeRefused: app.setup.closeRefused,
@@ -80,13 +95,19 @@ Item {
                 useUucp: app.setup.useUucp,
                 planCurrent: app.setup.planCurrent,
                 busy: app.setup.busy,
+                listening: app.setup.listening,
+                hardware: app.setup.hardware.map(e => ({key: e.key, boat: e.boat, offered: e.offered, choice: e.choice,
+                                                         heard: e.heard, verdict: e.row ? e.row.verdict : null})),
+                hardwareError: app.setup.hardwareError,
+                applyError: app.setup.applyError,
                 loaded: app.setup.loaded,
                 sources: app.setup.sources(),
                 apps: app.setup.apps,
                 problems: app.setup.report ? app.setup.report.problems.length : -1,
                 problemList: app.setup.report ? app.setup.report.problems : [],
                 applyState: app.setup.applyState,
-                opened: app.opened
+                opened: app.opened,
+                visible: win.visible
             });
         }
         function next(): void { app.setup.next(); }
@@ -102,9 +123,12 @@ Item {
         function go(): void { app.setup.go(); }
         function close(): void { app.dismiss(); }
         function allowSerial(): void { app.setup.allowSerial(); }
-        function chooseDevice(i: int, choice: string): void { app.setup.chooseDevice(i, choice); }
+        function choose(key: string, choice: string): bool { return app.setup.choose(key, choice); }
         function testNet(hostPort: string): void { app.setup.testNet(hostPort); }
-        function chooseNet(choice: string): void { app.setup.chooseNet(choice); }
+        // What the shell's hide does.
+        function hide(): void { app.close(); }
+        // What the shell's summon does, with its payload.
+        function open(payload: string): void { app.open(payload); }
     }
 
     FloatingWindow {
@@ -253,5 +277,8 @@ Item {
         }
     }
 
-    Component.onCompleted: Qt.callLater(() => surface.forceActiveFocus())
+    Component.onCompleted: {
+        if (standalone) setup.begin(Quickshell.env("OMAHOY_BIN") || "");
+        Qt.callLater(() => surface.forceActiveFocus());
+    }
 }

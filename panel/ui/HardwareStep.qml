@@ -2,7 +2,8 @@ pragma ComponentBehavior: Bound
 import QtQuick
 
 // Step 2: GPS and AIS receivers. Each device, and each network source, is
-// Used or skipped for now; omahoy says what the probe heard.
+// Used, Kept as the boat has it, or skipped for now; omahoy says what the
+// probe heard.
 Column {
     id: step
     required property Setup s
@@ -59,33 +60,52 @@ Column {
         dim: true
     }
 
+    // One row per source: the devices the probe heard, the boat's own
+    // sources, and the network sources tested.
     Repeater {
-        model: step.s.devices
+        model: step.s.hardware
         delegate: Row2 {
             id: dev
             required property var modelData
-            required property int index
-            Words { theme: step.s.theme; text: dev.modelData.name; font.bold: true }
-            Words { theme: step.s.theme; text: dev.modelData.verdict + ": " + dev.modelData.describe; dim: true }
+            readonly property var row: modelData.row
+            readonly property bool offers: !!modelData.offered && modelData.offered !== modelData.boat
+            Words { theme: step.s.theme; text: dev.row ? dev.row.name : dev.modelData.boat; font.bold: true }
+            Words {
+                theme: step.s.theme
+                text: dev.row ? dev.row.verdict + ": " + dev.row.describe
+                    : dev.modelData.boat ? "In this boat now, but not heard" + (dev.modelData.offered ? " on the last listen" : "")
+                    : "Not heard on the last listen"
+                dim: true
+            }
             Row {
                 spacing: 8
-                visible: dev.modelData.verdict === "ok" || dev.modelData.verdict === "silent"
+                visible: !!dev.modelData.boat || !!dev.modelData.offered
                 Btn {
                     theme: step.s.theme
-                    text: dev.modelData.verdict === "silent" ? "Use as AIS at 38400" : "Use"
+                    visible: !!dev.modelData.boat
+                    text: dev.offers ? "Keep " + dev.modelData.boat : "Keep"
+                    primary: dev.modelData.choice === "keep"
+                    onClicked: step.s.choose(dev.modelData.key, "keep")
+                }
+                Btn {
+                    theme: step.s.theme
+                    visible: dev.offers
+                    text: dev.row && dev.row.verdict === "silent" ? "Use as AIS at 38400"
+                        : dev.row && dev.row.verdict !== "ok" ? "Use anyway"
+                        : dev.modelData.boat ? "Use " + dev.modelData.offered : "Use"
                     primary: dev.modelData.choice === "use"
-                    onClicked: step.s.chooseDevice(dev.index, "use")
+                    onClicked: step.s.choose(dev.modelData.key, "use")
                 }
                 Btn {
                     theme: step.s.theme
                     text: "Skip for now"
                     primary: dev.modelData.choice === "skip"
-                    onClicked: step.s.chooseDevice(dev.index, "skip")
+                    onClicked: step.s.choose(dev.modelData.key, "skip")
                 }
             }
             Btn {
                 theme: step.s.theme
-                visible: dev.modelData.verdict === "denied"
+                visible: !!dev.row && dev.row.verdict === "denied"
                 text: "Allow serial ports"
                 enabled: !step.s.busy
                 onClicked: step.s.allowSerial()
@@ -93,40 +113,9 @@ Column {
         }
     }
 
-    Words {
-        theme: step.s.theme
-        visible: step.s.held.length > 0
-        text: "In this boat now, but not heard:"
-        font.bold: true
-    }
-    Repeater {
-        model: step.s.held
-        delegate: Row2 {
-            id: old
-            required property var modelData
-            required property int index
-            Words { theme: step.s.theme; text: old.modelData.source }
-            Row {
-                spacing: 8
-                Btn {
-                    theme: step.s.theme
-                    text: "Keep"
-                    primary: old.modelData.keep
-                    onClicked: step.s.chooseHeld(old.index, true)
-                }
-                Btn {
-                    theme: step.s.theme
-                    text: "Skip for now"
-                    primary: !old.modelData.keep
-                    onClicked: step.s.chooseHeld(old.index, false)
-                }
-            }
-        }
-    }
-
     Field {
         theme: step.s.theme
-        label: "Network source (host:port), such as a phone app sharing NMEA"
+        label: "Network source (host:port), such as a phone app sharing NMEA. Phone apps share only while they're open."
         hint: "192.168.1.20:10110"
         text: step.netText
         onEdited: t => step.netText = t
@@ -136,39 +125,6 @@ Column {
         text: "Test"
         enabled: !step.s.busy && step.netText.trim() !== ""
         onClicked: step.s.testNet(step.netText)
-    }
-    Row2 {
-        visible: step.s.netProbe !== null
-        Words { theme: step.s.theme; text: step.s.netProbe ? step.s.netProbe.spec : "" ; font.bold: true }
-        Words { theme: step.s.theme; text: step.s.netProbe ? step.s.netProbe.verdict + ": " + step.s.netProbe.describe : ""; dim: true }
-        Words {
-            theme: step.s.theme
-            text: "Phone apps share only while they're open."
-            dim: true
-        }
-        Row {
-            spacing: 8
-            Btn {
-                theme: step.s.theme
-                text: step.s.netProbe && step.s.netProbe.verdict === "ok" ? "Use" : "Use anyway"
-                enabled: step.s.netProbe !== null && !!step.s.netProbe.source
-                onClicked: step.s.chooseNet("use")
-            }
-            Btn {
-                theme: step.s.theme
-                text: "Skip for now"
-                onClicked: step.s.chooseNet("skip")
-            }
-        }
-    }
-    Repeater {
-        model: step.s.nets
-        delegate: Row2 {
-            id: net
-            required property var modelData
-            Words { theme: step.s.theme; text: net.modelData.source + (net.modelData.choice === "use" ? "  (using)" : "  (skipped for now)") }
-            Btn { theme: step.s.theme; text: "Remove"; onClicked: step.s.dropNet(net.modelData.spec) }
-        }
     }
 
     Words {

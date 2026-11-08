@@ -3,14 +3,16 @@ import QtQuick
 import Quickshell
 
 // The form's state and every call to `omahoy gui`. The panel holds the
-// answers; omahoy decides what they mean (docs/gui.md in the omahoy repo).
+// answers; omahoy decides what they mean (docs/gui.md).
 // Whatever the panel shows as a problem, an area, a refusal or a plan came
 // back from the binary in a report.
 Item {
     id: s
 
     property Theme theme: Theme {}
-    readonly property string bin: Quickshell.env("OMAHOY_BIN") || "omahoy"
+    // The omahoy binary every call runs. `omahoy panel` passes its own path
+    // in the open payload; standalone it is OMAHOY_BIN, else omahoy on PATH.
+    property string bin: ""
 
     // The answers.
     property string name: ""
@@ -29,7 +31,6 @@ Item {
     property bool loaded: false
     property string loadError: ""
     property bool homeEdited: false
-    property var boatSources: []
 
     // The boat text is the revision: every request carries the text it was
     // made from, and an answer counts only while the form still says the
@@ -40,19 +41,22 @@ Item {
     property string planText: ""
     property string planSent: ""
     property string applySent: ""
+    // The units the sailor picked, until a report converts the numbers.
     property string wantUnits: ""
+    readonly property var unitList: ["feet", "meters", "fathoms"]
 
-    // Hardware. "keep" leaves the boat's sources as they were; "chosen"
-    // builds them from the choices below.
-    property string hardwareMode: "keep"
-    property var devices: []
-    property var held: []
-    property var nets: []
-    property var netProbe: null
+    // Hardware: one entry per source, keyed by what it is (hwKey), never by
+    // how it was heard. An entry holds the boat's own value (`boat`), the
+    // value the last probe offered (`offered`), the sailor's `choice` ("keep"
+    // the boat's value, "use" the offered one, "skip", or "" for none yet),
+    // whether the last listen heard it (`heard`) and the probe's `row`.
+    // Probes add entries and update offered, heard and row; only the sailor
+    // changes a choice. The boat's sources are read from the choices.
+    property var hw: ({})
+    readonly property var hardware: Object.keys(hw).map(k => hw[k])
     property bool probed: false
     property string hardwareError: ""
     property bool needLogout: false
-    property string probeLog: ""
     property bool useUucp: false
 
     // The steps, review last.
@@ -78,13 +82,13 @@ Item {
     readonly property bool reportCurrent: report !== null && reportText === boat
     readonly property bool planCurrent: plan !== null && planText === boat
     readonly property bool complete: reportCurrent && report.complete === true && !refusing
-    readonly property bool ready: complete && planCurrent
+    readonly property bool ready: complete && planCurrent && wantUnits === ""
     readonly property bool planning: planner.running
-    readonly property bool applying: applier.running
+    readonly property bool applying: applyState === "running" || launcher.running
+    readonly property bool listening: scanner.running || reprober.running || netter.running || joiner.running
     readonly property bool checking: checker.running || checkTimer.running
     onBusyChanged: if (!busy) closeRefused = false
-    readonly property bool busy: scanner.running || reprober.running || netter.running || joiner.running
-        || planner.running || applier.running
+    readonly property bool busy: listening || planner.running || applying
 
     // For checks: the first line of each runner's stderr while it works.
     readonly property string progress: {
@@ -97,17 +101,27 @@ Item {
         try { return JSON.parse(text); } catch (e) { return null; }
     }
 
-    function sourceMatches(source, device) {
-        return source === device.source || source === device.spec || source.indexOf(device.spec + ":") === 0;
+    // A serial source is its device path, whatever the baud; a tcp source
+    // is its host and port.
+    function hwKey(source) {
+        const src = String(source).trim();
+        if (src.indexOf("serial:") === 0) {
+            const m = /^(.*):(4800|9600|19200|38400|57600|115200)$/.exec(src.slice(7));
+            return "serial:" + (m ? m[1] : src.slice(7));
+        }
+        const tcp = /^tcp:(.+):(\d+)$/.exec(src);
+        if (tcp) return "tcp:" + tcp[1].toLowerCase() + ":" + Number(tcp[2]);
+        return src;
     }
-
+    function sourceOf(e) {
+        return e.choice === "use" ? e.offered : e.choice === "keep" ? e.boat : null;
+    }
     function chosenSources() {
-        if (hardwareMode === "keep") return boatSources.slice();
         const out = [];
-        const add = src => { if (src && out.indexOf(src) < 0) out.push(src); };
-        for (const d of devices) if (d.choice === "use") add(d.source);
-        for (const h of held) if (h.keep) add(h.source);
-        for (const n of nets) if (n.choice === "use") add(n.source);
+        for (const e of hardware) {
+            const src = sourceOf(e);
+            if (src && out.indexOf(src) < 0) out.push(src);
+        }
         return out;
     }
     function sources() {
@@ -190,14 +204,34 @@ Item {
         apps = a.apps ? a.apps.slice() : r.apps.filter(x => !x.refusal).map(x => x.short);
         if (a.vault) vault = a.vault;
         if (a.git !== null && a.git !== undefined) keepGit = a.git;
-        boatSources = (a.sources || []).filter(x => x !== "demo");
+        const m = {};
+        for (const src of a.sources || []) {
+            if (src === "demo") continue;
+            const k = hwKey(src);
+            if (!m[k]) m[k] = {key: k, boat: src, offered: null, choice: "keep", heard: false, row: null};
+        }
+        hw = m;
         report = r;
         reportText = "";
     }
 
+    // Starts the form once, the first time the panel is opened.
+    function begin(path) {
+        if (path) bin = path;
+        if (!bin) bin = "omahoy";
+        if (!loaded && !drafter.running) load();
+    }
+    // An apply already in runDir (running, or finished while no panel was
+    // loaded) is picked up: the form is the text it applies, on review.
     function load() {
         loadError = "";
-        drafter.argv = [bin, "gui", "draft"];
+        if (runDir === "") draftFrom("");
+        else pollApply();
+    }
+    function draftFrom(text) {
+        adoptText = text;
+        drafter.input = text;
+        drafter.argv = text === "" ? [bin, "gui", "draft"] : [bin, "gui", "check"];
         drafter.start();
     }
 
@@ -215,25 +249,40 @@ Item {
         else if (key === "git") keepGit = value === true || value === "true";
         touch();
     }
-    // Conversions come from the report, so they wait for one that describes
-    // the answers as they stand now.
+    // A change between the three units waits, as wantUnits, for a report
+    // on the text as it stands, with nothing refused, that converts every
+    // number in it. Until then units, draft and clearance stay as typed, so
+    // a number is never read in units it wasn't typed in.
     function setUnits(u) {
-        if (u === units) { wantUnits = ""; return; }
-        // Only the three units convert; anything else is just stored, and the
-        // binary or the refusal check answers for it.
-        if (!report || refusing || ["feet", "meters", "fathoms"].indexOf(u) < 0) { wantUnits = ""; units = u; touch(); return; }
-        if (!reportCurrent) {
-            wantUnits = u;
-            checkTimer.stop();
-            runCheck();
+        if (unitList.indexOf(u) < 0 || unitList.indexOf(units) < 0) {
+            // No conversion to or from a unit omahoy doesn't know; the
+            // refusal check or the binary answers for it.
+            wantUnits = "";
+            units = u;
+            touch();
             return;
         }
-        wantUnits = "";
+        wantUnits = u === units ? "" : u;
+        convert();
+    }
+    function convert() {
+        const u = wantUnits;
+        if (u === "" || !reportCurrent || refusing) return;
         const r = report;
-        if (r.draftIn && r.draftIn[u] !== null && r.draftIn[u] !== undefined) draft = String(r.draftIn[u]);
-        const wasDefault = r.defaultClearance && Number(clearance) === r.defaultClearance[units];
-        if (wasDefault) clearance = String(r.defaultClearance[u]);
-        else if (r.clearanceIn && r.clearanceIn[u] !== null && r.clearanceIn[u] !== undefined) clearance = String(r.clearanceIn[u]);
+        const a = r.answers;
+        // "same" when there is no number to convert; null when the report
+        // has no conversion for one.
+        const to = (value, table) => value === null || value === undefined ? "same"
+            : table && table[u] !== null && table[u] !== undefined ? String(table[u]) : null;
+        const d = to(a.draft, r.draftIn);
+        const c = to(a.clearance, r.clearanceIn);
+        if (d === null || c === null) return;
+        wantUnits = "";
+        if (d !== "same") draft = d;
+        if (c !== "same") {
+            const wasDefault = r.defaultClearance && Number(a.clearance) === r.defaultClearance[units];
+            clearance = wasDefault ? String(r.defaultClearance[u]) : c;
+        }
         units = u;
         touch();
     }
@@ -259,7 +308,7 @@ Item {
     function takeReport(r, text) {
         report = r;
         reportText = text;
-        if (wantUnits !== "") setUnits(wantUnits);
+        convert();
         const sa = r.suggestedArea || null;
         if (JSON.stringify(sa) !== JSON.stringify(area)) {
             area = sa;
@@ -269,36 +318,36 @@ Item {
 
     // Hardware.
     function listen() {
+        if (busy) return;
         hardwareError = "";
         needLogout = false;
         scanner.argv = [bin, "gui", "probe"].concat(useUucp ? ["--uucp"] : []);
         scanner.start();
     }
 
-    // One entry per source. A device row owns the sources it matches: a
-    // held source that an ok device matches folds into that row's choice, and
-    // a silent device the boat already has stays only as the held source.
-    function reconcile(rows, hold) {
-        const out = [];
-        for (const d of rows) {
-            const mine = hold.filter(h => sourceMatches(h.source, d));
-            if (d.verdict === "silent" && mine.length) continue;
-            let choice = d.verdict === "ok" || d.verdict === "silent" ? d.choice || "" : "";
-            if (d.verdict === "ok" && mine.length && choice === "") choice = mine.some(h => h.keep) ? "use" : "skip";
-            out.push(Object.assign({}, d, {choice: choice}));
+    // Takes probe rows into the entries. `all` is a scan of every serial
+    // device, so a serial entry it didn't report wasn't heard.
+    function hear(devices, all) {
+        const m = Object.assign({}, hw);
+        if (all) {
+            for (const k in m) {
+                if (k.indexOf("serial:") === 0 && !devices.some(d => hwKey(d.spec) === k))
+                    m[k] = Object.assign({}, m[k], {heard: false, row: null});
+            }
         }
-        devices = out;
-        held = hold.filter(h => !out.some(d => d.verdict === "ok" && sourceMatches(h.source, d)));
+        const errors = [];
+        for (const d of devices) {
+            const k = hwKey(d.spec);
+            if (d.verdict === "error" && !m[k]) { errors.push(d.spec + ": " + d.describe); continue; }
+            const was = m[k] || {key: k, boat: null, offered: null, choice: "", heard: false, row: null};
+            m[k] = Object.assign({}, was, {heard: d.verdict === "ok", row: d, offered: d.source || was.offered});
+        }
+        hw = m;
+        if (errors.length) hardwareError = errors.join("\n");
     }
     function takeProbe(r) {
-        const hold = probed ? held : boatSources.map(b => ({source: b, keep: true}));
         probed = true;
-        hardwareMode = "chosen";
-        const rows = r.devices.map(d => {
-            const was = devices.find(x => x.spec === d.spec);
-            return Object.assign({}, d, {choice: was ? was.choice : ""});
-        });
-        reconcile(rows, hold);
+        hear(r.devices, true);
         if (r.uucp && r.uucp.member && !r.uucp.session) { needLogout = true; useUucp = true; }
         const fix = r.devices.find(d => d.fix);
         if (fix && !homeEdited && !(exists && home.trim() !== "")) {
@@ -306,62 +355,51 @@ Item {
         }
         touch();
     }
-    function chooseDevice(i, choice) {
-        const d = devices[i];
-        if (choice === "use" && !d.source) return;
-        const next = devices.slice();
-        next[i] = Object.assign({}, d, {choice: choice});
-        devices = next;
-        held = held.filter(h => !sourceMatches(h.source, d));
-        hardwareMode = "chosen";
+    // The sailor's choice for one entry: "use" needs a value the probe
+    // offered, "keep" a value the boat has.
+    function choose(key, choice) {
+        const e = hw[key];
+        if (!e || ["use", "keep", "skip"].indexOf(choice) < 0) return false;
+        if ((choice === "use" && !e.offered) || (choice === "keep" && !e.boat)) return false;
+        const m = Object.assign({}, hw);
+        m[key] = Object.assign({}, e, {choice: choice});
+        hw = m;
         touch();
-    }
-    function chooseHeld(i, keep) {
-        const next = held.slice();
-        next[i] = Object.assign({}, next[i], {keep: keep});
-        held = next;
-        hardwareMode = "chosen";
-        touch();
+        return true;
     }
     function allowSerial() {
+        if (busy) return;
         hardwareError = "";
         joiner.argv = [bin, "gui", "join-uucp"];
         joiner.start();
     }
     function deniedSpecs() {
-        return devices.filter(d => d.verdict === "denied").map(d => d.spec);
+        return hardware.filter(e => e.row && e.row.verdict === "denied").map(e => e.row.spec);
     }
     function takeReprobe(r) {
-        const rows = devices.map(x => r.devices.find(d => d.spec === x.spec) || x)
-            .concat(r.devices.filter(d => !devices.some(x => x.spec === d.spec)));
-        reconcile(rows.map(d => Object.assign({}, d, {choice: d.verdict === "ok" && d.choice ? d.choice : ""})), held);
+        hear(r.devices, false);
         needLogout = true;
         touch();
     }
     function testNet(hostPort) {
-        netProbe = null;
+        if (busy) return;
         hardwareError = "";
         if (unsafe(hostPort)) { hardwareError = "A host:port can't hold quotes, #, or control characters."; return; }
         netter.argv = [bin, "gui", "probe", "tcp:" + hostPort.trim()];
         netter.start();
     }
-    function chooseNet(choice) {
-        if (!netProbe || (choice === "use" && !netProbe.source)) return;
-        held = held.filter(h => !sourceMatches(h.source, netProbe));
-        const next = nets.filter(n => n.spec !== netProbe.spec);
-        next.push({spec: netProbe.spec, source: netProbe.source || netProbe.spec, describe: netProbe.describe, choice: choice});
-        nets = next;
-        netProbe = null;
-        hardwareMode = "chosen";
+    function takeNet(r) {
+        const d = r.devices[0];
+        if (!d.source) { hardwareError = "Couldn't test " + d.spec + ": " + d.describe; return; }
+        hear([d], false);
         touch();
     }
-    function dropNet(spec) {
-        nets = nets.filter(n => n.spec !== spec);
-        touch();
-    }
-    // The step's own Skip for now: whatever the boat has stays.
+    // The step's own Skip for now: the boat's sources stay as they are.
     function skipHardware() {
-        hardwareMode = "keep";
+        const m = {};
+        for (const k in hw) m[k] = Object.assign({}, hw[k], {choice: hw[k].boat ? "keep" : ""});
+        hw = m;
+        touch();
         next();
     }
 
@@ -379,7 +417,7 @@ Item {
         if (stepIndex < stepList.length - 1) goTo(stepList[stepIndex + 1].id);
     }
     function back() {
-        if (stepIndex > 0 && !applier.running) goTo(stepList[stepIndex - 1].id);
+        if (stepIndex > 0 && !applying) goTo(stepList[stepIndex - 1].id);
     }
 
     // One plan at a time; a plan for older text is dropped and, on the
@@ -394,16 +432,73 @@ Item {
         planner.argv = [bin, "gui", "plan"];
         planner.start();
     }
+    // Apply runs detached (scripts/apply.sh) with its files in runDir, so
+    // it outlives the panel: the shell reloads every panel when a plugin is
+    // added mid-apply. The panel follows the files while it runs.
+    readonly property string runDir: {
+        const d = Quickshell.env("XDG_RUNTIME_DIR");
+        return d ? d + "/omahoy-setup" : "";
+    }
+    // Set by the window: the plugin's folder holds scripts/apply.sh.
+    property string applyScript: ""
+    property string adoptText: ""
+
     // Go applies the text the check and the plan were made for.
     function go() {
         if (!ready || busy || refusing) return;
         applyLog = [];
         applyError = "";
+        if (runDir === "") {
+            applyState = "failed";
+            applyError = "XDG_RUNTIME_DIR is not set, so apply has nowhere to keep its progress. Run omahoy apply in a terminal.";
+            return;
+        }
         applyState = "running";
         applySent = boat;
-        applier.input = applySent;
-        applier.argv = [bin, "gui", "apply"];
-        applier.start();
+        launcher.input = applySent;
+        launcher.argv = ["bash", applyScript, "start", runDir, bin];
+        launcher.start();
+    }
+    function pollApply() {
+        if (watcher.running) return;
+        watcher.argv = ["bash", applyScript, "status", runDir];
+        watcher.start();
+    }
+    // What apply.sh status said: a state line, then prefixed out, err and
+    // in lines.
+    function takeApply(lines) {
+        const state = lines.length ? lines[0] : "none";
+        const part = p => lines.filter(l => l.indexOf(p) === 0).map(l => l.slice(2));
+        if (!loaded) {
+            draftFrom(state === "none" ? "" : part("i ").join("\n") + "\n");
+            return;
+        }
+        if (state === "none") {
+            if (applyState === "running") {
+                applyState = "failed";
+                applyError = "The apply's record is gone, so how it ended is unknown. Run omahoy doctor to see.";
+            }
+            return;
+        }
+        applyLog = part("o ");
+        if (state === "running") {
+            applyState = "running";
+            applyTimer.restart();
+            return;
+        }
+        clearer.argv = ["bash", applyScript, "clear", runDir];
+        clearer.start();
+        const code = state.indexOf("code ") === 0 ? Number(state.slice(5)) : -1;
+        if (code === 0 && applySent !== boat) {
+            applyState = "";
+            applyError = "Applied the answers as they were when you pressed Go; later edits are not applied yet.";
+        } else if (code === 0) applyState = "done";
+        else if (code === 1) applyState = "needs";
+        else {
+            applyState = "failed";
+            applyError = state === "lost" ? "The apply stopped before it finished. Run omahoy apply in a terminal to finish it."
+                : part("e ").join("\n") || "omahoy gui apply failed";
+        }
     }
     // Answers that change after an apply no longer match what it did.
     onBoatChanged: {
@@ -430,9 +525,15 @@ Item {
                     : (drafter.err || "omahoy gui draft failed") + "\nRun omahoy doctor in a terminal to see what is wrong with boat.toml.";
                 return;
             }
-            s.exists = r.exists === true;
-            s.applyDraft(r.report);
+            const adopted = s.adoptText !== "";
+            s.exists = adopted || r.exists === true;
+            s.applyDraft(adopted ? r : r.report);
             s.loaded = true;
+            if (adopted) {
+                s.applySent = s.boat;
+                s.goTo("review");
+                s.pollApply();
+            }
             s.touch();
         }
     }
@@ -477,7 +578,7 @@ Item {
         onFinished: code => {
             const r = code === 0 ? s.parse(netter.out) : null;
             if (r === null || r.devices.length === 0) s.hardwareError = "Couldn't test the source: " + (netter.err || "no answer");
-            else s.netProbe = r.devices[0];
+            else s.takeNet(r);
         }
     }
     Runner {
@@ -494,24 +595,31 @@ Item {
         }
     }
     Runner {
-        id: applier
-        onLinesChanged: s.applyLog = applier.lines
+        id: launcher
         onFinished: code => {
-            s.applyLog = applier.lines;
-            if (code === 0 && s.applySent !== s.boat) {
-                s.applyState = "";
-                s.applyError = "Applied the answers as they were when you pressed Go; later edits are not applied yet.";
-            } else if (code === 0) s.applyState = "done";
-            else if (code === 1) s.applyState = "needs";
-            else {
+            if (code === 0) s.pollApply();
+            else if (code === 3) {
+                s.applyError = "Another apply was already running; this is its progress.";
+                s.pollApply();
+            } else {
                 s.applyState = "failed";
-                s.applyError = applier.err || "omahoy gui apply failed";
+                s.applyError = launcher.err || "Couldn't start omahoy gui apply";
             }
         }
     }
     Runner {
+        id: watcher
+        onFinished: code => s.takeApply(code === 0 ? watcher.lines : [])
+    }
+    Timer {
+        id: applyTimer
+        interval: 400
+        onTriggered: s.pollApply()
+    }
+    Runner {
+        id: clearer
+    }
+    Runner {
         id: opener
     }
-
-    Component.onCompleted: load()
 }

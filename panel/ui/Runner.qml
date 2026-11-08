@@ -6,8 +6,9 @@ import Quickshell.Io
 // closes it the same way every time and needs no timing. Output arrives a
 // line at a time on `lines` and `errLines` as it happens, and whole in
 // `out` and `err` when the command exits. There is no stop: a probe stops
-// the hub's service and starts it again at the end, and an apply changes the
-// machine, so each runs to its end even if the window closes. The runner
+// the hub's service and starts it again at the end, so it runs to its end
+// even if the window closes. Apply does not run here: it runs detached
+// (scripts/apply.sh), because a panel reload destroys this Process. The runner
 // stays busy until `finished` is delivered, so a second start can't reset
 // the output or code a pending completion is about to report.
 Item {
