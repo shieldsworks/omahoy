@@ -362,7 +362,6 @@ pub mod tests {
                 app,
                 OnDisk::Checkout(Checkout {
                     dir,
-                    dev: false,
                     build: app.binary().map(|_| Build::Fresh),
                     built_at: Some(100),
                     unit_file: app.unit().is_some(),
@@ -637,7 +636,6 @@ pub mod tests {
             App::Helm,
             OnDisk::Checkout(Checkout {
                 dir: "/work/omahelm".into(),
-                dev: true,
                 build: Some(Build::Stale),
                 built_at: Some(100),
                 unit_file: false,

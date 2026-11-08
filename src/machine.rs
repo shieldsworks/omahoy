@@ -37,9 +37,6 @@ pub fn build_state(binary: bool, record: Option<&str>, head: Option<&str>) -> Bu
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Checkout {
     pub dir: PathBuf,
-    /// A developer's own checkout, linked in by link-plugin.sh or on
-    /// PATH: built where it is, never replaced.
-    pub dev: bool,
     /// None for omalookout, which has no binary.
     pub build: Option<Build>,
     /// When the binary was last written, in Unix seconds.
@@ -352,26 +349,26 @@ pub fn uucp(r: &mut dyn Runner, user: &str) -> (bool, bool) {
 }
 
 pub fn find(r: &mut dyn Runner, dirs: &Dirs, app: App) -> OnDisk {
-    let (dir, dev) = match app.plugin_id() {
+    let dir = match app.plugin_id() {
         Some(id) => {
             let at = dirs.plugins.join(id);
             match std::fs::symlink_metadata(&at) {
                 Ok(m) if m.file_type().is_symlink() => match std::fs::canonicalize(&at) {
-                    Ok(real) => (real, true),
+                    Ok(real) => real,
                     Err(_) => return OnDisk::Absent,
                 },
-                Ok(m) if m.is_dir() => (at, false),
+                Ok(m) if m.is_dir() => at,
                 _ => return OnDisk::Absent,
             }
         }
         None => match dev_checkout(&dirs.bin.join(app.name()), app.name()) {
-            Some(dir) => (dir, true),
+            Some(dir) => dir,
             None => {
                 let at = Machine::home_of(dirs, app);
                 if !at.is_dir() {
                     return OnDisk::Absent;
                 }
-                (at, false)
+                at
             }
         },
     };
@@ -389,7 +386,6 @@ pub fn find(r: &mut dyn Runner, dirs: &Dirs, app: App) -> OnDisk {
         .is_some_and(|u| dir.join("dist").join(u).is_file());
     OnDisk::Checkout(Checkout {
         dir,
-        dev,
         build,
         built_at,
         unit_file,
