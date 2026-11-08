@@ -28,3 +28,4 @@ Preconditions:
 - A file that was already dirty is not a `clean` finding. CI still fails if `git status` is dirty after the run, including dirt that was already there.
 - `feature-map` reads `.cursor/skills/verify/features/` only. Do not retarget that check at this directory. That change belongs in a PR whose purpose is the gate.
 - The run reads the checkout. A second writer in the same tree can make `clean` fail.
+- `crate` runs only when `Cargo.toml` is at the root. Then it needs `mise` and the pinned Rust (`mise install`), and its cargo build writes `target/`, which `.gitignore` keeps out of `clean`.

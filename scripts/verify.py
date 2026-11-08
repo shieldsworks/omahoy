@@ -308,6 +308,37 @@ def comments(repo: Repo) -> Iterator[Finding]:
     return _script(repo, "scripts/check-comments.sh", str(repo.root / "scripts/check-comments.sh"))
 
 
+_CARGO = ("mise", "exec", "--", "cargo")
+_CARGO_STEPS = (
+    ("fmt", "--check"),
+    ("clippy", "--locked", "--all-targets", "--", "-D", "warnings"),
+    ("test", "--locked"),
+)
+_SETTING = re.compile(r'^(msrv|rust-version)\s*=\s*"([^"]*)"', re.MULTILINE)
+
+
+@check("the omahoy setup program at the root: rustfmt, clippy with warnings denied, its tests, "
+       "and clippy.toml msrv equal to Cargo.toml rust-version")
+def crate(repo: Repo) -> Iterator[Finding]:
+    # The toolchain is the one mise.toml pins, so a newer system cargo can't pass what CI fails.
+    if not repo.ls("Cargo.toml"):
+        return
+    for step in _CARGO_STEPS:
+        done = subprocess.run([*_CARGO, *step], cwd=repo.root, capture_output=True, text=True)
+        if done.returncode != 0:
+            output = (done.stdout.splitlines() + done.stderr.splitlines())[-40:]
+            yield Finding("Cargo.toml", None, f"cargo {step[0]} failed:\n" + "\n".join(output))
+            return
+    found = {}
+    for name in ("clippy.toml", "Cargo.toml"):
+        path = repo.root / name
+        if path.exists():
+            found.update(_SETTING.findall(path.read_text(encoding="utf-8")))
+    if found.get("msrv") != found.get("rust-version"):
+        yield Finding("clippy.toml", None,
+                      f"msrv {found.get('msrv')} is not Cargo.toml rust-version {found.get('rust-version')}")
+
+
 @check("every page's tags open and close, so it can be walked")
 def html(repo: Repo) -> Iterator[Finding]:
     for page in repo.pages:
