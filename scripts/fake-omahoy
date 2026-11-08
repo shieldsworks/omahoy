@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+# A stand-in for `omahoy gui ...` that answers with the JSON shapes in
+# omahoy's docs/gui.md, so the panel can be driven without the real binary:
+#   OMAHOY_BIN=$PWD/scripts/fake-omahoy ./run.sh
+# It follows the contract's shape, not its rules: the real omahoy decides.
+# FAKE_OMAHOY_FAST=1 skips the sleeps.
+set -euo pipefail
+
+nap() { [[ -n ${FAKE_OMAHOY_FAST:-} ]] || sleep "$1"; }
+die() { printf '%s\n' "$*" >&2; exit 2; }
+
+[[ ${1:-} == gui ]] || die "fake-omahoy: only 'gui' commands"
+shift
+cmd=${1:-}
+shift || true
+
+# The report for boat text on stdin: a few rules, enough to move the form.
+report() {
+  local text=$1
+  jq -n --arg text "$text" '
+    def val($k): [$text | split("\n")[] | select(test("^\\s*" + $k + "\\s*=")) | sub("^[^=]*=\\s*"; "")] ;
+    def one($k): val($k) | first // null;
+    def num($s): if $s == null then null else ($s | tonumber? // null) end;
+    def r2: if . == null then null else (. * 100 | round) / 100 end;
+    def unquote: if . == null then null else gsub("^\"|\"$"; "") end;
+    def conv($v; $from; $to):
+      if $v == null then null
+      else ({feet: 1, meters: 3.28084, fathoms: 6}) as $ft
+        | ($v * $ft[$from] / $ft[$to]) | r2 end;
+    def deg($n): ($n | floor) as $d | (($n - $d) * 60 * 10 | round / 10) as $m
+      | "\($d)°\($m)′";
+    (one("units") // "feet") as $units
+    | (one("name") | unquote) as $name
+    | num(one("draft")) as $draft
+    | num(one("clearance")) as $clearance
+    | (one("home") | if . == null then null else (split(",") | map(gsub("\\s"; "") | tonumber? // null)) end) as $home
+    | (if $home != null and ($home | length) == 2 and ($home | all(. != null))
+        then {lat: $home[0], lon: $home[1]} else null end) as $h
+    | (if $h == null then null else {
+        south: (($h.lat - 1) * 1000 | round / 1000), west: (($h.lon - 1.1) * 1000 | round / 1000),
+        north: (($h.lat + 1) * 1000 | round / 1000), east: (($h.lon + 1.1) * 1000 | round / 1000)} end) as $area
+    | (if $h == null then null else {
+        noaa: ($h.lon < -64 and $h.lat > 17),
+        hrrr: ($h.lon > -134 and $h.lon < -61 and $h.lat > 21.2 and $h.lat < 52.6)} end) as $cov
+    | ([{short: "helm", name: "omahelm", what: "chartplotter", refusal: null, caveat: ($cov != null and $cov.noaa == false | if . then "import your own ENC: omahelm import ZIP|DIR" else null end)},
+        {short: "lookout", name: "omalookout", what: "AIS targets and collision alarms", refusal: null, caveat: null},
+        {short: "logbook", name: "omalogbook", what: "logbook of the days sailed", refusal: null, caveat: null},
+        {short: "tide", name: "omatide", what: "tides and currents",
+         refusal: (if $cov != null and $cov.noaa == false then "NOAA tides cover US waters only" else null end), caveat: null},
+        {short: "wind", name: "omawind", what: "HRRR wind forecast",
+         refusal: (if $cov != null and $cov.hrrr == false then "HRRR wind covers US waters only" else null end), caveat: null}]) as $apps
+    | ($apps | map(select(.refusal == null) | .short)) as $allowed
+    | (one("apps") | if . == null then null else split(",") | map(gsub("\\s"; "") | select(. != "")) end) as $chosen
+    | ([ if $name == null or $name == "" then {key: "name", message: "name is missing"} else empty end,
+         if $draft == null then {key: "draft", message: "draft is missing"}
+         elif $draft <= 0 then {key: "draft", message: "draft \($draft) is not a depth"} else empty end,
+         if $clearance == null then {key: "clearance", message: "clearance is missing"}
+         elif $clearance <= 0 then {key: "clearance", message: "clearance \($clearance) is not a depth"} else empty end,
+         if $h == null then {key: "home", message: "home is missing: type lat, lon"} else empty end,
+         if (val("source") | length) == 0 then {key: "source", message: "source is missing"}
+         elif (val("source") | length) > 1 and (val("source") | index("demo")) != null
+           then {key: "source", message: "demo must be the only source"} else empty end,
+         if $chosen == null then {key: "apps", message: "apps is missing"}
+         elif ($chosen | map(select(. as $c | $allowed | index($c) == null)) | length) > 0
+           then {key: "apps", message: "an app cannot work in this area"} else empty end,
+         if (($chosen // []) | index("logbook")) != null and (one("vault") | unquote) == null
+           then {key: "vault", message: "vault is missing"} else empty end ]) as $problems
+    | (if $draft != null and $clearance != null and $draft > 0 and $clearance > 0
+        then (($draft + $clearance) * ({feet: 1, meters: 3.28084, fathoms: 6}[$units])) else null end) as $safetyFt
+    | (if $safetyFt == null then null else
+        ($safetyFt / ({feet: 1, meters: 3.28084, fathoms: 6}[$units]) | r2) end) as $safety
+    | {
+        answers: {name: $name, home: (if $h == null then null else $h + {show: "\(deg($h.lat | fabs))\(if $h.lat < 0 then "S" else "N" end) \(deg($h.lon | fabs))\(if $h.lon < 0 then "W" else "E" end)"} end),
+                  area: $area, units: $units, draft: $draft, clearance: $clearance,
+                  sources: val("source"), apps: $chosen, vault: (one("vault") | unquote),
+                  git: (one("git") | if . == null then null else . == "true" end)},
+        problems: $problems,
+        complete: ($problems | length == 0),
+        suggestedArea: $area,
+        coverage: $cov,
+        depths: (if $safety == null then null else
+                  {safety: $safety, shallow: ($safety / 2 | floor), safetyContour: $safety, deep: ({feet: 30, meters: 10, fathoms: 5}[$units])} end),
+        draftIn: (if $draft == null then null else {feet: conv($draft; $units; "feet"), meters: conv($draft; $units; "meters"), fathoms: conv($draft; $units; "fathoms")} end),
+        clearanceIn: (if $clearance == null then null else {feet: conv($clearance; $units; "feet"), meters: conv($clearance; $units; "meters"), fathoms: conv($clearance; $units; "fathoms")} end),
+        defaultClearance: {feet: 2, meters: 0.6, fathoms: 0.5},
+        apps: $apps,
+        appsAllowed: $allowed
+      }'
+}
+
+case $cmd in
+  draft)
+    text=$'name = "Dash"\nunits = feet\ndraft = 3.5\nclearance = 2\nhome = 37.8667, -122.3134\nsource = demo\napps = helm, lookout, logbook, tide, wind\nvault = "~/Logbook"\ngit = true'
+    jq -n --argjson r "$(report "$text")" '{exists: false, report: $r}'
+    ;;
+  check)
+    report "$(cat)"
+    ;;
+  probe)
+    uucp=
+    specs=()
+    for a in "$@"; do
+      if [[ $a == --uucp ]]; then uucp=1; else specs+=("$a"); fi
+    done
+    printf 'building omakeel...\n' >&2
+    nap 1
+    printf 'stopping omakeel.service\n' >&2
+    nap 1
+    printf 'listening on every serial device (up to 30 s each)\n' >&2
+    nap 1
+    gps='{"spec":"serial:/dev/serial/by-id/usb-u-blox_GPS-if00","name":"usb-u-blox_GPS-if00","kind":"serial","verdict":"ok","describe":"GPS, 4800 baud, 41 good sentences, fix 37°52.0′N 122°18.8′W","source":"serial:/dev/serial/by-id/usb-u-blox_GPS-if00:4800","fix":{"lat":37.8667,"lon":-122.3134}}'
+    denied='{"spec":"serial:/dev/serial/by-id/usb-FTDI_FT232-if00","name":"usb-FTDI_FT232-if00","kind":"serial","verdict":"denied","describe":"permission denied: you are not in the uucp group","source":null,"fix":null}'
+    denied_ok='{"spec":"serial:/dev/serial/by-id/usb-FTDI_FT232-if00","name":"usb-FTDI_FT232-if00","kind":"serial","verdict":"ok","describe":"AIS, 38400 baud, 6 vessels heard","source":"serial:/dev/serial/by-id/usb-FTDI_FT232-if00:38400","fix":null}'
+    silent='{"spec":"serial:/dev/serial/by-id/usb-dAISy_AIS_Receiver-if00","name":"usb-dAISy_AIS_Receiver-if00","kind":"serial","verdict":"silent","describe":"nothing heard at any baud","source":"serial:/dev/serial/by-id/usb-dAISy_AIS_Receiver-if00:38400","fix":null}'
+    if ((${#specs[@]} == 0)); then
+      devices="[$gps,$denied,$silent]"
+    else
+      devices=
+      for s in "${specs[@]}"; do
+        case $s in
+          tcp:*|[a-z0-9.-]*:[0-9]*)
+            host=${s#tcp:}
+            if [[ $host == *unreachable* ]]; then
+              d=$(jq -n --arg s "tcp:$host" '{spec:$s,name:$s,kind:"tcp",verdict:"unreachable",describe:"connection refused",source:null,fix:null}')
+            else
+              d=$(jq -n --arg s "tcp:$host" '{spec:$s,name:$s,kind:"tcp",verdict:"ok",describe:"AIS and GPS, 12 good sentences, fix 37°52.0′N 122°18.8′W",source:$s,fix:{lat:37.8667,lon:-122.3134}}')
+            fi
+            ;;
+          serial:*)
+            if [[ -n $uucp ]]; then d=$denied_ok; else d=$denied; fi
+            ;;
+          *)
+            d=$(jq -n --arg s "$s" '{spec:$s,name:$s,kind:"serial",verdict:"error",describe:"not a serial: or tcp: spec",source:null,fix:null}')
+            ;;
+        esac
+        devices+=${devices:+,}$d
+      done
+      devices="[$devices]"
+    fi
+    nap 1
+    printf 'starting omakeel.service\n' >&2
+    jq -n --argjson d "$devices" --argjson s "$([[ -n $uucp ]] && echo true || echo false)" \
+      '{devices: $d, uucp: {member: ($s or false), session: $s}}'
+    ;;
+  join-uucp)
+    nap 1
+    printf '%s\n' '{"member": true, "session": false}'
+    ;;
+  plan)
+    r=$(report "$(cat)")
+    jq -n --argjson r "$r" '{
+      problems: $r.problems,
+      steps: (if ($r.problems | length) > 0 then [] else
+        ["install packages: git, curl, libarchive",
+         "clone and build omakeel", "install plugin org.omahoy.helm",
+         "write app configs: omakeel, omahelm, omalogbook",
+         "enable omakeel.service"] end),
+      findings: (if ($r.problems | length) > 0 then [] else ["omakeel is not running yet"] end)}'
+    ;;
+  apply)
+    cat > /dev/null
+    printf 'saved boat.toml\n'; nap 1
+    printf 'installing packages\n'; nap 1
+    printf 'building omakeel\n'; nap 1
+    printf 'enabling omakeel.service\n'
+    exit "${FAKE_OMAHOY_APPLY_EXIT:-0}"
+    ;;
+  *)
+    die "fake-omahoy: unknown gui command '$cmd'"
+    ;;
+esac
