@@ -5,9 +5,10 @@
 use crate::apps::App;
 use crate::boat::{Boat, Partial, parse_depth};
 use crate::depth::{self, Units};
-use crate::hub::{Baud, Heard, Hub, Source, Verdict, parse_probe};
+use crate::hub::{Baud, Heard, Hub, Source, Verdict};
 use crate::machine::uucp;
 use crate::place::{Area, Position, coverage};
+use crate::probe;
 use crate::sys::{Cmd, Dirs, Runner, Terminal, confirm};
 use std::path::PathBuf;
 
@@ -204,68 +205,20 @@ impl Ask<'_> {
         Ok(())
     }
 
-    /// Runs `omakeel probe`. A probe that fails to run is an error, never
-    /// an empty scan: an omakeel from before `probe` existed would
-    /// otherwise read as "no hardware" and set the hub to the demo.
     fn probe(
         &mut self,
         targets: &[String],
         via_uucp: bool,
     ) -> Result<Vec<Result<Heard, String>>, String> {
-        let bin = self.omakeel.display().to_string();
-        let cmd = if via_uucp {
-            let mut inner = format!("{} probe", shell_quote(&bin));
-            for t in targets {
-                inner += &format!(" {}", shell_quote(t));
-            }
-            Cmd::new("sg", &["uucp", "-c", &inner])
-        } else {
-            Cmd::new(bin, &["probe"]).args(targets.iter().cloned())
-        };
-        let out = self
-            .r
-            .read(&cmd)
-            .map_err(|e| format!("couldn't run omakeel probe: {e}"))?;
-        let is_probe_line = |l: &str| {
-            l.split_whitespace()
-                .next()
-                .is_some_and(|w| w.starts_with("serial:") || w.starts_with("tcp:"))
-        };
-        let lines = out.lines().filter(|l| !l.trim().is_empty());
-        if lines.clone().next().is_some() && !lines.clone().any(is_probe_line) {
-            let first = lines.clone().next().unwrap_or("").trim();
-            return Err(format!(
-                "couldn't run omakeel probe: it printed {first:?}, which is not a probe report. Update omakeel."
-            ));
-        }
-        Ok(parse_probe(&out))
+        probe::probe(&mut *self.r, &self.omakeel, targets, via_uucp)
     }
 
-    /// omakeel.service holds the ports it reads, so it is stopped while
-    /// the probe listens and started again after.
     fn probe_with_hub_stopped(
         &mut self,
         targets: &[String],
         via_uucp: bool,
     ) -> Result<Vec<Result<Heard, String>>, String> {
-        let unit = ["--user", "is-active", "--quiet", "omakeel.service"];
-        let running = self.r.read(&Cmd::new("systemctl", &unit)).is_ok();
-        if running {
-            self.t
-                .say("  Stopping the hub while setup listens to the ports.");
-            let _ = self.r.run(&Cmd::new(
-                "systemctl",
-                &["--user", "stop", "omakeel.service"],
-            ));
-        }
-        let heard = self.probe(targets, via_uucp);
-        if running {
-            let _ = self.r.run(&Cmd::new(
-                "systemctl",
-                &["--user", "start", "omakeel.service"],
-            ));
-        }
-        heard
+        probe::probe_with_hub_stopped(&mut *self.r, &mut *self.t, &self.omakeel, targets, via_uucp)
     }
 
     /// Sorts what the probe heard: kept sources, and the paths that need uucp.
@@ -300,7 +253,7 @@ impl Ask<'_> {
                     self.t.say(&format!("  ? {name}: silent at every baud."));
                     if let Some(path) = h.path()
                         && self.yes(
-                            "    Keep it as AIS at 38400, the usual rate? A dAISy in a quiet anchorage can stay silent for minutes.",
+                            "    Keep it as AIS at 38400, the usual rate? A dAISy in a quiet anchorage can stay silent for minutes. (n skips it for now)",
                             false,
                         )
                     {
@@ -319,9 +272,20 @@ impl Ask<'_> {
 
     /// The hardware question. Returns the GPS fix, if one was heard.
     fn hardware(&mut self, p: &mut Partial) -> Result<Option<Position>, String> {
-        self.t
-            .say("Hardware. Plug in your GPS and AIS receivers now, then press Enter.");
-        self.t.ask("").ok_or(STOPPED)?;
+        self.t.say("Hardware.");
+        let a = self
+            .t
+            .ask("Plug in your GPS and AIS receivers now, then press Enter. Or type s to skip for now:")
+            .ok_or(STOPPED)?;
+        if matches!(a.to_ascii_lowercase().as_str(), "s" | "skip") {
+            let kept = p.hub.get_or_insert(Hub::Demo);
+            self.t.say(if *kept == Hub::Demo {
+                "  Skipped for now. The hub keeps the demo sail. Run omahoy hardware when you plug something in."
+            } else {
+                "  Skipped for now. The hub keeps the sources it has. Run omahoy hardware when you want to change them."
+            });
+            return Ok(None);
+        }
         self.t
             .say("  Listening to each serial device, at each baud (up to 30 s a device).");
         let heard = self.probe_with_hub_stopped(&[], false)?;
@@ -339,7 +303,7 @@ impl Ask<'_> {
             if !db {
                 self.t.say("  Serial ports need the uucp group.");
                 if self.yes(
-                    &format!("  Add {user} now? (sudo gpasswd -a {user} uucp)"),
+                    &format!("  Add {user} now? (sudo gpasswd -a {user} uucp; n skips it for now)"),
                     true,
                 ) {
                     match self
@@ -379,7 +343,7 @@ impl Ask<'_> {
                 && !matches!(old, Source::Tcp { .. })
                 && self.yes(
                     &format!(
-                        "  Keep {} from before? It wasn't heard just now.",
+                        "  Keep {} from before? It wasn't heard just now. (n skips it for now)",
                         old.spec()
                     ),
                     false,
@@ -407,7 +371,7 @@ impl Ask<'_> {
                 .t
                 .ask(&match &tcp_default {
                     Some(d) => format!("Network source (a phone app or NMEA multiplexer)? host:port, - for none [{d}]:"),
-                    None => "Network source (a phone app or NMEA multiplexer)? host:port, or Enter for none:".into(),
+                    None => "Network source (a phone app or NMEA multiplexer)? host:port, or Enter to skip for now:".into(),
                 })
                 .ok_or(STOPPED)?;
             let a = match (a.as_str(), &tcp_default) {
@@ -441,7 +405,7 @@ impl Ask<'_> {
             self.sort(heard, &mut kept);
             if !reached
                 && self.yes(
-                    "  Keep it anyway? Phone apps share only while they're open.",
+                    "  Keep it anyway? Phone apps share only while they're open. (n skips it for now)",
                     true,
                 )
                 && !kept.contains(&source)
@@ -600,13 +564,8 @@ fn first_fix(heard: &[Result<Heard, String>]) -> Option<Position> {
     })
 }
 
-/// One word for `sh -c`, in single quotes.
-fn shell_quote(s: &str) -> String {
-    format!("'{}'", s.replace('\'', r"'\''"))
-}
-
 /// `usb-dAISy_AIS_Receiver_0001-if00` rather than the whole by-id path.
-fn short_device(path: &str) -> String {
+pub fn short_device(path: &str) -> String {
     path.rsplit('/').next().unwrap_or(path).to_string()
 }
 
@@ -1090,6 +1049,86 @@ serial:/dev/serial/by-id/usb-dAISy-if00  denied
         );
         assert!(!STOPPED.contains("Nothing changed"));
         assert!(!t.shown.contains("nothing changes until you say so"));
+    }
+
+    #[test]
+    fn s_skips_the_hardware_question_for_now_on_a_first_run() {
+        let mut t = Script::new(&[
+            "Dash",
+            "",
+            "4",
+            "",
+            "s", // skip hardware: no probe, no network question
+            "37.8663, -122.3148",
+            "",
+            "",
+            "",
+        ]);
+        let mut r = Commands::default();
+        let b = ask(&mut t, &mut r, Partial::default()).unwrap();
+        assert_eq!(b.hub, crate::hub::Hub::Demo);
+        assert!(r.log.is_empty(), "nothing was run: {:?}", r.log);
+        assert!(t.shown.contains(
+            "Plug in your GPS and AIS receivers now, then press Enter. Or type s to skip for now: <s>"
+        ));
+        assert!(!t.shown.contains("Network source"));
+        assert!(
+            t.shown
+                .contains("Skipped for now. The hub keeps the demo sail. Run omahoy hardware")
+        );
+    }
+
+    #[test]
+    fn s_keeps_the_boats_sources_and_returns_no_fix() {
+        let boat = crate::boat::tests::wavelength();
+        let mut t = Script::new(&["S"]);
+        let mut r = Commands::default();
+        let dirs = dirs();
+        let got = Ask {
+            t: &mut t,
+            r: &mut r,
+            dirs: &dirs,
+            omakeel: KEEL.into(),
+        }
+        .hardware_only(&boat)
+        .unwrap();
+        assert_eq!(got, boat);
+        assert!(r.log.is_empty());
+        assert!(t.shown.contains("keeps the sources it has"));
+    }
+
+    #[test]
+    fn the_network_question_and_the_device_prompts_say_no_skips_for_now() {
+        let mut t = Script::new(&[
+            "Dash",
+            "",
+            "4",
+            "",
+            "",
+            "",
+            "",
+            "37.8663, -122.3148",
+            "",
+            "",
+            "",
+        ]);
+        let mut r = Commands::default().on(
+            "/k/omakeel probe",
+            Ok("serial:/dev/serial/by-id/usb-dAISy-if00  silent\n"),
+        );
+        let b = ask(&mut t, &mut r, Partial::default()).unwrap();
+        assert_eq!(b.hub, crate::hub::Hub::Demo);
+        assert!(
+            t.shown.contains("host:port, or Enter to skip for now:"),
+            "{}",
+            t.shown
+        );
+        assert!(
+            t.shown
+                .contains("silent for minutes. (n skips it for now) [y/N]"),
+            "{}",
+            t.shown
+        );
     }
 
     #[test]

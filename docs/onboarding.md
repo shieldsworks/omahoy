@@ -18,7 +18,7 @@ The first run asks the following, in order. Hardware comes before home, so a GPS
 1. Boat name.
 2. Depth units: feet, meters or fathoms.
 3. Draft, and the clearance wanted under the keel, both in those units. The clearance offered is 2 ft, 0.6 m or 0.5 fathoms. Both are rounded to two decimals as they are typed, so the first apply works from the numbers boat.toml keeps; a draft that rounds to zero is refused. When a re-run changes the units, the offered draft and clearance are converted (1 fathom is 6 ft, 1 m is 3.28 ft) and rounded the same way.
-4. Hardware. Plug in receivers, then press Enter. omakeel probes each serial device and lists what it heard: GPS, AIS, silent, or permission denied. Then an optional network source (`host:port`). If nothing is found, the hub runs the demo sail.
+4. Hardware. Plug in receivers, then press Enter, or type `s` to skip for now. omakeel probes each serial device and lists what it heard: GPS, AIS, silent, or permission denied. Then an optional network source (`host:port`, Enter to skip for now). If nothing is found, the hub runs the demo sail. `s` keeps the boat's current sources (the demo on a first run), skips the probe and the network question, and says to come back with `omahoy hardware`. The per-device yes/no questions keep their defaults, and their prompts say that "no" skips that source for now.
 5. Home port. The default is the GPS fix when there is one; otherwise type `lat, lon`. Degrees-and-minutes forms are accepted too.
 6. Sailing area. It is derived from home, about ±1° in each direction, and shown with what the US data covers there: NOAA charts, NOAA tides, HRRR wind.
 7. Apps, each with a reason when it can't work where the boat sails.
@@ -35,7 +35,10 @@ omahoy            # boat.toml exists: show it, offer to change a section, then p
 omahoy doctor     # read-only: what's wrong, what apply would do; exit 1 if anything
 omahoy apply      # make the machine match boat.toml; a no-op when healthy (--yes skips the prompt)
 omahoy hardware   # re-run only the hardware question
+omahoy gui ...    # the interface for graphical setup: draft, check, probe, join-uucp, plan, apply
 ```
+
+`omahoy gui` is how the omahoy-setup panel runs setup. Its commands, JSON and exit codes are in `gui.md`; the panel holds the form and this crate keeps every rule.
 
 A source that was in boat.toml but isn't heard on a re-run is offered back ("Keep it from before?", default no), so an unplugged receiver is never dropped by surprise. Re-running the hardware question never moves home or the area: the home question is asked only when boat.toml has no home. To move home, change the home section.
 
@@ -186,8 +189,11 @@ The alternative was a shared `omahoy-boat` crate that every app reads. It lost o
 
 | File | What it holds |
 |---|---|
-| `src/main.rs`, `src/cli.rs` | The four commands, and the converge loop: survey, plan, show, confirm, run. |
-| `src/boat.rs` | `Boat` with its strict parse and render, `Partial` (answers so far) and the defaults read from existing app configs. |
+| `src/main.rs`, `src/cli.rs` | The four commands, `gui` dispatch, and the converge loop: survey, plan, show, confirm, run. |
+| `src/json.rs` | A std-only JSON value and writer, for `gui`. |
+| `src/gui.rs` | `omahoy gui`: the commands, the REPORT, the stderr `Terminal` and the capturing `Runner` that maps `sudo` and `omarchy pkg add` to `pkexec`. See `gui.md`. |
+| `src/probe.rs` | Running `omakeel probe` (the not-a-probe-report check, `sg uucp`, stopping the hub around it), shared by the terminal and `gui`. |
+| `src/boat.rs` | `Boat` with its strict parse and render, `Partial` (answers so far, its lenient parse, and the defaults read from existing app configs). |
 | `src/apps.rs` | `enum App`, the only app list: repo, plugin id, binary, unit, config, coverage refusals, and the managed keys. |
 | `src/place.rs` | `Position`, `Area`, `coverage`, the NOAA boxes and the HRRR bounds. |
 | `src/depth.rs` | Units, and omahelm's four depths from draft and clearance. |
