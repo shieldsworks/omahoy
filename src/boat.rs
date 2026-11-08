@@ -131,7 +131,11 @@ fn check_vault(v: &str) -> Result<String, String> {
     if v.contains(['"', '#']) {
         return Err("a folder name can't hold \" or #".into());
     }
-    Ok(v.trim_end_matches('/').to_string())
+    let v = v.trim_end_matches('/');
+    if v.is_empty() || v == "~" {
+        return Err("the logbook folder needs a name below / or ~/".into());
+    }
+    Ok(v.to_string())
 }
 
 fn check_depth(v: f64, what: &str, zero_ok: bool) -> Result<f64, String> {
@@ -489,18 +493,25 @@ impl Partial {
                 "source" => sources.push((n, v.to_string())),
                 "apps" => {
                     let mut apps = Vec::new();
+                    let mut all_known = true;
                     for w in v.split(',').map(str::trim).filter(|w| !w.is_empty()) {
                         match App::from_short(w) {
                             Some(a) => apps.push(a),
                             None if w == "keel" => {
-                                bad("keel always comes; leave it out of apps".into())
+                                all_known = false;
+                                bad("keel always comes; leave it out of apps".into());
                             }
-                            None => bad(format!(
-                                "apps: {w} is not one of helm, lookout, logbook, tide, wind"
-                            )),
+                            None => {
+                                all_known = false;
+                                bad(format!(
+                                    "apps: {w} is not one of helm, lookout, logbook, tide, wind"
+                                ));
+                            }
                         }
                     }
-                    p.apps = Some(apps);
+                    if all_known {
+                        p.apps = Some(apps);
+                    }
                 }
                 "vault" => match check_vault(&unquote(v)) {
                     Ok(x) => p.vault = Some(x),

@@ -246,7 +246,7 @@ fn doctor(e: &mut Env<'_>) -> Result<i32, String> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     use crate::sys::fake::{Commands, Script};
@@ -288,7 +288,11 @@ mod tests {
     /// A tmp home with only omakeel on it, built and linked, for a boat
     /// that has the demo hub and no apps. Everything matches unless the
     /// unit is stopped.
-    fn keel_only(name: &str, active: bool, plugins_listed: bool) -> (Dirs, Boat, Commands) {
+    pub(crate) fn keel_only(
+        name: &str,
+        active: bool,
+        plugins_listed: bool,
+    ) -> (Dirs, Boat, Commands) {
         let dirs = tmp_dirs(name);
         let mut boat = crate::boat::tests::wavelength();
         boat.hub = crate::hub::Hub::Demo;

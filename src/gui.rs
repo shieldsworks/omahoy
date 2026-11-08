@@ -13,7 +13,7 @@ use crate::hub::{Heard, Source, Verdict};
 use crate::json::Json;
 use crate::machine::{Machine, uucp};
 use crate::place::{Area, Coverage, coverage};
-use crate::plan::{findings, plan};
+use crate::plan::{Step, findings, plan};
 use crate::probe::probe_with_hub_stopped;
 use crate::sys::{Cmd, Runner, Terminal};
 use std::path::Path;
@@ -364,7 +364,8 @@ fn plan_json(e: &mut Env<'_>, input: &str) -> Json {
 
 fn join_uucp(e: &mut Env<'_>) -> Result<Json, String> {
     let user = e.dirs.user.clone();
-    e.r.run(&Cmd::new("pkexec", &["gpasswd", "-a", &user, "uucp"]))
+    Step::JoinUucp(user.clone())
+        .run(&mut *e.r, e.dirs)
         .map_err(|err| format!("couldn't add {user} to the uucp group: {err}"))?;
     let (_, session) = uucp(&mut *e.r, &user);
     Ok(Json::obj(vec![
@@ -380,6 +381,11 @@ fn normalize_spec(spec: &str) -> Result<String, String> {
     if let Some(rest) = spec.strip_prefix("serial:") {
         let path = match rest.rsplit_once(':') {
             Some((path, baud)) if crate::hub::Baud::parse(baud).is_some() => path,
+            Some((_, baud)) if !baud.is_empty() && baud.bytes().all(|b| b.is_ascii_digit()) => {
+                return Err(format!(
+                    "{spec}: {baud} is not a baud omakeel reads (4800, 9600, 19200, 38400, 57600, 115200)"
+                ));
+            }
             _ => rest,
         };
         return if path.starts_with('/') {
@@ -460,10 +466,10 @@ fn heard_json(h: Result<Heard, String>) -> Json {
     };
     let source = match &h.verdict {
         Verdict::Ok { source, .. } => Json::from(source.spec()),
+        _ if h.spec.starts_with("tcp:") => Source::parse(&h.spec).ok().map(|s| s.spec()).into(),
         Verdict::Silent => h
             .path()
             .map_or(Json::Null, |p| Json::from(format!("serial:{p}:38400"))),
-        _ if h.spec.starts_with("tcp:") => Source::parse(&h.spec).ok().map(|s| s.spec()).into(),
         _ => Json::Null,
     };
     let fix = match &h.verdict {
@@ -506,7 +512,7 @@ mod tests {
         Dirs::resolve(Some(tmp.into()), None, None, None, Some("sailor".into())).unwrap()
     }
 
-    fn go(g: &Gui, dirs: &Dirs, r: &mut Commands, input: &str) -> (Result<i32, String>, String) {
+    fn go(g: &Gui, dirs: &Dirs, r: &mut dyn Runner, input: &str) -> (Result<i32, String>, String) {
         let mut t = Script::new(&[]);
         let mut out = String::new();
         let code = run(
@@ -724,17 +730,28 @@ mod tests {
     #[test]
     fn join_uucp_asks_polkit_and_reports_the_session() {
         let dirs = tmp_dirs("join");
-        let mut r = Commands::default()
+        let mut inner = Commands::default()
             .on("pkexec gpasswd -a sailor uucp", Ok(""))
             .on("getent group uucp", Ok("uucp:x:987:sailor\n"))
             .on("id -nG", Ok("sailor wheel\n"));
-        let (code, out) = go(&Gui::JoinUucp, &dirs, &mut r, "");
+        let (code, out) = go(
+            &Gui::JoinUucp,
+            &dirs,
+            &mut GuiRunner { inner: &mut inner },
+            "",
+        );
+        assert_eq!(inner.log[0], "pkexec gpasswd -a sailor uucp");
         assert_eq!(
             (code, out.as_str()),
             (Ok(0), "{\"member\":true,\"session\":false}\n")
         );
-        let mut r = Commands::default().on("pkexec gpasswd -a sailor uucp", Err("dismissed"));
-        let (code, _) = go(&Gui::JoinUucp, &dirs, &mut r, "");
+        let mut inner = Commands::default().on("pkexec gpasswd -a sailor uucp", Err("dismissed"));
+        let (code, _) = go(
+            &Gui::JoinUucp,
+            &dirs,
+            &mut GuiRunner { inner: &mut inner },
+            "",
+        );
         assert!(code.unwrap_err().contains("dismissed"));
     }
 
@@ -877,6 +894,143 @@ serial:/dev/serial/by-id/usb-X  nonsense
         let r = Commands::default().on("/k/omakeel probe", Err("exit 2"));
         let (got, _) = probe_out("", &[], false, r);
         assert!(got.unwrap_err().contains("couldn't run omakeel probe"));
+    }
+
+    #[test]
+    fn a_silent_tcp_device_still_offers_its_canonical_source() {
+        let heard = "tcp:phone:10110  silent\n";
+        let r = Commands::default()
+            .on("/k/omakeel probe tcp:phone:10110", Ok(heard))
+            .on("getent group uucp", Ok(""))
+            .on("id -nG", Ok(""));
+        let (got, _) = probe_out(heard, &["phone:10110"], false, r);
+        let out = got.unwrap().render();
+        assert!(
+            out.contains(r#"{"spec":"tcp:phone:10110","name":"tcp:phone:10110","kind":"tcp","verdict":"silent","describe":"silent at every baud","source":"tcp:phone:10110","fix":null}"#),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn an_unsupported_baud_is_an_error_device_and_the_rest_are_still_probed() {
+        let r = Commands::default()
+            .on(
+                "/k/omakeel probe serial:/dev/ttyUSB1:4800",
+                Ok("serial:/dev/ttyUSB1:4800  busy\n"),
+            )
+            .on("getent group uucp", Ok(""))
+            .on("id -nG", Ok(""));
+        let (got, _) = probe_out(
+            "",
+            &["serial:/dev/ttyUSB0:12345", "serial:/dev/ttyUSB1:4800"],
+            false,
+            r,
+        );
+        let out = got.unwrap().render();
+        assert!(
+            out.starts_with(r#"{"devices":[{"spec":"serial:/dev/ttyUSB0:12345","name":"ttyUSB0:12345","kind":"serial","verdict":"error","describe":"serial:/dev/ttyUSB0:12345: 12345 is not a baud omakeel reads"#),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#""spec":"serial:/dev/ttyUSB1:4800""#),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn a_vault_that_is_only_a_root_is_a_problem_in_check_as_in_apply() {
+        let dirs = tmp_dirs("vault-root");
+        for vault in ["/", "~/", "~", "//"] {
+            let text = WAVELENGTH.replace("~/Logbook", vault);
+            let (_, out) = go(&Gui::Check, &dirs, &mut Commands::default(), &text);
+            assert!(out.contains(r#""complete":false"#), "{vault}: {out}");
+            assert!(out.contains(r#""key":"vault","line":12"#), "{vault}: {out}");
+            assert!(Boat::parse(&text).is_err(), "{vault}");
+        }
+    }
+
+    #[test]
+    fn a_bad_app_name_nulls_the_apps_answer_and_allows_none() {
+        let dirs = tmp_dirs("bad-apps");
+        let text = WAVELENGTH.replace("helm, lookout, logbook, tide, wind", "helm, typo");
+        let (_, out) = go(&Gui::Check, &dirs, &mut Commands::default(), &text);
+        assert!(out.contains(r#""apps":null,"vault""#), "{out}");
+        assert!(out.contains(r#""appsAllowed":[]"#), "{out}");
+        assert!(out.contains(r#""complete":false"#), "{out}");
+        assert!(
+            out.contains(r#"{"key":"apps","line":11,"message":"apps: typo is not one of"#),
+            "{out}"
+        );
+        assert!(!out.contains("missing apps"), "{out}");
+    }
+
+    /// `go` with a scripted machine and the panel's runner, as `main` wires it.
+    fn apply(
+        dirs: &Dirs,
+        inner: &mut Commands,
+        boat: &Boat,
+    ) -> (Result<i32, String>, String, String) {
+        let mut t = Script::new(&[]);
+        let mut r = GuiRunner { inner };
+        let mut out = String::new();
+        let code = run(
+            &Gui::Apply,
+            &mut Env {
+                t: &mut t,
+                r: &mut r,
+                dirs,
+                own: None,
+            },
+            &boat.render(),
+            &mut out,
+        );
+        (code, out, t.shown)
+    }
+
+    #[test]
+    fn apply_saves_the_boat_and_a_machine_that_matches_is_exit_0() {
+        let (dirs, boat, mut r) = crate::cli::tests::keel_only("gui-apply-ok", true, true);
+        let (code, _, shown) = apply(&dirs, &mut r, &boat);
+        let saved = std::fs::read_to_string(dirs.boat());
+        let _ = std::fs::remove_dir_all(&dirs.home);
+        assert_eq!(code, Ok(0));
+        assert_eq!(saved.ok(), Some(boat.render()));
+        assert!(shown.contains("Everything matches boat.toml."), "{shown}");
+    }
+
+    #[test]
+    fn apply_that_leaves_a_step_is_exit_1_with_the_boat_saved() {
+        let (dirs, boat, mut r) = crate::cli::tests::keel_only("gui-apply-left", false, true);
+        let (code, _, shown) = apply(&dirs, &mut r, &boat);
+        let saved = dirs.boat().exists();
+        let _ = std::fs::remove_dir_all(&dirs.home);
+        assert_eq!(code, Ok(1));
+        assert!(saved);
+        assert!(shown.contains("Not finished. Still to do:"), "{shown}");
+        assert!(
+            r.log
+                .contains(&"systemctl --user enable --now omakeel.service".to_string()),
+            "{:?}",
+            r.log
+        );
+    }
+
+    #[test]
+    fn a_dismissed_polkit_prompt_after_saving_is_exit_2_and_the_boat_stays_saved() {
+        let (dirs, boat, r) = crate::cli::tests::keel_only("gui-apply-pk", true, true);
+        let mut r = r.on(
+            "pkexec pacman -S --noconfirm --needed -- git",
+            Err("dismissed"),
+        );
+        r.answers.retain(|(l, _)| l != "pacman -Q git");
+        let (code, out, _) = apply(&dirs, &mut r, &boat);
+        let saved = dirs.boat().exists();
+        let _ = std::fs::remove_dir_all(&dirs.home);
+        let err = code.unwrap_err();
+        assert!(err.contains("dismissed"), "{err}");
+        assert!(err.contains("The steps before this one are done"), "{err}");
+        assert_eq!(out, "");
+        assert!(saved);
     }
 
     /// Records which Runner method a command came through.

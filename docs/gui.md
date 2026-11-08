@@ -50,7 +50,9 @@ REPORT
 
 Listens for hardware, as the terminal's hardware question does: builds
 omakeel first when it isn't fresh, stops `omakeel.service` while it
-listens and starts it again after. With no SPEC it scans every serial
+listens and starts it again after (a hub that was not running is left alone;
+when it was and won't start again, that is exit 2, with the probe's own
+failure named too if it also failed). With no SPEC it scans every serial
 device. A SPEC is `serial:PATH` or `tcp:HOST:PORT` (`HOST:PORT` alone is
 read as tcp). `--uucp` listens through `sg uucp`, for a sailor who was just
 added to the group; when `/etc/group` doesn't list the user in uucp it is
@@ -86,7 +88,7 @@ terminal that isn't there.
 - `fix`: the position heard, or null.
 - `uucp.member`: the user is in the uucp group in /etc/group.
   `uucp.session`: this login session has it.
-- A SPEC that doesn't parse is exit 0 with one device whose verdict is
+- A SPEC that doesn't parse, an unsupported serial baud included, is exit 0 with one device whose verdict is
   `error` and whose `describe` says why. Spec errors come first in `devices`.
 
 ### `omahoy gui join-uucp`
@@ -148,7 +150,8 @@ the sailor, 1 when something is left (the lines say what), 2 on failure.
 }
 ```
 
-- `answers`: each key as parsed, null when missing or bad. `sources` is
+- `answers`: each key as parsed, null when missing or bad (`apps` with any
+  unrecognized name is null, and `vault` must name a folder below `/` or `~/`). `sources` is
   the list of `source` values, `[]` when none.
 - `problems`: `key` is the boat.toml key the problem is on, or null when it
   is on no key (an unknown key, a line without `=`). A missing key carries
