@@ -252,8 +252,11 @@ impl Dirs {
 }
 
 /// Writes through a temp file in the same directory and a rename, so a
-/// reader never sees half a file.
+/// reader never sees half a file. A path that is a symlink (a dotfiles
+/// manager's) is written through to the file it points at, and the file
+/// keeps its permissions.
 pub fn write_atomic(path: &Path, text: &str) -> Result<(), String> {
+    let path = &through_links(path);
     let dir = path
         .parent()
         .ok_or_else(|| format!("{} has no directory", path.display()))?;
@@ -264,7 +267,33 @@ pub fn write_atomic(path: &Path, text: &str) -> Result<(), String> {
         .unwrap_or_default();
     let tmp = dir.join(format!(".{name}.omahoy-{}", std::process::id()));
     std::fs::write(&tmp, text).map_err(|e| format!("{}: {e}", tmp.display()))?;
+    if let Ok(old) = std::fs::metadata(path) {
+        std::fs::set_permissions(&tmp, old.permissions())
+            .map_err(|e| format!("{}: {e}", tmp.display()))?;
+    }
     std::fs::rename(&tmp, path).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+/// The file a symlink chain ends at, even when that file doesn't exist
+/// yet. A path that isn't a link comes back as it is.
+fn through_links(path: &Path) -> PathBuf {
+    let mut at = path.to_path_buf();
+    for _ in 0..40 {
+        let Ok(meta) = std::fs::symlink_metadata(&at) else {
+            return at;
+        };
+        if !meta.file_type().is_symlink() {
+            return at;
+        }
+        let Ok(to) = std::fs::read_link(&at) else {
+            return at;
+        };
+        at = match at.parent() {
+            Some(dir) => dir.join(to),
+            None => to,
+        };
+    }
+    at
 }
 
 /// Points `link` at `target`, through a temp link and a rename.
@@ -281,6 +310,64 @@ pub fn symlink_atomic(target: &Path, link: &Path) -> Result<(), String> {
     let _ = std::fs::remove_file(&tmp);
     std::os::unix::fs::symlink(target, &tmp).map_err(|e| format!("{}: {e}", tmp.display()))?;
     std::fs::rename(&tmp, link).map_err(|e| format!("{}: {e}", link.display()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    #[test]
+    fn a_symlinked_config_is_written_through_and_keeps_its_mode() {
+        let tmp = std::env::temp_dir().join(format!("omahoy-atomic-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        std::fs::create_dir_all(tmp.join("dotfiles")).unwrap();
+        std::fs::create_dir_all(tmp.join("config")).unwrap();
+        let real = tmp.join("dotfiles/config.toml");
+        std::fs::write(&real, "old = 1\n").unwrap();
+        std::fs::set_permissions(&real, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let link = tmp.join("config/config.toml");
+        std::os::unix::fs::symlink("../dotfiles/config.toml", &link).unwrap();
+
+        write_atomic(&link, "new = 2\n").unwrap();
+
+        let still_link = std::fs::symlink_metadata(&link)
+            .unwrap()
+            .file_type()
+            .is_symlink();
+        let text = std::fs::read_to_string(&real).unwrap();
+        let mode = std::fs::metadata(&real).unwrap().permissions().mode() & 0o777;
+        let leftovers = std::fs::read_dir(tmp.join("config")).unwrap().count();
+        std::fs::remove_dir_all(&tmp).unwrap();
+        assert!(still_link, "the link stays a link");
+        assert_eq!(text, "new = 2\n");
+        assert_eq!(mode, 0o600);
+        assert_eq!(leftovers, 1, "no temp file beside the link");
+    }
+
+    #[test]
+    fn a_dangling_link_creates_the_file_it_names() {
+        let tmp = std::env::temp_dir().join(format!("omahoy-dangle-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        std::fs::create_dir_all(&tmp).unwrap();
+        std::os::unix::fs::symlink("made.toml", tmp.join("c.toml")).unwrap();
+        write_atomic(&tmp.join("c.toml"), "x = 1\n").unwrap();
+        let text = std::fs::read_to_string(tmp.join("made.toml")).ok();
+        let link = std::fs::symlink_metadata(tmp.join("c.toml")).unwrap();
+        std::fs::remove_dir_all(&tmp).unwrap();
+        assert_eq!(text.as_deref(), Some("x = 1\n"));
+        assert!(link.file_type().is_symlink());
+    }
+
+    #[test]
+    fn a_plain_new_file_is_written_as_before() {
+        let tmp = std::env::temp_dir().join(format!("omahoy-plain-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        write_atomic(&tmp.join("a/b.toml"), "k = 1\n").unwrap();
+        let text = std::fs::read_to_string(tmp.join("a/b.toml")).ok();
+        std::fs::remove_dir_all(&tmp).unwrap();
+        assert_eq!(text.as_deref(), Some("k = 1\n"));
+    }
 }
 
 #[cfg(test)]
