@@ -53,14 +53,20 @@ pub fn probe_with_hub_stopped(
 ) -> Result<Vec<Result<Heard, String>>, String> {
     let unit = ["--user", "is-active", "--quiet", "omakeel.service"];
     let running = r.read(&Cmd::new("systemctl", &unit)).is_ok();
+    let mut stopped = Ok(());
     if running {
         t.say("  Stopping the hub while setup listens to the ports.");
-        let _ = r.run(&Cmd::new(
+        stopped = r.run(&Cmd::new(
             "systemctl",
             &["--user", "stop", "omakeel.service"],
         ));
     }
-    let heard = probe(r, omakeel, targets, via_uucp);
+    let heard = match stopped {
+        Ok(()) => probe(r, omakeel, targets, via_uucp),
+        Err(e) => Err(format!(
+            "couldn't stop omakeel.service to listen to the ports: {e}"
+        )),
+    };
     if !running {
         return heard;
     }
@@ -129,6 +135,27 @@ mod tests {
             err.contains("couldn't start omakeel.service again"),
             "{err}"
         );
+    }
+
+    #[test]
+    fn a_hub_that_will_not_stop_is_not_probed_and_is_started_again() {
+        let mut r = Commands::default()
+            .on(ACTIVE, Ok(""))
+            .on(STOP, Err("busy"))
+            .on(START, Err("unit is masked"));
+        let err = go(&mut r).unwrap_err();
+        assert!(err.contains("couldn't stop omakeel.service"), "{err}");
+        assert!(
+            err.contains("couldn't start omakeel.service again"),
+            "{err}"
+        );
+        assert_eq!(r.log, vec![ACTIVE, STOP, START]);
+        let mut r = Commands::default()
+            .on(ACTIVE, Ok(""))
+            .on(STOP, Err("busy"))
+            .on(START, Ok(""));
+        assert!(go(&mut r).unwrap_err().contains("busy"));
+        assert!(!r.log.iter().any(|l| l == PROBE));
     }
 
     #[test]
