@@ -46,14 +46,27 @@ pub struct Diff {
     pub state: KeyState,
 }
 
-/// The same value, as the app would read it: quotes dropped, and lists of
-/// numbers compared as numbers, so `8.0` is `8` and `37.8,-122.3` is
-/// `37.8, -122.3`.
-fn same(a: &str, b: &str) -> bool {
+/// Keys whose values are numbers, or comma lists of them.
+const NUMERIC: [&str; 6] = [
+    "safety_depth",
+    "shallow_contour",
+    "safety_contour",
+    "deep_contour",
+    "home",
+    "region",
+];
+
+/// The same value, as the app would read it: quotes dropped, and the
+/// numeric keys compared as numbers, so `8.0` is `8` and `37.8,-122.3` is
+/// `37.8, -122.3`. Every other key is text: boat `007` is not `7`.
+fn same(key: &str, a: &str, b: &str) -> bool {
     let a = a.trim().trim_matches('"');
     let b = b.trim().trim_matches('"');
     if a == b {
         return true;
+    }
+    if !NUMERIC.contains(&key) {
+        return false;
     }
     let nums = |s: &str| {
         s.split(',')
@@ -88,7 +101,7 @@ pub fn compare(text: &str, want: &[(&'static str, String)]) -> Vec<Diff> {
             let state = if found.is_empty() {
                 KeyState::Missing
             } else if found.len() == wanted.len()
-                && found.iter().zip(&wanted).all(|(f, w)| same(f, w))
+                && found.iter().zip(&wanted).all(|(f, w)| same(key, f, w))
             {
                 KeyState::Matches
             } else {
@@ -117,7 +130,7 @@ pub fn edit(text: &str, want: &[(&'static str, String)]) -> String {
         .into_iter()
         .filter(|(k, vs)| {
             let found = values(text, k);
-            !(found.len() == vs.len() && found.iter().zip(vs).all(|(f, w)| same(f, w)))
+            !(found.len() == vs.len() && found.iter().zip(vs).all(|(f, w)| same(k, f, w)))
         })
         .collect();
     if stale.is_empty() {
@@ -255,6 +268,39 @@ home = 37.8663, -122.3148
                 .all(|d| d.state == KeyState::Matches)
         );
         assert_eq!(edit(text, &w), text);
+    }
+
+    #[test]
+    fn text_keys_compare_as_text_and_only_numeric_keys_as_numbers() {
+        let text = "boat = \"007\"\nvault = \"/a/1.0\"\nsafety_depth = 8.0\n";
+        let w = want(&[
+            ("boat", "\"7\""),
+            ("vault", "\"/a/1\""),
+            ("safety_depth", "8"),
+        ]);
+        let states: Vec<_> = compare(text, &w).into_iter().map(|d| d.state).collect();
+        assert_eq!(
+            states,
+            vec![
+                KeyState::Differs {
+                    found: "007".into()
+                },
+                KeyState::Differs {
+                    found: "/a/1.0".into()
+                },
+                KeyState::Matches,
+            ]
+        );
+        assert_eq!(
+            edit(text, &w),
+            "boat = \"7\"\nvault = \"/a/1\"\nsafety_depth = 8.0\n"
+        );
+        let g = want(&[("git", "true"), ("units", "feet")]);
+        assert!(
+            compare("git = 1\nunits = 1.0\n", &g)
+                .iter()
+                .all(|d| d.state != KeyState::Matches)
+        );
     }
 
     #[test]

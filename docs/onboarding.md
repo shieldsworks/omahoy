@@ -85,7 +85,7 @@ Setup owns a fixed set of keys in each app's config. It leaves every other line 
 - **Safety contour** equals the safety depth.
 - **Shallow contour** is half the safety depth, rounded down.
 - **Deep contour** is the larger of 30 ft (rounded up in the chosen units: 30 ft, 10 m, 5 fathoms) and twice the safety depth.
-- `boat` and `vault` are written quoted. Values are compared the way the apps read them, so `8.0` matches `8` and spacing inside a region doesn't count.
+- `boat` and `vault` are written quoted. Values are compared the way the apps read them, so `8.0` matches `8` and spacing inside a region doesn't count. Only the depths, `home` and `region` are compared as numbers; `boat`, `vault`, `units` and `git` are text, so boat `007` is not `7`.
 - A key that differs is replaced where it stood, keeping its trailing comment; later copies of it are dropped. A missing key is appended under `# Set by omahoy from ~/.config/omahoy/boat.toml.` Every other line, comment and `[section]` stays byte for byte.
 - The contours keep omahelm's rule that shallow ≤ safety ≤ deep, because omahelm reverts all three to its defaults if that order breaks.
 
