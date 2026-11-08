@@ -17,7 +17,7 @@ The first run asks the following, in order. Hardware comes before home, so a GPS
 
 1. Boat name.
 2. Depth units: feet, meters or fathoms.
-3. Draft, and the clearance wanted under the keel, both in those units. The clearance offered is 2 ft, 0.6 m or 0.5 fathoms.
+3. Draft, and the clearance wanted under the keel, both in those units. The clearance offered is 2 ft, 0.6 m or 0.5 fathoms. Both are rounded to two decimals as they are typed, so the first apply works from the numbers boat.toml keeps; a draft that rounds to zero is refused. When a re-run changes the units, the offered draft and clearance are converted (1 fathom is 6 ft, 1 m is 3.28 ft) and rounded the same way.
 4. Hardware. Plug in receivers, then press Enter. omakeel probes each serial device and lists what it heard: GPS, AIS, silent, or permission denied. Then an optional network source (`host:port`). If nothing is found, the hub runs the demo sail.
 5. Home port. The default is the GPS fix when there is one; otherwise type `lat, lon`. Degrees-and-minutes forms are accepted too.
 6. Sailing area. It is derived from home, about ±1° in each direction, and shown with what the US data covers there: NOAA charts, NOAA tides, HRRR wind.
@@ -64,6 +64,7 @@ The rules for the file:
 - A serial source names its baud (`serial:PATH:BAUD`). The probe found it, and omakeel's 4800 default would be a silent guess. `tcp:HOST:PORT` and `replay:FILE` are accepted too.
 - `area` must contain `home` and must not cross the antimeridian.
 - `apps` lists the chosen apps; omakeel always comes and is not listed. An app that can't work in `area` (omatide outside NOAA, omawind outside HRRR) is a problem on the `apps` line.
+- `draft` and `clearance` are read to two decimals: `5.001` is `5`. A nonzero value that rounds to zero is a problem on its line.
 - `name` and `vault` can't hold `"` or `#`, because every app's parser reads those as syntax. `vault` starts with `/` or `~/`.
 - Saving the same answers twice leaves the file byte for byte the same.
 

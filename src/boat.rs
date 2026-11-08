@@ -134,12 +134,21 @@ fn check_depth(v: f64, what: &str, zero_ok: bool) -> Result<f64, String> {
     }
 }
 
+/// A depth as typed or read from boat.toml, rounded to the two decimals
+/// the file keeps. A nonzero value that rounds to zero is refused.
 pub fn parse_depth(s: &str, what: &str, zero_ok: bool) -> Result<f64, String> {
     let v = s
         .trim()
         .parse::<f64>()
         .map_err(|_| format!("{what}: {} is not a number", s.trim()))?;
-    check_depth(v, what, zero_ok)
+    let r = depth::round2(v);
+    if v != 0.0 && r == 0.0 {
+        return Err(format!(
+            "{what} {} rounds to zero; depths keep two decimals",
+            s.trim()
+        ));
+    }
+    check_depth(r, what, zero_ok)
 }
 
 impl Partial {
@@ -623,6 +632,22 @@ git       = true
                 "line 11: omawind can't work here: HRRR forecasts cover the lower 48 and its coasts only",
             ]
         );
+    }
+
+    #[test]
+    fn depths_are_rounded_once_where_they_come_in() {
+        assert_eq!(parse_depth("5.001", "draft", false), Ok(5.0));
+        assert_eq!(parse_depth("1.7", "draft", false), Ok(1.7));
+        assert_eq!(parse_depth("0", "clearance", true), Ok(0.0));
+        assert_eq!(
+            parse_depth("0.004", "draft", false),
+            Err("draft 0.004 rounds to zero; depths keep two decimals".into())
+        );
+        assert!(parse_depth("0.004", "clearance", true).is_err());
+        assert!(parse_depth("0", "draft", false).is_err());
+        let b = Boat::parse(&WAVELENGTH.replace("draft     = 5.5", "draft     = 5.001")).unwrap();
+        assert_eq!(b.draft, 5.0, "the file is read as it would be saved");
+        assert_eq!(Boat::parse(&b.render()), Ok(b));
     }
 
     #[test]

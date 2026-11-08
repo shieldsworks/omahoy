@@ -172,13 +172,17 @@ impl Ask<'_> {
             Some(p.units.unwrap_or(Units::Feet).name()),
             |s| Units::parse(s).ok_or_else(|| format!("{s} is not feet, meters or fathoms")),
         )?;
-        let draft_default = p.draft.map(depth::show);
+        let carry = |v: f64| match p.units {
+            Some(old) => old.convert(v, units),
+            None => v,
+        };
+        let draft_default = p.draft.map(|d| depth::show(carry(d)));
         let draft = self.parsed(
             &format!("Draft, in {}", units.name()),
             draft_default.as_deref(),
             |s| parse_depth(s, "draft", false),
         )?;
-        let clearance_default = depth::show(p.clearance.unwrap_or(units.default_clearance()));
+        let clearance_default = depth::show(p.clearance.map_or(units.default_clearance(), carry));
         let clearance = self.parsed(
             &format!("Clearance you want under the keel, in {}", units.name()),
             Some(&clearance_default),
@@ -927,6 +931,68 @@ serial:/dev/serial/by-id/usb-dAISy-if00  denied
         assert_eq!(
             r.log.last().map(String::as_str),
             Some("systemctl --user start omakeel.service")
+        );
+    }
+
+    #[test]
+    fn changing_units_converts_the_draft_and_clearance_on_offer() {
+        let mut p = Partial::from_boat(&crate::boat::tests::wavelength());
+        p.units = Some(Units::Meters);
+        p.draft = Some(1.7);
+        p.clearance = Some(0.6);
+        let mut t = Script::new(&["", "feet", "", ""]);
+        let mut r = Commands::default();
+        let dirs = dirs();
+        Ask {
+            t: &mut t,
+            r: &mut r,
+            dirs: &dirs,
+            omakeel: KEEL.into(),
+        }
+        .boat(&mut p)
+        .unwrap();
+        assert!(t.shown.contains("Draft, in feet [5.58]:"), "{}", t.shown);
+        assert!(
+            t.shown
+                .contains("Clearance you want under the keel, in feet [1.97]:")
+        );
+        assert_eq!((p.draft, p.clearance), (Some(5.58), Some(1.97)));
+
+        let mut same = Partial::from_boat(&crate::boat::tests::wavelength());
+        let mut t = Script::new(&["", "", "", ""]);
+        Ask {
+            t: &mut t,
+            r: &mut r,
+            dirs: &dirs,
+            omakeel: KEEL.into(),
+        }
+        .boat(&mut same)
+        .unwrap();
+        assert_eq!((same.draft, same.clearance), (Some(5.5), Some(2.0)));
+    }
+
+    #[test]
+    fn a_draft_is_saved_as_typed_to_two_decimals_so_apply_agrees() {
+        let mut t = Script::new(&[
+            "Wavelength",
+            "",
+            "5.001",
+            "2", // the first apply must see draft 5, not 5.001
+            "",
+            "",
+            "47.687, -122.413",
+            "",
+            "",
+            "",
+        ]);
+        let mut r = Commands::default().on("/k/omakeel probe", Ok(""));
+        let b = ask(&mut t, &mut r, Partial::default()).unwrap();
+        assert_eq!(b.draft, 5.0);
+        assert!(t.shown.contains("Safety depth 7 feet"), "{}", t.shown);
+        let reread = Boat::parse(&b.render()).unwrap();
+        assert_eq!(
+            crate::apps::managed(App::Helm, &b),
+            crate::apps::managed(App::Helm, &reread)
         );
     }
 

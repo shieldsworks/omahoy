@@ -25,6 +25,19 @@ impl Units {
         }
     }
 
+    fn meters(self) -> f64 {
+        match self {
+            Units::Feet => 0.3048,
+            Units::Meters => 1.0,
+            Units::Fathoms => 1.8288,
+        }
+    }
+
+    /// `v` of these units in `to`, rounded the way depths are saved.
+    pub fn convert(self, v: f64, to: Units) -> f64 {
+        round2(v * self.meters() / to.meters())
+    }
+
     /// 30 feet in these units, rounded up to a whole unit.
     fn thirty_feet(self) -> u32 {
         match self {
@@ -68,9 +81,16 @@ pub fn depths(units: Units, draft: f64, clearance: f64) -> Depths {
     }
 }
 
+/// A depth to the two decimals boat.toml keeps. Every depth is rounded
+/// this way when it comes in, so the first apply and every later one
+/// work from the same number.
+pub fn round2(v: f64) -> f64 {
+    (v * 100.0).round() / 100.0
+}
+
 /// A depth as the sailor typed it: `5.5`, never more than two decimals.
 pub fn show(v: f64) -> String {
-    crate::place::deg((v * 100.0).round() / 100.0)
+    crate::place::deg(round2(v))
 }
 
 #[cfg(test)]
@@ -110,6 +130,14 @@ mod tests {
                 assert!(x.safety_contour <= x.deep_contour, "{x:?}");
             }
         }
+    }
+
+    #[test]
+    fn depths_convert_between_units_to_two_decimals() {
+        assert_eq!(Units::Meters.convert(1.7, Units::Feet), 5.58);
+        assert_eq!(Units::Feet.convert(5.5, Units::Meters), 1.68);
+        assert_eq!(Units::Fathoms.convert(1.0, Units::Feet), 6.0);
+        assert_eq!(Units::Feet.convert(2.0, Units::Feet), 2.0);
     }
 
     #[test]
