@@ -37,7 +37,7 @@ omahoy apply      # make the machine match boat.toml; a no-op when healthy (--ye
 omahoy hardware   # re-run only the hardware question
 ```
 
-A source that was in boat.toml but isn't heard on a re-run is offered back ("Keep it from before?", default no), so an unplugged receiver is never dropped by surprise. When the GPS fix differs from home, the home question is asked again with the fix as its default.
+A source that was in boat.toml but isn't heard on a re-run is offered back ("Keep it from before?", default no), so an unplugged receiver is never dropped by surprise. Re-running the hardware question never moves home or the area: the home question is asked only when boat.toml has no home. To move home, change the home section.
 
 ## boat.toml
 
@@ -135,7 +135,7 @@ How setup handles each case:
 
 ## Region and coverage
 
-- Home is the one geographic fact the sailor gives. `area` is derived from it and can be edited in boat.toml.
+- Home is the one geographic fact the sailor gives. `area` is derived from it and can be edited in boat.toml, and setup keeps an edited `area` for as long as it still contains home.
 - `coverage(area)` is computed and never stored. It reports two things:
   - **NOAA:** the area touches one of ten coarse boxes covering the coasts of the lower 48, the Great Lakes, Alaska and the Aleutians, Hawaii, PR/USVI, and Guam/CNMI (`place::NOAA`).
   - **HRRR:** the area lies inside S 21.2, N 52.6, W -134, E -61 and is at most 8° by 10°, mirrored from omawind's `Region::check`. A unit test pins the numbers.

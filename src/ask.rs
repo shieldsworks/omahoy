@@ -148,7 +148,7 @@ impl Ask<'_> {
             Section::Boat => self.boat(p),
             Section::Hardware => {
                 let fix = self.hardware(p)?;
-                if fix.is_some() && fix != p.home {
+                if p.home.is_none() {
                     self.home(p, fix)?;
                 }
                 Ok(())
@@ -468,7 +468,7 @@ impl Ask<'_> {
         };
         let home = self.parsed(&prompt, default.as_deref(), Position::parse)?;
         let area = match p.area {
-            Some(a) if a.contains(home) && p.home == Some(home) => a,
+            Some(a) if a.contains(home) => a,
             _ => Area::around(home),
         };
         let c = coverage(area);
@@ -993,6 +993,55 @@ serial:/dev/serial/by-id/usb-dAISy-if00  denied
         assert_eq!(
             crate::apps::managed(App::Helm, &b),
             crate::apps::managed(App::Helm, &reread)
+        );
+    }
+
+    #[test]
+    fn rerunning_hardware_keeps_home_and_area_whatever_the_gps_says() {
+        let boat = crate::boat::tests::wavelength();
+        let mut t = Script::new(&["", "", "", ""]);
+        let mut r = Commands::default().on(
+            "/k/omakeel probe",
+            Ok("serial:/dev/serial/by-id/usb-GPS:4800  ok  fix=41 ais=0 rejected=0 at=37.8663000,-122.3148000\n"),
+        );
+        let dirs = dirs();
+        let got = Ask {
+            t: &mut t,
+            r: &mut r,
+            dirs: &dirs,
+            omakeel: KEEL.into(),
+        }
+        .hardware_only(&boat)
+        .unwrap();
+        assert_eq!((got.home, got.area), (boat.home, boat.area));
+        assert!(!t.shown.contains("Home port"), "{}", t.shown);
+        assert_eq!(
+            got.hub.specs(),
+            vec!["serial:/dev/serial/by-id/usb-GPS:4800"]
+        );
+    }
+
+    #[test]
+    fn a_hand_edited_area_stays_while_it_holds_home() {
+        let dirs = dirs();
+        let mut r = Commands::default();
+        let wide = Area::parse("45,-125,50,-120").unwrap();
+        let mut t = Script::new(&["47.5, -122.0", "46, -100"]);
+        let mut ask = Ask {
+            t: &mut t,
+            r: &mut r,
+            dirs: &dirs,
+            omakeel: KEEL.into(),
+        };
+        let mut p = Partial::from_boat(&crate::boat::tests::wavelength());
+        p.area = Some(wide);
+        ask.home(&mut p, None).unwrap();
+        assert_eq!(p.area, Some(wide), "the new home is inside the edited area");
+        ask.home(&mut p, None).unwrap();
+        assert_eq!(
+            p.area,
+            Some(Area::around(Position::parse("46, -100").unwrap())),
+            "outside it, the area follows home"
         );
     }
 
