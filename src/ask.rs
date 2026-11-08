@@ -830,7 +830,7 @@ serial:/dev/serial/by-id/usb-dAISy-if00  denied
     }
 
     #[test]
-    fn caseys_machine_keeps_his_vault_and_asks_his_name() {
+    fn caseys_machine_keeps_his_vault_and_the_name_his_log_already_has() {
         let tmp = std::env::temp_dir().join(format!("omahoy-adopt-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&tmp);
         let dirs = Dirs::resolve(
@@ -857,24 +857,17 @@ serial:/dev/serial/by-id/usb-dAISy-if00  denied
             std::os::unix::fs::symlink("/work", dirs.plugins.join(id)).unwrap();
         }
         let p = Partial::from_existing(&dirs);
-        assert_eq!(p.name, None, "his logbook config has no boat line");
+        assert_eq!(
+            p.name.as_deref(),
+            Some("Dash"),
+            "his logbook config has no boat line, and omalogbook logged as Dash"
+        );
         assert_eq!(p.vault.as_deref(), Some("/home/casey/notes/Logbook"));
         assert_eq!(
             p.apps,
             Some(vec![App::Helm, App::Lookout, App::Logbook, App::Wind])
         );
-        let mut t = Script::new(&[
-            "Dash",
-            "",
-            "4",
-            "",
-            "",
-            "",
-            "37.8663, -122.3148",
-            "",
-            "",
-            "",
-        ]);
+        let mut t = Script::new(&["", "", "4", "", "", "", "37.8663, -122.3148", "", "", ""]);
         let mut r = Commands::default().on("/k/omakeel probe", Ok(""));
         let b = Ask {
             t: &mut t,
@@ -885,12 +878,12 @@ serial:/dev/serial/by-id/usb-dAISy-if00  denied
         .first_run(p)
         .unwrap();
         std::fs::remove_dir_all(&tmp).unwrap();
-        assert!(t.shown.contains("Boat name:"), "no default name to offer");
+        assert!(t.shown.contains("Boat name [Dash]:"));
         assert!(
             t.shown
                 .contains("Logbook folder [/home/casey/notes/Logbook]:")
         );
-        assert_eq!(b.name, "Dash");
+        assert_eq!(b.name, "Dash", "Enter keeps the old default");
         assert_eq!(b.vault, "/home/casey/notes/Logbook");
         assert_eq!(
             b.apps.chosen(),
@@ -1043,6 +1036,23 @@ serial:/dev/serial/by-id/usb-dAISy-if00  denied
             Some(Area::around(Position::parse("46, -100").unwrap())),
             "outside it, the area follows home"
         );
+    }
+
+    #[test]
+    fn no_logbook_config_offers_no_name_and_an_explicit_boat_wins() {
+        let tmp = std::env::temp_dir().join(format!("omahoy-names-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        let dirs = Dirs::resolve(Some(tmp.clone().into()), None, None, None, None).unwrap();
+        assert_eq!(Partial::from_existing(&dirs).name, None);
+        std::fs::create_dir_all(dirs.config.join("omalogbook")).unwrap();
+        std::fs::write(
+            dirs.config.join("omalogbook/config.toml"),
+            "boat = \"Salt\"\n",
+        )
+        .unwrap();
+        let got = Partial::from_existing(&dirs).name;
+        std::fs::remove_dir_all(&tmp).unwrap();
+        assert_eq!(got.as_deref(), Some("Salt"));
     }
 
     #[test]

@@ -258,7 +258,17 @@ impl Partial {
         let mut p = Partial::default();
 
         let logbook = read(App::Logbook);
-        p.name = first(&logbook, "boat").and_then(|v| check_name(&v).ok());
+        let has_logbook_config = App::Logbook
+            .config(dirs)
+            .is_some_and(|c| std::fs::metadata(c).is_ok());
+        p.name = match first(&logbook, "boat") {
+            Some(v) => check_name(&v).ok(),
+            // omalogbook's runtime default for a config with no `boat`
+            // key was "Dash" until it changed to "Boat", so existing log
+            // entries carry that name.
+            None if has_logbook_config => Some("Dash".into()),
+            None => None,
+        };
         p.vault = first(&logbook, "vault").and_then(|v| check_vault(&v).ok());
         p.git = first(&logbook, "git").and_then(|v| v.parse().ok());
 

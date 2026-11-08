@@ -26,7 +26,7 @@ The first run asks the following, in order. Hardware comes before home, so a GPS
 
 Setup saves `boat.toml`, then shows the plan: packages, clones, builds, links, plugins, config keys, services, downloads. It asks "Go?" and applies it. "No" leaves the machine alone; `omahoy apply` picks it up later.
 
-On a machine that already has app configs, the first run takes its defaults from them: omalogbook's `boat`, `vault` and `git`, omahelm's `units`, omatide's or omawind's `home` and `region`, omakeel's `source` lines, and the apps whose plugin folders exist. A config without a `boat` line gives no name, so setup asks for one.
+On a machine that already has app configs, the first run takes its defaults from them: omalogbook's `boat`, `vault` and `git`, omahelm's `units`, omatide's or omawind's `home` and `region`, omakeel's `source` lines, and the apps whose plugin folders exist. An omalogbook config without a `boat` line offers "Dash" as the name, because that was omalogbook's default and its log entries already carry it. With no omalogbook config there is no default name.
 
 After the first run:
 
