@@ -555,7 +555,7 @@ impl Boat {
         if first_line(&seen, "source").is_none() {
             problems.push(Problem {
                 line: 0,
-                key: None,
+                key: Some("source"),
                 message: "missing source (source = demo when there is no hardware)".into(),
             });
         }

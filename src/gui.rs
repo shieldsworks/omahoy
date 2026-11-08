@@ -687,7 +687,7 @@ mod tests {
         );
         assert_eq!(code, Ok(0));
         assert!(
-            out.starts_with(r#"{"problems":[{"key":null,"line":0,"message":"missing source"#),
+            out.starts_with(r#"{"problems":[{"key":"source","line":0,"message":"missing source"#),
             "{out}"
         );
         assert!(out.ends_with("\"steps\":[],\"findings\":[]}\n"), "{out}");
