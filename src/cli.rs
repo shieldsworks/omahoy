@@ -99,7 +99,8 @@ fn save(e: &mut Env<'_>, boat: &Boat) -> Result<(), String> {
 }
 
 /// The probe lives in omakeel, so omakeel is fetched and built before the
-/// hardware question, when it isn't already.
+/// hardware question, when it isn't already. A stale build is rebuilt too:
+/// a binary from before `probe` existed would fail the question.
 fn hub_ready(e: &mut Env<'_>) -> Result<PathBuf, String> {
     let (dir, build) = match find(e.r, e.dirs, App::Keel) {
         OnDisk::Checkout(c) => (c.dir, c.build),
@@ -113,7 +114,7 @@ fn hub_ready(e: &mut Env<'_>) -> Result<PathBuf, String> {
             dir: dir.clone(),
         });
     }
-    if !matches!(build, Some(Build::Fresh | Build::Stale)) {
+    if build != Some(Build::Fresh) {
         steps.push(Step::Build {
             app: App::Keel,
             dir: dir.clone(),
@@ -202,6 +203,42 @@ fn doctor(e: &mut Env<'_>) -> Result<i32, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::sys::fake::{Commands, Script};
+
+    fn tmp_dirs(name: &str) -> Dirs {
+        let tmp = std::env::temp_dir().join(format!("omahoy-cli-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        Dirs::resolve(Some(tmp.into()), None, None, None, Some("sailor".into())).unwrap()
+    }
+
+    #[test]
+    fn a_stale_omakeel_is_rebuilt_before_the_probe() {
+        let dirs = tmp_dirs("stale-keel");
+        let keel = Machine::home_of(&dirs, App::Keel);
+        std::fs::create_dir_all(keel.join("target/release")).unwrap();
+        std::fs::write(keel.join("target/release/omakeel"), "").unwrap();
+        let mut r = Commands::default()
+            .on("git rev-parse HEAD", Ok("abc\n"))
+            .on(&format!("mise trust --quiet {}", keel.display()), Ok(""))
+            .on("mise install", Ok(""))
+            .on("mise exec -- cargo build --release --locked", Ok(""));
+        let mut t = Script::new(&[]);
+        let bin = hub_ready(&mut Env {
+            t: &mut t,
+            r: &mut r,
+            dirs: &dirs,
+            own: None,
+        });
+        let _ = std::fs::remove_dir_all(&dirs.home);
+        assert_eq!(bin, Ok(keel.join("target/release/omakeel")));
+        assert!(
+            r.log
+                .contains(&"mise exec -- cargo build --release --locked".to_string()),
+            "{:?}",
+            r.log
+        );
+    }
 
     #[test]
     fn arguments() {

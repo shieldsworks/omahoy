@@ -11,7 +11,7 @@ $ ./omahoy
 
 `./omahoy` is a short bash bootstrap. Its only job is to reach Rust: it gets mise if it is missing (`omarchy pkg add mise`), runs `mise trust` and `mise install` for the toolchain pinned in this repo, builds the `omahoy` crate with `--release --locked`, and execs `target/release/omahoy "$@"`. Everything after that is Rust, std only, in `src/`.
 
-The probe that finds receivers is `omakeel probe`, so omakeel has to be built before the hardware question. When it isn't, setup says so, clones it and builds it first (a minute or two), then asks the questions. An omakeel already on PATH as a link into `<checkout>/target/release/omakeel` is that checkout, and is used where it is.
+The probe that finds receivers is `omakeel probe`, so omakeel has to be built before the hardware question. When it isn't built, or its build is stale, setup says so, clones it if needed and builds it first (a minute or two), then asks the questions. An omakeel already on PATH as a link into `<checkout>/target/release/omakeel` is that checkout, and is used where it is.
 
 The first run asks the following, in order. Hardware comes before home, so a GPS fix can be the home port.
 
@@ -128,6 +128,7 @@ How setup handles each case:
 - **Silent.** A silent device can still be kept. Setup offers "keep it as AIS at 38400, the usual rate" (default no), because a dAISy in a quiet anchorage can stay silent for minutes.
 - **Network.** A `host:port` is probed as `tcp:HOST:PORT`. Unreachable, it is offered "keep it anyway" (default yes), because phone apps share only while they're open.
 - **Unknown lines.** A probe line setup doesn't understand is shown, not guessed at.
+- **Probe won't run.** If `omakeel probe` exits non-zero, or prints nothing that looks like a probe report (an omakeel from before `probe`), setup stops with "couldn't run omakeel probe: ...". It never reads that as "no hardware", because that would set the hub to the demo.
 - **No hardware.** `source = demo`. This is a new omakeel source: the sample sail is compiled into omakeel, loops forever, and is named `demo` in `state.sources`.
 - **Unplugged later.** The by-id path survives a replug onto a different `ttyACMn`. The hub already retries every 2 s. When omakeel.service is active, `doctor` reads `omakeel watch --once` (its ` | NAME STATUS (n ok, m bad)` segments) and names any source in `error`, or says the hub isn't answering.
 

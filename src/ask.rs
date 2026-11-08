@@ -197,21 +197,41 @@ impl Ask<'_> {
         Ok(())
     }
 
-    fn probe(&mut self, targets: &[String], via_uucp: bool) -> Vec<Result<Heard, String>> {
+    /// Runs `omakeel probe`. A probe that fails to run is an error, never
+    /// an empty scan: an omakeel from before `probe` existed would
+    /// otherwise read as "no hardware" and set the hub to the demo.
+    fn probe(
+        &mut self,
+        targets: &[String],
+        via_uucp: bool,
+    ) -> Result<Vec<Result<Heard, String>>, String> {
         let bin = self.omakeel.display().to_string();
         let cmd = if via_uucp {
-            let mut inner = format!("'{bin}' probe");
+            let mut inner = format!("{} probe", shell_quote(&bin));
             for t in targets {
-                inner += &format!(" '{}'", t.replace('\'', r"'\''"));
+                inner += &format!(" {}", shell_quote(t));
             }
             Cmd::new("sg", &["uucp", "-c", &inner])
         } else {
             Cmd::new(bin, &["probe"]).args(targets.iter().cloned())
         };
-        match self.r.read(&cmd) {
-            Ok(out) => parse_probe(&out),
-            Err(e) => vec![Err(format!("omakeel probe failed: {e}"))],
+        let out = self
+            .r
+            .read(&cmd)
+            .map_err(|e| format!("couldn't run omakeel probe: {e}"))?;
+        let is_probe_line = |l: &str| {
+            l.split_whitespace()
+                .next()
+                .is_some_and(|w| w.starts_with("serial:") || w.starts_with("tcp:"))
+        };
+        let lines = out.lines().filter(|l| !l.trim().is_empty());
+        if lines.clone().next().is_some() && !lines.clone().any(is_probe_line) {
+            let first = lines.clone().next().unwrap_or("").trim();
+            return Err(format!(
+                "couldn't run omakeel probe: it printed {first:?}, which is not a probe report. Update omakeel."
+            ));
         }
+        Ok(parse_probe(&out))
     }
 
     /// omakeel.service holds the ports it reads, so it is stopped while
@@ -220,7 +240,7 @@ impl Ask<'_> {
         &mut self,
         targets: &[String],
         via_uucp: bool,
-    ) -> Vec<Result<Heard, String>> {
+    ) -> Result<Vec<Result<Heard, String>>, String> {
         let unit = ["--user", "is-active", "--quiet", "omakeel.service"];
         let running = self.r.read(&Cmd::new("systemctl", &unit)).is_ok();
         if running {
@@ -297,7 +317,7 @@ impl Ask<'_> {
         self.t.ask("").ok_or(STOPPED)?;
         self.t
             .say("  Listening to each serial device, at each baud (up to 30 s a device).");
-        let heard = self.probe_with_hub_stopped(&[], false);
+        let heard = self.probe_with_hub_stopped(&[], false)?;
         let fix = first_fix(&heard);
         let mut kept = Vec::new();
         if heard.is_empty() {
@@ -326,7 +346,7 @@ impl Ask<'_> {
             }
             if joined && !session {
                 self.t.say("  Listening again through sg uucp.");
-                let again = self.probe_with_hub_stopped(&denied, true);
+                let again = self.probe_with_hub_stopped(&denied, true)?;
                 fix = fix.or(first_fix(&again));
                 let still = self.sort(again, &mut kept);
                 if !still.is_empty() {
@@ -400,7 +420,7 @@ impl Ask<'_> {
                     continue;
                 }
             };
-            let heard = self.probe(&[source.spec()], false);
+            let heard = self.probe(&[source.spec()], false)?;
             let reached = heard.iter().any(|h| {
                 matches!(
                     h,
@@ -571,6 +591,11 @@ fn first_fix(heard: &[Result<Heard, String>]) -> Option<Position> {
         }) => Some(*p),
         _ => None,
     })
+}
+
+/// One word for `sh -c`, in single quotes.
+fn shell_quote(s: &str) -> String {
+    format!("'{}'", s.replace('\'', r"'\''"))
 }
 
 /// `usb-dAISy_AIS_Receiver_0001-if00` rather than the whole by-id path.
@@ -867,6 +892,41 @@ serial:/dev/serial/by-id/usb-dAISy-if00  denied
             b.apps.chosen(),
             vec![App::Helm, App::Lookout, App::Logbook, App::Wind],
             "omatide stays off: it isn't installed"
+        );
+    }
+
+    #[test]
+    fn a_probe_that_fails_to_run_is_an_error_not_no_hardware() {
+        for (said, want) in [
+            (
+                Err("/k/omakeel probe failed (exit 2): unknown command: probe"),
+                "couldn't run omakeel probe: /k/omakeel probe failed (exit 2): unknown command: probe",
+            ),
+            (
+                Ok("usage: omakeel [run|watch] [--source SPEC]\n"),
+                "couldn't run omakeel probe: it printed \"usage: omakeel [run|watch] [--source SPEC]\", which is not a probe report. Update omakeel.",
+            ),
+        ] {
+            let mut t = Script::new(&["Dash", "", "4", "", ""]);
+            let mut r = Commands::default().on("/k/omakeel probe", said);
+            let got = ask(&mut t, &mut r, Partial::default());
+            assert_eq!(got, Err(want.to_string()));
+            assert!(!t.shown.contains("No hardware"), "never the demo");
+        }
+    }
+
+    #[test]
+    fn a_failed_probe_still_starts_the_hub_it_stopped() {
+        let mut t = Script::new(&["Dash", "", "4", "", ""]);
+        let mut r = Commands::default()
+            .on("systemctl --user is-active --quiet omakeel.service", Ok(""))
+            .on("systemctl --user stop omakeel.service", Ok(""))
+            .on("systemctl --user start omakeel.service", Ok(""))
+            .on("/k/omakeel probe", Err("exit 2"));
+        assert!(ask(&mut t, &mut r, Partial::default()).is_err());
+        assert_eq!(
+            r.log.last().map(String::as_str),
+            Some("systemctl --user start omakeel.service")
         );
     }
 
