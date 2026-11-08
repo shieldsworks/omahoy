@@ -8,16 +8,42 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    name: ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        if: hashFiles('mise.toml') != ''
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        if: hashFiles('Cargo.lock') != ''
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: build-${{ matrix.arch }}-${{ hashFiles('Cargo.lock', 'mise.toml') }}
       - name: Verify
         run: scripts/verify.sh
+      - name: Release build
+        if: hashFiles('Cargo.toml') != ''
+        run: mise exec -- cargo build --release --locked
       - name: Verification left the tree clean
         run: |
           status=$(git status --porcelain --untracked-files=all)

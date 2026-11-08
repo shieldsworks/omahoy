@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 from verify import CHECKS, Check, Finding, main, run
 
@@ -269,6 +270,49 @@ class FeatureMap(SiteCase):
                                               "Driving it with headless Chromium; want Sub-features, "
                                               "How to get to it (user POV), Driving it with <harness>, Gotchas"),
         ))
+
+
+class Crate(SiteCase):
+    CARGO_TOML = 'rust-version = "1.89"\n'
+
+    def cargo(self, fails: str = "") -> tuple[tuple[str, ...], Path]:
+        """A stand-in for mise exec -- cargo that logs its arguments and fails the named step."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        log, fake = Path(tmp.name) / "log", Path(tmp.name) / "cargo"
+        fake.write_text(f'#!/bin/sh\necho "$1" >> {log}\n[ "$1" != "{fails}" ] || {{ echo "$1 said no"; exit 1; }}\n')
+        fake.chmod(0o755)
+        return (str(fake),), log
+
+    def test_no_cargo_toml_runs_nothing(self):
+        cargo, log = self.cargo()
+        with mock.patch("verify._CARGO", cargo):
+            self.assertEqual(run(self.site({"site/a.txt": ""}), ["crate"])["crate"], ())
+        self.assertFalse(log.exists())
+
+    def test_fmt_clippy_and_test_run_in_order(self):
+        cargo, log = self.cargo()
+        root = self.site({"Cargo.toml": self.CARGO_TOML, "clippy.toml": 'msrv = "1.89"\n'})
+        with mock.patch("verify._CARGO", cargo):
+            self.assertEqual(run(root, ["crate"])["crate"], ())
+        self.assertEqual(log.read_text(), "fmt\nclippy\ntest\n")
+
+    def test_a_failing_step_is_one_finding_and_stops_the_rest(self):
+        cargo, log = self.cargo(fails="clippy")
+        root = self.site({"Cargo.toml": self.CARGO_TOML, "clippy.toml": 'msrv = "1.89"\n'})
+        with mock.patch("verify._CARGO", cargo):
+            self.assertEqual(run(root, ["crate"])["crate"], (
+                Finding("Cargo.toml", None, "cargo clippy failed:\nclippy said no"),
+            ))
+        self.assertEqual(log.read_text(), "fmt\nclippy\n")
+
+    def test_msrv_must_equal_rust_version(self):
+        cargo, _ = self.cargo()
+        root = self.site({"Cargo.toml": self.CARGO_TOML, "clippy.toml": 'msrv = "1.85"\n'})
+        with mock.patch("verify._CARGO", cargo):
+            self.assertEqual(run(root, ["crate"])["crate"], (
+                Finding("clippy.toml", None, "msrv 1.85 is not Cargo.toml rust-version 1.89"),
+            ))
 
 
 class Clean(SiteCase):
