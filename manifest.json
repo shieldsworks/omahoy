@@ -10,6 +10,7 @@
   "kinds": [
     "panel"
   ],
+  "keepLoaded": true,
   "entryPoints": {
     "panel": "ui/Panel.qml"
   }
