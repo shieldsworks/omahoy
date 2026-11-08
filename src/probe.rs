@@ -61,16 +61,82 @@ pub fn probe_with_hub_stopped(
         ));
     }
     let heard = probe(r, omakeel, targets, via_uucp);
-    if running {
-        let _ = r.run(&Cmd::new(
-            "systemctl",
-            &["--user", "start", "omakeel.service"],
-        ));
+    if !running {
+        return heard;
     }
-    heard
+    let started = r.run(&Cmd::new(
+        "systemctl",
+        &["--user", "start", "omakeel.service"],
+    ));
+    match (heard, started) {
+        (heard, Ok(())) => heard,
+        (Ok(_), Err(e)) => Err(restart_failed(&e)),
+        (Err(probe_err), Err(e)) => Err(format!("{probe_err}\nAlso {}", restart_failed(&e))),
+    }
+}
+
+/// The hub was stopped for the probe, so GPS and AIS stay offline until it
+/// starts.
+fn restart_failed(e: &str) -> String {
+    format!("couldn't start omakeel.service again ({e}); GPS and AIS stay offline until it runs")
 }
 
 /// One word for `sh -c`, in single quotes.
 fn shell_quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', r"'\''"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::sys::fake::{Commands, Script};
+
+    const PROBE: &str = "/k/omakeel probe";
+    const ACTIVE: &str = "systemctl --user is-active --quiet omakeel.service";
+    const STOP: &str = "systemctl --user stop omakeel.service";
+    const START: &str = "systemctl --user start omakeel.service";
+
+    fn go(r: &mut Commands) -> Result<Vec<Result<Heard, String>>, String> {
+        let mut t = Script::new(&[]);
+        probe_with_hub_stopped(r, &mut t, Path::new("/k/omakeel"), &[], false)
+    }
+
+    #[test]
+    fn a_hub_that_will_not_start_again_fails_the_probe() {
+        let mut r = Commands::default()
+            .on(ACTIVE, Ok(""))
+            .on(STOP, Ok(""))
+            .on(PROBE, Ok("serial:/dev/ttyUSB0  busy\n"))
+            .on(START, Err("unit is masked"));
+        let err = go(&mut r).unwrap_err();
+        assert!(
+            err.contains("couldn't start omakeel.service again"),
+            "{err}"
+        );
+        assert!(err.contains("unit is masked"), "{err}");
+    }
+
+    #[test]
+    fn both_failures_are_named_when_the_probe_and_the_restart_fail() {
+        let mut r = Commands::default()
+            .on(ACTIVE, Ok(""))
+            .on(STOP, Ok(""))
+            .on(PROBE, Err("exit 2"))
+            .on(START, Err("unit is masked"));
+        let err = go(&mut r).unwrap_err();
+        assert!(err.contains("couldn't run omakeel probe"), "{err}");
+        assert!(
+            err.contains("couldn't start omakeel.service again"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn an_inactive_hub_is_never_stopped_or_started() {
+        let mut r = Commands::default()
+            .on(ACTIVE, Err("inactive"))
+            .on(PROBE, Ok("serial:/dev/ttyUSB0  busy\n"));
+        assert!(go(&mut r).is_ok());
+        assert_eq!(r.log, vec![ACTIVE, PROBE]);
+    }
 }
