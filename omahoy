@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Gets the pinned Rust in place, then hands over to omahoy, which is Rust.
+set -euo pipefail
+cd "$(dirname "$(readlink -f "$0")")"
+command -v mise >/dev/null || omarchy pkg add mise
+mise trust --quiet .
+mise install --quiet
+mise exec -- cargo build --release --locked --quiet
+exec target/release/omahoy "$@"
