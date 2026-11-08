@@ -283,8 +283,11 @@ impl Machine {
             r.read(&Cmd::new("git", &["config", "--get", key]).in_dir(&id_dir))
                 .is_ok_and(|v| !v.trim().is_empty())
         };
+        let in_git = vault_dir.is_dir()
+            && r.read(&Cmd::new("git", &["rev-parse", "--git-dir"]).in_dir(&vault_dir))
+                .is_ok();
         let vault = Vault {
-            repo: vault_dir.join(".git").exists(),
+            repo: in_git,
             name: ident(r, "user.name"),
             email: ident(r, "user.email"),
         };
@@ -605,6 +608,24 @@ mod tests {
         assert_eq!(m.checkout(App::Keel).and_then(|c| c.built_at), Some(1000));
         assert_eq!(m.config_at.get(&App::Keel), Some(&2000));
         assert_eq!(m.units[&App::Logbook].since, None, "not running");
+    }
+
+    #[test]
+    fn a_vault_inside_another_repo_is_already_in_git() {
+        let (dirs, _) = built_helm("vault-in-repo");
+        let b = crate::boat::tests::wavelength();
+        let vault = dirs.expand(&b.vault);
+        std::fs::create_dir_all(&vault).unwrap();
+        let mut inside = Commands::default().on("git rev-parse --git-dir", Ok("/h/notes/.git\n"));
+        let m = Machine::survey(&mut inside, &dirs, &b, None);
+        assert!(
+            m.vault.repo,
+            "a vault in a parent repo is committed there; git init would nest one"
+        );
+        let mut outside = Commands::default();
+        let m = Machine::survey(&mut outside, &dirs, &b, None);
+        let _ = std::fs::remove_dir_all(&dirs.home);
+        assert!(!m.vault.repo);
     }
 
     #[test]
