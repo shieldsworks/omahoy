@@ -283,6 +283,7 @@ impl Ask<'_> {
                         });
                     }
                 }
+                Verdict::Missing => self.t.say(&format!("  ✗ {name}: not plugged in")),
                 Verdict::Unreachable(why) => self.t.say(&format!("  ✗ {name}: {why}")),
             }
         }

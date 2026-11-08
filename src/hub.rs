@@ -165,6 +165,8 @@ pub enum Verdict {
     Denied,
     Busy,
     Silent,
+    /// Named, but not there: a by-id link for a receiver that was unplugged.
+    Missing,
     Unreachable(String),
 }
 
@@ -211,6 +213,7 @@ impl Heard {
             Verdict::Denied => "permission denied".into(),
             Verdict::Busy => "held by another program".into(),
             Verdict::Silent => "silent at every baud".into(),
+            Verdict::Missing => "not plugged in".into(),
             Verdict::Unreachable(why) => format!("unreachable: {why}"),
         }
     }
@@ -255,6 +258,7 @@ fn parse_line(line: &str) -> Result<Heard, String> {
         "denied" => Verdict::Denied,
         "busy" => Verdict::Busy,
         "silent" => Verdict::Silent,
+        "missing" => Verdict::Missing,
         "unreachable" => Verdict::Unreachable(words.collect::<Vec<_>>().join(" ")),
         _ => return Err(bad()),
     };
@@ -272,6 +276,7 @@ serial:/dev/serial/by-id/usb-u-blox-if00  denied
 serial:/dev/serial/by-id/usb-FTDI-if00  busy
 serial:/dev/serial/by-id/usb-Other-if00  silent
 tcp:192.168.1.20:10110  unreachable  connection refused
+serial:/dev/serial/by-id/nope  missing
 ";
 
     #[test]
@@ -304,6 +309,8 @@ tcp:192.168.1.20:10110  unreachable  connection refused
             Verdict::Unreachable("connection refused".into())
         );
         assert_eq!(heard[5].path(), None);
+        assert_eq!(heard[6].verdict, Verdict::Missing);
+        assert_eq!(heard[6].path(), Some("/dev/serial/by-id/nope"));
     }
 
     #[test]

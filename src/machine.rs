@@ -464,16 +464,12 @@ pub fn plugin_states(json: &str) -> Option<BTreeMap<String, bool>> {
     (started && depth == 0).then_some(out)
 }
 
-/// `omakeel watch --once`: the fix, then `  | NAME STATUS (n ok, m bad)`
-/// for each source.
+/// `omakeel watch --once`: a `fix STATUS ...` line, then
+/// `source NAME STATUS [MESSAGE]` for each source.
 pub fn parse_watch(text: &str) -> Vec<SourceStatus> {
-    let Some(line) = text.lines().find(|l| l.contains(" | ")) else {
-        return Vec::new();
-    };
-    line.split(" | ")
-        .skip(1)
-        .filter_map(|seg| {
-            let mut w = seg.split_whitespace();
+    text.lines()
+        .filter_map(|line| {
+            let mut w = line.strip_prefix("source ")?.split_whitespace();
             Some(SourceStatus {
                 name: w.next()?.to_string(),
                 status: w.next()?.to_string(),
@@ -508,9 +504,11 @@ mod tests {
 
     #[test]
     fn watch_once_names_each_source_and_its_status() {
-        let line = "ok      37°52.0′N 122°18.9′W   4.1 kn  250°T  1s ago  | serial:/dev/serial/by-id/usb-GPS:4800 ok (120 ok, 0 bad)  | serial:/dev/serial/by-id/usb-dAISy:38400 error (0 ok, 0 bad)\n";
+        let out = "fix ok 37.8650000,-122.3200000 0s\n\
+source serial:/dev/serial/by-id/usb-GPS:4800 ok\n\
+source serial:/dev/serial/by-id/usb-dAISy:38400 error permission denied\n";
         assert_eq!(
-            parse_watch(line),
+            parse_watch(out),
             vec![
                 SourceStatus {
                     name: "serial:/dev/serial/by-id/usb-GPS:4800".into(),
@@ -522,6 +520,7 @@ mod tests {
                 },
             ]
         );
+        assert_eq!(parse_watch("fix none\n"), vec![]);
     }
 
     #[test]
