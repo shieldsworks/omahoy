@@ -715,6 +715,24 @@ serial:/dev/serial/by-id/usb-dAISy-if00  denied
     }
 
     #[test]
+    fn the_binary_path_is_quoted_inside_the_sg_command() {
+        let mut t = Script::new(&[]);
+        let mut r = Commands::default().on(
+            r#"sg uucp -c ''\''/home/o'\''\'\'''\''brien/omakeel'\'' probe '\''/dev/serial/by-id/usb-X'\'''"#,
+            Ok("serial:/dev/serial/by-id/usb-X:4800  ok  fix=1 ais=0 rejected=0\n"),
+        );
+        let dirs = dirs();
+        let heard = Ask {
+            t: &mut t,
+            r: &mut r,
+            dirs: &dirs,
+            omakeel: "/home/o'brien/omakeel".into(),
+        }
+        .probe(&["/dev/serial/by-id/usb-X".to_string()], true);
+        assert_eq!(heard.map(|h| h.len()), Ok(1));
+    }
+
+    #[test]
     fn a_silent_device_can_be_kept_and_an_unreachable_phone_too() {
         let mut t = Script::new(&[
             "Dash",
