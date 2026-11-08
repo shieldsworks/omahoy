@@ -6,7 +6,8 @@ A new sailor clones omahoy and runs `./omahoy`. Setup asks about the boat, its h
 
 ```
 $ git clone https://github.com/shieldsworks/omahoy && cd omahoy
-$ ./omahoy
+$ ./omahoy          # in the terminal
+$ ./omahoy panel    # or in the Omarchy shell's panel
 ```
 
 `./omahoy` is a short bash bootstrap. Its only job is to reach Rust: it gets mise if it is missing (`omarchy pkg add mise`), runs `mise trust` and `mise install` for the toolchain pinned in this repo, builds the `omahoy` crate with `--release --locked`, and execs `target/release/omahoy "$@"`. Everything after that is Rust, std only, in `src/`.
@@ -35,10 +36,19 @@ omahoy            # boat.toml exists: show it, offer to change a section, then p
 omahoy doctor     # read-only: what's wrong, what apply would do; exit 1 if anything
 omahoy apply      # make the machine match boat.toml; a no-op when healthy (--yes skips the prompt)
 omahoy hardware   # re-run only the hardware question
+omahoy panel      # set up from the Omarchy shell's panel instead
 omahoy gui ...    # the interface for graphical setup: draft, check, probe, join-uucp, plan, apply
 ```
 
-`omahoy gui` is how the omahoy-setup panel runs setup. Its commands, JSON and exit codes are in `gui.md`; the panel holds the form and this crate keeps every rule.
+`omahoy gui` is how the setup panel in `panel/` runs setup. Its commands, JSON and exit codes are in `gui.md`; the panel holds the form and this crate keeps every rule.
+
+`omahoy panel` opens that panel. It runs from a checkout (`./omahoy panel`, or `omahoy panel` through the `~/.local/bin/omahoy` link setup makes), and does three things:
+
+1. Links `~/.config/omarchy/plugins/org.omahoy.setup` to the checkout's `panel/`. A link that is already there and points at it is left as it is. Anything else at that path (a folder, a link elsewhere, a dangling link) is someone else's: it is never replaced, and the command stops and names it.
+2. When the shell doesn't list the plugin (`omarchy plugin list --json`), or the link is new, it runs `omarchy-shell shell rescanPlugins` and waits up to 2 s for it to appear. A plugin that is listed but disabled is enabled with `omarchy plugin enable org.omahoy.setup`.
+3. Opens it with `omarchy-shell shell summon org.omahoy.setup '{"bin":"PATH"}'`, where PATH is this binary (`target/release/omahoy`), because `omahoy` may not be on PATH before the first apply. The panel runs every `omahoy gui` call through that path.
+
+It writes nothing else and changes no setting. With the shell down it stops and says to start it.
 
 A source that was in boat.toml but isn't heard on a re-run is offered back ("Keep it from before?", default no), so an unplugged receiver is never dropped by surprise. Re-running the hardware question never moves home or the area: the home question is asked only when boat.toml has no home. To move home, change the home section.
 
@@ -179,7 +189,7 @@ How setup handles each case:
 | omahelm | A `home = lat, lon` key. The first camera is the last view, then home, then the chart extent, then the built-in default. `fetch --region S,W,N,E`. |
 | omatide | Hide the SF Bay panel when the configured region doesn't touch the Bay. |
 | omalookout | The no-hub hint points at `omahoy doctor` and no longer names Casey's dAISy. |
-| omahoy | The crate, the bootstrap, the `crate` check in `scripts/verify.py` (a gate change, landed on its own), and the README "Get started" section. |
+| omahoy | The crate, the bootstrap, the `crate` check in `scripts/verify.py` (a gate change, landed on its own), and the README "Install" section. |
 
 ## Why one boat file
 
@@ -189,7 +199,8 @@ The alternative was a shared `omahoy-boat` crate that every app reads. It lost o
 
 | File | What it holds |
 |---|---|
-| `src/main.rs`, `src/cli.rs` | The four commands, `gui` dispatch, and the converge loop: survey, plan, show, confirm, run. |
+| `src/main.rs`, `src/cli.rs` | The commands, `gui` dispatch, and the converge loop: survey, plan, show, confirm, run. |
+| `src/panel.rs` | `omahoy panel`: link, enable and open the setup panel. |
 | `src/json.rs` | A std-only JSON value and writer, for `gui`. |
 | `src/gui.rs` | `omahoy gui`: the commands, the REPORT, the stderr `Terminal` and the capturing `Runner` that maps `sudo` and `omarchy pkg add` to `pkexec`. See `gui.md`. |
 | `src/probe.rs` | Running `omakeel probe` (the not-a-probe-report check, `sg uucp`, stopping the hub around it), shared by the terminal and `gui`. |

@@ -10,6 +10,7 @@ mod gui;
 mod hub;
 mod json;
 mod machine;
+mod panel;
 mod place;
 mod plan;
 mod probe;

@@ -35,20 +35,44 @@ the others read from; the rest are Omarchy plugins.
 | [omatiller](https://github.com/shieldsworks/omatiller) | Tiller pilot control |
 | [omarig](https://github.com/shieldsworks/omarig) | Open sensor hardware and firmware |
 
-## Get started
+## Install
+
+You need an Omarchy machine and an internet connection for the first run.
+Nothing else to install by hand: the `./omahoy` bootstrap installs mise and
+the pinned Rust, then builds omahoy, which takes a few minutes the first
+time.
 
 ```sh
 git clone https://github.com/shieldsworks/omahoy && cd omahoy
-./omahoy
+./omahoy          # questions in the terminal
+./omahoy panel    # or the setup panel in the Omarchy shell
 ```
 
-Setup asks about your boat, its GPS and AIS, where it sails and which apps you
-want. It saves the answers to `~/.config/omahoy/boat.toml`, shows what it will
-do, and on your word installs, configures and starts the apps. Run it again to
-change an answer.
+Both ask the same things: the boat's name, its depth units, draft and the
+clearance you want under the keel, its GPS and AIS hardware (each receiver
+can be skipped for now; with none, the hub plays a demo sail), its home port
+and sailing area, and which apps to install (checkboxes in the panel).
 
-`omahoy doctor` checks the machine against `boat.toml` at any time. It changes
-nothing, and says what `omahoy apply` would put right.
+Then it shows the plan, and when you say go it:
+
+- installs the packages the apps need,
+- clones and builds each chosen app, plus omakeel, the hub, which is always
+  installed,
+- adds and enables the Omarchy plugins, in `~/.config/omarchy/plugins`,
+  with omakeel's checkout in `~/.local/share/omahoy/src/omakeel`,
+- links the binaries into `~/.local/bin`,
+- writes each app's config from your answers, which it keeps in
+  `~/.config/omahoy/boat.toml`,
+- downloads charts and tides for your sailing area,
+- and starts their services.
+
+Installing packages and adding you to the `uucp` group (so the hub can read
+serial GPS and AIS receivers) need your password: `sudo` asks in the
+terminal, and a polkit dialog asks from the panel.
+
+Afterwards, `omahoy doctor` checks the machine against `boat.toml` and changes
+nothing. Run `omahoy` (or `omahoy panel`) again to change an answer or add an
+app, and `omahoy hardware` to add a receiver later.
 [docs/onboarding.md](docs/onboarding.md) has the details.
 
 ## Principles

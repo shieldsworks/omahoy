@@ -1,4 +1,4 @@
-//! The four commands: setup, doctor, apply, hardware.
+//! The commands: setup, doctor, apply, hardware, panel.
 
 use crate::apps::App;
 use crate::ask::Ask;
@@ -15,6 +15,7 @@ pub enum Command {
     Doctor,
     Apply { yes: bool },
     Hardware,
+    Panel,
     Help,
     Gui(Gui),
 }
@@ -24,6 +25,7 @@ usage: omahoy                set up, or change boat.toml and apply it
        omahoy doctor         read-only: what's wrong, and what apply would do
        omahoy apply [--yes]  make the machine match boat.toml
        omahoy hardware       ask only the hardware question again
+       omahoy panel          set up from the Omarchy shell's panel instead
        omahoy gui draft|check|probe|join-uucp|plan|apply
                              the interface for graphical setup (docs/gui.md)";
 
@@ -35,6 +37,7 @@ pub fn parse_args(args: &[String]) -> Result<Command, String> {
         ["apply"] => Command::Apply { yes: false },
         ["apply", "--yes" | "-y"] => Command::Apply { yes: true },
         ["hardware"] => Command::Hardware,
+        ["panel"] => Command::Panel,
         ["help" | "--help" | "-h"] => Command::Help,
         ["gui", rest @ ..] => Command::Gui(parse_gui(rest)?),
         _ => return Err(format!("unknown command: {}\n{USAGE}", words.join(" "))),
@@ -80,6 +83,11 @@ pub fn run(cmd: Command, e: &mut Env<'_>) -> Result<i32, String> {
         }
         Command::Gui(_) => Err("gui commands run through gui::main".into()),
         Command::Doctor => doctor(e),
+        Command::Panel => {
+            let exe =
+                std::env::current_exe().map_err(|err| format!("finding this binary: {err}"))?;
+            crate::panel::open(e, &exe)
+        }
         Command::Apply { yes } => {
             let boat = required(e.dirs)?;
             converge(e, &boat, yes)
@@ -406,6 +414,7 @@ pub(crate) mod tests {
         assert_eq!(p(&["doctor"]), Ok(Command::Doctor));
         assert_eq!(p(&["apply", "--yes"]), Ok(Command::Apply { yes: true }));
         assert_eq!(p(&["hardware"]), Ok(Command::Hardware));
+        assert_eq!(p(&["panel"]), Ok(Command::Panel));
         assert!(p(&["apply", "--force"]).is_err());
         assert_eq!(p(&["gui", "draft"]), Ok(Command::Gui(Gui::Draft)));
         assert_eq!(
