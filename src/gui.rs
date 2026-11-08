@@ -453,7 +453,11 @@ fn heard_json(h: Result<Heard, String>) -> Json {
         Err(e) => {
             let line = e.strip_prefix("unexpected probe line: ").unwrap_or(&e);
             let spec = line.split_whitespace().next().unwrap_or("");
-            return device(spec, "error", &e, Json::Null, Json::Null);
+            let source = match Source::parse(spec) {
+                Ok(s) if spec.starts_with("tcp:") => Json::from(s.spec()),
+                _ => Json::Null,
+            };
+            return device(spec, "error", &e, source, Json::Null);
         }
     };
     let verdict = match &h.verdict {
@@ -912,6 +916,21 @@ serial:/dev/serial/by-id/usb-X  nonsense
     }
 
     #[test]
+    fn an_unrecognized_tcp_report_still_offers_its_canonical_source() {
+        let heard = "tcp:phone:10110  nonsense\n";
+        let r = Commands::default()
+            .on("/k/omakeel probe tcp:phone:10110", Ok(heard))
+            .on("getent group uucp", Ok(""))
+            .on("id -nG", Ok(""));
+        let (got, _) = probe_out(heard, &["phone:10110"], false, r);
+        let out = got.unwrap().render();
+        assert!(
+            out.contains(r#"{"spec":"tcp:phone:10110","name":"tcp:phone:10110","kind":"tcp","verdict":"error","describe":"unexpected probe line: tcp:phone:10110  nonsense","source":"tcp:phone:10110","fix":null}"#),
+            "{out}"
+        );
+    }
+
+    #[test]
     fn an_unsupported_baud_is_an_error_device_and_the_rest_are_still_probed() {
         let r = Commands::default()
             .on(
@@ -940,7 +959,7 @@ serial:/dev/serial/by-id/usb-X  nonsense
     #[test]
     fn a_vault_that_is_only_a_root_is_a_problem_in_check_as_in_apply() {
         let dirs = tmp_dirs("vault-root");
-        for vault in ["/", "~/", "~", "//"] {
+        for vault in ["/", "~/", "~", "//", "/ /", "~/ /"] {
             let text = WAVELENGTH.replace("~/Logbook", vault);
             let (_, out) = go(&Gui::Check, &dirs, &mut Commands::default(), &text);
             assert!(out.contains(r#""complete":false"#), "{vault}: {out}");

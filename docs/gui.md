@@ -51,7 +51,7 @@ REPORT
 Listens for hardware, as the terminal's hardware question does: builds
 omakeel first when it isn't fresh, stops `omakeel.service` while it
 listens and starts it again after (a hub that was not running is left alone;
-when it was and won't start again, that is exit 2, with the probe's own
+when it was and won't stop, no probe runs and that is exit 2; when it won't start again, that is exit 2, with the probe's own
 failure named too if it also failed). With no SPEC it scans every serial
 device. A SPEC is `serial:PATH` or `tcp:HOST:PORT` (`HOST:PORT` alone is
 read as tcp). `--uucp` listens through `sg uucp`, for a sailor who was just

@@ -131,7 +131,7 @@ fn check_vault(v: &str) -> Result<String, String> {
     if v.contains(['"', '#']) {
         return Err("a folder name can't hold \" or #".into());
     }
-    let v = v.trim_end_matches('/');
+    let v = v.trim_end_matches(|c: char| c == '/' || c.is_whitespace());
     if v.is_empty() || v == "~" {
         return Err("the logbook folder needs a name below / or ~/".into());
     }
