@@ -246,7 +246,7 @@ bash scripts/apply.sh clear "$applydir" "$other" || fail "this panel cleared the
 
 echo "apply.sh: one of many racing starts runs, and clear waits for it"
 runs=$tmp/runs
-printf '#!/bin/sh\ncat >/dev/null\necho run >> %s\nsleep 2\n' "$runs" > "$slow"
+printf '#!/bin/sh\ncat >> %s\nsleep 2\n' "$runs" > "$slow"
 racers=()
 for i in 1 2 3 4 5 6; do
   (rc=0; echo "name = \"Boat$i\"" | bash scripts/apply.sh start "$applydir" "$slow" >/dev/null 2>&1 || rc=$?; echo $rc > "$tmp/race$i") &
@@ -261,6 +261,25 @@ for _ in $(seq 50); do [[ $(bash scripts/apply.sh status "$applydir" | head -1) 
 if bash scripts/apply.sh clear "$applydir" wrong-id; then fail "clear removed another run"; fi
 bash scripts/apply.sh clear "$applydir" "$(cat "$applydir/id")" || fail "clear refused a finished apply"
 [[ ! -e $applydir/in ]] || fail "clear left the apply's files"
+
+echo "apply.sh: a worker applies only its own run, and a run is never ownerless"
+rm -f "$runs"
+echo 'name = "B"' > "$applydir/in"
+echo id-B > "$applydir/id"
+bash scripts/apply.sh work "$applydir" "$slow" id-A
+[[ ! -e $runs && ! -e $applydir/code && ! -e $applydir/pid ]] || fail "a worker applied another run's input"
+flock "$applydir/lock" sleep 1.5 &
+locker=$!
+sleep 0.3
+[[ $(bash scripts/apply.sh status "$applydir" | head -1) == running ]] || fail "a run whose start waits on its worker is not running"
+rc=0; echo 'name = "C"' | bash scripts/apply.sh start "$applydir" "$slow" >/dev/null 2>&1 || rc=$?
+(( rc == 3 )) || fail "a start replaced a run whose worker had not started (exit $rc)"
+wait "$locker"
+[[ $(bash scripts/apply.sh status "$applydir" | head -1) == lost ]] || fail "a run with no worker and no start is not lost"
+id=$(echo 'name = "C"' | bash scripts/apply.sh start "$applydir" "$slow")
+for _ in $(seq 50); do [[ -e $applydir/code ]] && break; sleep 0.1; done
+[[ $(cat "$runs") == 'name = "C"' ]] || fail "applied: $(cat "$runs")"
+bash scripts/apply.sh clear "$applydir" "$id" || fail "clear refused a finished apply"
 
 echo "panel: an apply outlives the panel and the next one picks it up"
 start

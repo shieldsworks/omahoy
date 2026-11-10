@@ -219,7 +219,11 @@ flocked by a start while it checks and writes, by the worker from its start
 until `code` is written, by a clear, and by every probe the panel runs
 (`apply.sh probe`) for the whole probe, so of every open panel only one
 starts an apply, no probe stops the hub during an apply, and no apply starts
-during a probe. A refused start or probe (exit 3) does nothing and says
+during a probe. A start keeps the lock until its worker has written its
+`pid`, and the worker is given the run's id and applies nothing unless `id`
+still names it, so a slow worker never applies another run's input. A run
+is lost only when its worker's pid is gone (or no worker came and no start
+waits for one), never on a timer. A refused start or probe (exit 3) does nothing and says
 setup is busy in another window. A panel follows, reports and clears only
 the run whose id it started or picked up; a run with another id is never its
 result. The panel follows
