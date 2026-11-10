@@ -317,12 +317,18 @@ Item {
         }
     }
 
-    // Hardware.
+    // Hardware. A probe stops and starts the hub, so it runs under the lock
+    // an apply holds (scripts/apply.sh probe) and is refused, exit 3, while
+    // any window applies or listens.
+    readonly property string elsewhere: "Setup is applying or listening in another window. Try again when it has finished."
+    function probeArgv(args) {
+        return (runDir === "" ? [bin, "gui", "probe"] : ["bash", applyScript, "probe", runDir, bin]).concat(args);
+    }
     function listen() {
         if (busy) return;
         hardwareError = "";
         needLogout = false;
-        scanner.argv = [bin, "gui", "probe"].concat(useUucp ? ["--uucp"] : []);
+        scanner.argv = probeArgv(useUucp ? ["--uucp"] : []);
         scanner.start();
     }
 
@@ -386,7 +392,7 @@ Item {
         if (busy) return;
         hardwareError = "";
         if (unsafe(hostPort)) { hardwareError = "A host:port can't hold quotes, #, or control characters."; return; }
-        netter.argv = [bin, "gui", "probe", "tcp:" + hostPort.trim()];
+        netter.argv = probeArgv(["tcp:" + hostPort.trim()]);
         netter.start();
     }
     function takeNet(r) {
@@ -443,6 +449,9 @@ Item {
     // Set by the window: the plugin's folder holds scripts/apply.sh.
     property string applyScript: ""
     property string adoptText: ""
+    // The run this panel started or picked up; another run's files are
+    // never read as its result, nor cleared.
+    property string applyId: ""
 
     // Go applies the text the check and the plan were made for.
     function go() {
@@ -465,13 +474,22 @@ Item {
         watcher.argv = ["bash", applyScript, "status", runDir];
         watcher.start();
     }
-    // What apply.sh status said: a state line, then prefixed out, err and
-    // in lines.
+    // What apply.sh status said: a state line, then prefixed id, out, err
+    // and in lines.
     function takeApply(lines) {
         const state = lines.length ? lines[0] : "none";
         const part = p => lines.filter(l => l.indexOf(p) === 0).map(l => l.slice(2));
+        const id = part("d ").join("");
         if (!loaded) {
+            applyId = state === "none" ? "" : id;
             draftFrom(state === "none" ? "" : part("i ").join("\n") + "\n");
+            return;
+        }
+        if (state !== "none" && id !== applyId) {
+            if (applyState === "running") {
+                applyState = "failed";
+                applyError = "Another window started an apply before this one's end was read, so how it ended is unknown. Run omahoy doctor to see.";
+            }
             return;
         }
         if (state === "none") {
@@ -487,7 +505,7 @@ Item {
             applyTimer.restart();
             return;
         }
-        clearer.argv = ["bash", applyScript, "clear", runDir];
+        clearer.argv = ["bash", applyScript, "clear", runDir, applyId];
         clearer.start();
         const code = state.indexOf("code ") === 0 ? Number(state.slice(5)) : -1;
         if (code === 0 && applySent !== boat) {
@@ -550,7 +568,8 @@ Item {
         id: scanner
         onFinished: code => {
             const r = code === 0 ? s.parse(scanner.out) : null;
-            if (r === null) s.hardwareError = "Couldn't listen: " + (scanner.err || "omahoy gui probe failed");
+            if (code === 3) s.hardwareError = s.elsewhere;
+            else if (r === null) s.hardwareError = "Couldn't listen: " + (scanner.err || "omahoy gui probe failed");
             else s.takeProbe(r);
         }
     }
@@ -562,7 +581,7 @@ Item {
                 return;
             }
             s.useUucp = true;
-            reprober.argv = [s.bin, "gui", "probe", "--uucp"].concat(s.deniedSpecs());
+            reprober.argv = s.probeArgv(["--uucp"].concat(s.deniedSpecs()));
             reprober.start();
         }
     }
@@ -570,7 +589,8 @@ Item {
         id: reprober
         onFinished: code => {
             const r = code === 0 ? s.parse(reprober.out) : null;
-            if (r === null) s.hardwareError = "Couldn't listen again: " + (reprober.err || "omahoy gui probe failed");
+            if (code === 3) s.hardwareError = s.elsewhere;
+            else if (r === null) s.hardwareError = "Couldn't listen again: " + (reprober.err || "omahoy gui probe failed");
             else s.takeReprobe(r);
         }
     }
@@ -578,7 +598,8 @@ Item {
         id: netter
         onFinished: code => {
             const r = code === 0 ? s.parse(netter.out) : null;
-            if (r === null || r.devices.length === 0) s.hardwareError = "Couldn't test the source: " + (netter.err || "no answer");
+            if (code === 3) s.hardwareError = s.elsewhere;
+            else if (r === null || r.devices.length === 0) s.hardwareError = "Couldn't test the source: " + (netter.err || "no answer");
             else s.takeNet(r);
         }
     }
@@ -598,12 +619,14 @@ Item {
     Runner {
         id: launcher
         onFinished: code => {
-            if (code === 0) s.pollApply();
-            else if (code === 3) {
-                // Another window's apply holds the run; its result is not
-                // these answers'.
+            if (code === 0) {
+                s.applyId = launcher.lines.length ? launcher.lines[launcher.lines.length - 1] : "";
+                s.pollApply();
+            } else if (code === 3) {
+                // Another window's apply or probe holds the lock; its result
+                // is not these answers'.
                 s.applyState = "";
-                s.applyError = "Another apply is running, so these answers were not applied. Press Go again when it has finished.";
+                s.applyError = "Setup is applying or listening in another window, so these answers were not applied. Press Go again when it has finished.";
             } else {
                 s.applyState = "failed";
                 s.applyError = launcher.err || "Couldn't start omahoy gui apply";

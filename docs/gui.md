@@ -214,17 +214,20 @@ unit (`systemd-run --user --collect`, with the panel's environment), or under
 `setsid` where there is no user manager, with the boat text read from a file.
 Its files live in `$XDG_RUNTIME_DIR/omahoy-setup/`: `in` (the boat text),
 `out` and `err` (apply's stdout and stderr), `pid`, and `code` (the exit
-status, written last). `lock` is flocked by a start while it checks and
-writes, by the worker from its start until `code` is written, and by a
-clear, so of two panels pressing Go only one starts, and a clear never
-removes a running apply's files. A refused start applies nothing: that
-panel says its answers were not applied and does not follow the other
-apply, whose result is not its own. The panel follows
+status, written last), and `id`, the run's, which start prints. `lock` is
+flocked by a start while it checks and writes, by the worker from its start
+until `code` is written, by a clear, and by every probe the panel runs
+(`apply.sh probe`) for the whole probe, so of every open panel only one
+starts an apply, no probe stops the hub during an apply, and no apply starts
+during a probe. A refused start or probe (exit 3) does nothing and says
+setup is busy in another window. A panel follows, reports and clears only
+the run whose id it started or picked up; a run with another id is never its
+result. The panel follows
 `out` while it runs; a panel that loads with an apply there, running or
 finished, shows that apply's answers on the review step and follows it to
 the end, then forgets the files. A worker that died without writing `code`
 is reported as stopped, with `omahoy apply` to finish. A probe is never
-started while an apply runs.
+started while an apply runs, in this panel or another.
 
 ## Which binary the panel runs
 

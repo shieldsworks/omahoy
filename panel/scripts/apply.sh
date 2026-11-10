@@ -6,20 +6,26 @@
 # its own (`setsid`) where there is no user manager to ask. Its output goes
 # to files the panel reads back, after a reload too.
 #
-#   apply.sh start DIR BIN   boat text on stdin; exit 3 while one runs
+#   apply.sh start DIR BIN   boat text on stdin; prints the run's id; exit 3
+#                            while an apply or a probe runs
 #   apply.sh status DIR      a state line (none, running, lost, code N),
-#                            then out, err and in, a prefixed line each
-#   apply.sh clear DIR       forgets a finished apply
+#                            then id, out, err and in, a prefixed line each
+#   apply.sh clear DIR ID    forgets run ID once it has finished
+#   apply.sh probe DIR BIN [ARG...]
+#                            runs `BIN gui probe ARG...`; exit 3 while an
+#                            apply or another probe runs
 #
-# DIR holds `in` (the boat text), `out` and `err` (apply's stdout and
-# stderr), `pid` (the worker's) and `code` (its exit status, written last).
-# `lock` is flocked by start and clear while they look and write, and by the
-# worker from its start until `code` is written, so two panels can't both
-# start an apply and a clear can't remove a running one's files.
+# DIR holds `id` (the run's), `in` (the boat text), `out` and `err`
+# (apply's stdout and stderr), `pid` (the worker's) and `code` (its exit
+# status, written last). `lock` is flocked by start and clear while they
+# look and write, by the worker from its start until `code` is written, and
+# by a probe for its whole run, so of every panel only one starts an apply,
+# a probe never stops the hub during an apply, and a clear can't remove a
+# running apply's files or another run's.
 set -euo pipefail
 
 cmd=${1:-}
-d=${2:?usage: apply.sh start|status|clear DIR [BIN]}
+d=${2:?usage: apply.sh start|status|clear|probe DIR [BIN|ID] [ARG...]}
 
 state() {
   [[ -e $d/in ]] || { echo none; return; }
@@ -49,6 +55,8 @@ case $cmd in
     : > "$d/out"
     : > "$d/err"
     cat > "$d/in"
+    id=$(date +%s%N)-$$
+    echo "$id" > "$d/id"
     self=$(readlink -f -- "$0")
     # The unit gets this environment (PATH, the session's display and
     # OMARCHY_PATH), which the user manager's own lacks.
@@ -58,6 +66,19 @@ case $cmd in
     if ! systemd-run --user --quiet --collect "${env[@]}" -- bash "$self" work "$d" "$bin" 2>/dev/null 9>&-; then
       setsid -f bash "$self" work "$d" "$bin" </dev/null >/dev/null 2>&1 9>&-
     fi
+    echo "$id"
+    ;;
+  probe)
+    bin=${3:?usage: apply.sh probe DIR BIN [ARG...]}
+    mkdir -p -m 700 -- "$d"
+    exec 9> "$d/lock"
+    if ! flock -n 9 || [[ $(state) == running ]]; then
+      echo "Setup is applying or listening in another window." >&2
+      exit 3
+    fi
+    # The probe keeps fd 9, so the lock is held until it has started the
+    # hub again and exited.
+    exec "$bin" gui probe "${@:4}"
     ;;
   work)
     exec 9> "$d/lock"
@@ -71,18 +92,21 @@ case $cmd in
   status)
     state
     [[ -e $d/in ]] || exit 0
+    sed 's/^/d /' -- "$d/id" 2>/dev/null || true
     sed 's/^/o /' -- "$d/out" 2>/dev/null || true
     sed 's/^/e /' -- "$d/err" 2>/dev/null || true
     sed 's/^/i /' -- "$d/in"
     ;;
   clear)
+    want=${3:?usage: apply.sh clear DIR ID}
     [[ -d $d ]] || exit 0
     exec 9> "$d/lock"
     if ! flock -n 9 || [[ $(state) == running ]]; then exit 3; fi
-    rm -f -- "$d/in" "$d/out" "$d/err" "$d/pid" "$d/code"
+    [[ $(cat -- "$d/id" 2>/dev/null) == "$want" ]] || exit 3
+    rm -f -- "$d/id" "$d/in" "$d/out" "$d/err" "$d/pid" "$d/code"
     ;;
   *)
-    echo "usage: apply.sh start|status|clear DIR [BIN]" >&2
+    echo "usage: apply.sh start|status|clear|probe DIR [BIN|ID] [ARG...]" >&2
     exit 2
     ;;
 esac

@@ -208,29 +208,58 @@ until_is '.ready' true
 slow=$tmp/bin/slow-apply
 printf '#!/bin/sh\ncat >/dev/null\necho other\nsleep 2\n' > "$slow"
 chmod +x "$slow"
-echo 'name = "Other"' | bash scripts/apply.sh start "$applydir" "$slow"
+other=$(echo 'name = "Other"' | bash scripts/apply.sh start "$applydir" "$slow")
 ipc go
 until_is '.applyError|test("not applied")' true
 until_is '.applyState' '""'
 sleep 3
 until_is '[.applyState, (.applyError|test("not applied"))]' '["",true]' "the other apply's end is not this one's"
-bash scripts/apply.sh clear "$applydir"
+bash scripts/apply.sh clear "$applydir" "$other" || fail "the other run was not cleared"
+
+echo "panel: no probe while another window applies, and no apply while one probes"
+other=$(echo 'name = "Other"' | bash scripts/apply.sh start "$applydir" "$slow")
+ipc probe
+until_is '.hardwareError|test("another window")' true
+settled
+until_is '.hardware|length' 0 "the probe did not run"
+until_is '.applyState' '""'
+for _ in $(seq 50); do [[ -e $applydir/code ]] && break; sleep 0.1; done
+bash scripts/apply.sh clear "$applydir" "$other" || fail "the other run was not cleared"
+bash scripts/apply.sh probe "$applydir" "$fake" >/dev/null 2>&1 &
+prober=$!
+sleep 0.5
+rc=0; echo 'name = "x"' | bash scripts/apply.sh start "$applydir" "$slow" >/dev/null 2>&1 || rc=$?
+wait "$prober" || fail "the probe failed"
+(( rc == 3 )) || fail "an apply started during a probe (exit $rc)"
+
+echo "panel: another window's run is never this one's result"
+start FAKE_OMAHOY_FAST=1 FAKE_OMAHOY_APPLY_EXIT=2
+ipc goTo review
+until_is '.ready' true
+ipc go
+for _ in $(seq 300); do [[ -e $applydir/code ]] && break; sleep 0.01; done
+other=$(echo 'name = "Other"' | bash scripts/apply.sh start "$applydir" "$slow")
+until_is '.applyState' '"failed"'
+sleep 3
+until_is '.applyState' '"failed"' "the other run's success is not this one's"
+bash scripts/apply.sh clear "$applydir" "$other" || fail "this panel cleared the other run, or it did not finish"
 
 echo "apply.sh: one of many racing starts runs, and clear waits for it"
 runs=$tmp/runs
 printf '#!/bin/sh\ncat >/dev/null\necho run >> %s\nsleep 2\n' "$runs" > "$slow"
 racers=()
 for i in 1 2 3 4 5 6; do
-  (rc=0; echo "name = \"Boat$i\"" | bash scripts/apply.sh start "$applydir" "$slow" 2>/dev/null || rc=$?; echo $rc > "$tmp/race$i") &
+  (rc=0; echo "name = \"Boat$i\"" | bash scripts/apply.sh start "$applydir" "$slow" >/dev/null 2>&1 || rc=$?; echo $rc > "$tmp/race$i") &
   racers+=($!)
 done
 wait "${racers[@]}"
 [[ $(cat "$tmp"/race? | sort | tr '\n' ' ') == "0 3 3 3 3 3 " ]] || fail "racing starts exited $(cat "$tmp"/race? | tr '\n' ' ')"
-if bash scripts/apply.sh clear "$applydir"; then fail "clear removed a running apply"; fi
+if bash scripts/apply.sh clear "$applydir" "$(cat "$applydir/id")"; then fail "clear removed a running apply"; fi
 for _ in $(seq 50); do [[ $(bash scripts/apply.sh status "$applydir" | head -1) == "code 0" ]] && break; sleep 0.1; done
 [[ $(bash scripts/apply.sh status "$applydir" | head -1) == "code 0" ]] || fail "the started apply did not finish"
 [[ $(wc -l < "$runs") == 1 ]] || fail "$(wc -l < "$runs") applies ran"
-bash scripts/apply.sh clear "$applydir" || fail "clear refused a finished apply"
+if bash scripts/apply.sh clear "$applydir" wrong-id; then fail "clear removed another run"; fi
+bash scripts/apply.sh clear "$applydir" "$(cat "$applydir/id")" || fail "clear refused a finished apply"
 [[ ! -e $applydir/in ]] || fail "clear left the apply's files"
 
 echo "panel: an apply outlives the panel and the next one picks it up"
