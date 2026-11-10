@@ -126,8 +126,15 @@ is `docs/gui.md`; change it in the same commit as either side.
   `*Step.qml`: one file per step; `Btn`, `Field`, `Tick`, `Words`: widgets.
 - `panel/scripts/fake-omahoy`: contract-shaped answers, for driving the
   panel without the real binary. `panel/scripts/check-panel.sh`: drives a
-  headless instance through its IPC handler. The `panel` check in
-  `scripts/verify.sh` runs it, qmllint and `bash -n`.
+  headless instance through its IPC handler.
+- `scripts/verify.sh` does not check the panel yet; a `panel` check is its
+  own gate PR. Until it lands, a change under `panel/` is done when these
+  pass too, from the repo root:
+
+  ```sh
+  /usr/lib/qt6/bin/qmllint panel/ui/*.qml
+  panel/scripts/check-panel.sh
+  ```
 - Boat text is composed by the panel and sent on stdin. A value with a
   newline, control character (C0, DEL, C1, U+2028/2029), `"` or `#` is
   refused in the form, never sent.

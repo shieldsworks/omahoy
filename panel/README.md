@@ -25,5 +25,6 @@ the panel runs in a window of its own without the real binary:
 OMAHOY_BIN=$PWD/scripts/fake-omahoy ./run.sh
 ```
 
-`scripts/verify.sh panel`, from the repo root, lints it and drives it
-headless (`scripts/check-panel.sh`).
+From the repo root, `/usr/lib/qt6/bin/qmllint panel/ui/*.qml` lints it and
+`panel/scripts/check-panel.sh` drives it headless. `scripts/verify.sh` does
+not run them yet.
