@@ -9,7 +9,9 @@ repos under github.com/shieldsworks.
 
 The `omahoy` crate at the root is the setup program. It keeps the apps' Rust
 rules: `mise` pins the toolchain, every cargo command is `--locked`, and the
-Cargo `[lints]` table and `clippy.toml` are gates. There is no QML here.
+Cargo `[lints]` table and `clippy.toml` are gates. `panel/` is the setup
+panel, a QML Omarchy shell plugin that runs `omahoy gui`; its rules are in
+The setup panel below.
 
 ## Toolchain
 
@@ -17,7 +19,8 @@ Cargo `[lints]` table and `clippy.toml` are gates. There is no QML here.
 Chromium or Google Chrome for the verify skill. For the crate, run `mise
 install` first: `mise.toml` pins Rust 1.98 with rustfmt and clippy.
 `Cargo.toml`'s `rust-version` is 1.89, and `clippy.toml`'s `msrv` must
-equal it.
+equal it. For the panel: Quickshell, `qmllint` (`/usr/lib/qt6/bin`) and
+`jq`, all on an Omarchy machine already.
 
 ## Done means verified
 
@@ -107,6 +110,49 @@ PR.
   `XDG_STATE_HOME` pointed at a temp dir and stub `omarchy`, `systemctl`,
   `pacman`, `sudo` and `sg` first on `PATH`. Never run `apply` against a
   real home to test it.
+
+## The setup panel
+
+`panel/` is the Omarchy shell plugin `org.omahoy.setup`, opened by `omahoy
+panel`. It fills the same form as the terminal setup. The panel holds the
+form; the binary keeps every rule. It never decides validity, areas, app
+refusals or what apply does: it calls `omahoy gui
+draft|check|probe|join-uucp|plan|apply` and renders the JSON. The contract
+is `docs/gui.md`; change it in the same commit as either side.
+
+- `panel/ui/Setup.qml`: the form's state and every call to `omahoy gui`.
+  `Runner.qml`: one attached command, stdin through `printf |`.
+  `SetupWindow.qml`: the window, keys and the `omahoysetup` IpcHandler.
+  `*Step.qml`: one file per step; `Btn`, `Field`, `Tick`, `Words`: widgets.
+- `panel/scripts/fake-omahoy`: contract-shaped answers, for driving the
+  panel without the real binary. `panel/scripts/check-panel.sh`: drives a
+  headless instance through its IPC handler.
+- `scripts/verify.sh` does not check the panel yet; a `panel` check is its
+  own gate PR. Until it lands, a change under `panel/` is done when these
+  pass too, from the repo root:
+
+  ```sh
+  /usr/lib/qt6/bin/qmllint panel/ui/*.qml
+  panel/scripts/check-panel.sh
+  ```
+- Boat text is composed by the panel and sent on stdin. A value with a
+  newline, control character (C0, DEL, C1, U+2028/2029), `"` or `#` is
+  refused in the form, never sent.
+- Never stop a running `gui probe` or `gui apply`: they stop and restart
+  the hub's service, and apply changes the machine. Apply runs detached
+  from the panel (`panel/scripts/apply.sh`, docs/gui.md), so a panel reload
+  can't cut it off.
+- Checks drive their own headless instance, addressed by `--pid`, with
+  `HOME` and `XDG_RUNTIME_DIR` in a temp dir and `OMAHOY_BIN` on the fake.
+- Never run `omahoy panel`, restart the shell or talk to the live shell
+  from a check: that is the desktop.
+
+To drive it by hand:
+
+```sh
+OMAHOY_BIN=$PWD/panel/scripts/fake-omahoy panel/run.sh &
+quickshell ipc --pid $! call omahoysetup status
+```
 
 ## No apologetic comments
 
@@ -219,6 +265,9 @@ You will copy what you see. Before copying, check that what you copy passes
 - `Cargo.toml`, `Cargo.lock`, `mise.toml`, `clippy.toml`, `src/`: the
   setup crate. `docs/onboarding.md` has its code map.
 - `docs/onboarding.md`: what setup asks, writes and runs.
+- `docs/gui.md`: the `omahoy gui` contract the panel calls.
+- `panel/`: the setup panel (The setup panel above). `manifest.json`, `ui/`,
+  `run.sh` (standalone window), `scripts/`.
 
 - `site/index.html`: the home page, with the inline wordmark, the Bay chart
   drawn from `bay.js`, the app list and the theme picker.

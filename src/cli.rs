@@ -1,27 +1,33 @@
-//! The four commands: setup, doctor, apply, hardware.
+//! The commands: setup, doctor, apply, hardware, panel.
 
 use crate::apps::App;
 use crate::ask::Ask;
 use crate::boat::{Boat, Partial};
+use crate::gui::Gui;
 use crate::machine::{Build, Machine, OnDisk, find};
 use crate::plan::{Step, findings, plan};
 use crate::sys::{Dirs, Runner, Terminal, confirm};
 use std::path::PathBuf;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Command {
     Setup,
     Doctor,
     Apply { yes: bool },
     Hardware,
+    Panel,
     Help,
+    Gui(Gui),
 }
 
 pub const USAGE: &str = "\
 usage: omahoy                set up, or change boat.toml and apply it
        omahoy doctor         read-only: what's wrong, and what apply would do
        omahoy apply [--yes]  make the machine match boat.toml
-       omahoy hardware       ask only the hardware question again";
+       omahoy hardware       ask only the hardware question again
+       omahoy panel          set up from the Omarchy shell's panel instead
+       omahoy gui draft|check|probe|join-uucp|plan|apply
+                             the interface for graphical setup (docs/gui.md)";
 
 pub fn parse_args(args: &[String]) -> Result<Command, String> {
     let words: Vec<&str> = args.iter().map(String::as_str).collect();
@@ -31,8 +37,33 @@ pub fn parse_args(args: &[String]) -> Result<Command, String> {
         ["apply"] => Command::Apply { yes: false },
         ["apply", "--yes" | "-y"] => Command::Apply { yes: true },
         ["hardware"] => Command::Hardware,
+        ["panel"] => Command::Panel,
         ["help" | "--help" | "-h"] => Command::Help,
+        ["gui", rest @ ..] => Command::Gui(parse_gui(rest)?),
         _ => return Err(format!("unknown command: {}\n{USAGE}", words.join(" "))),
+    })
+}
+
+fn parse_gui(words: &[&str]) -> Result<Gui, String> {
+    Ok(match words {
+        ["draft"] => Gui::Draft,
+        ["check"] => Gui::Check,
+        ["join-uucp"] => Gui::JoinUucp,
+        ["plan"] => Gui::Plan,
+        ["apply"] => Gui::Apply,
+        ["probe", rest @ ..] => {
+            let uucp = rest.contains(&"--uucp");
+            let specs: Vec<String> = rest
+                .iter()
+                .filter(|w| **w != "--uucp")
+                .map(|w| (*w).to_string())
+                .collect();
+            if let Some(flag) = specs.iter().find(|s| s.starts_with('-')) {
+                return Err(format!("unknown option {flag}\n{USAGE}"));
+            }
+            Gui::Probe { uucp, specs }
+        }
+        _ => return Err(format!("unknown gui command: {}\n{USAGE}", words.join(" "))),
     })
 }
 
@@ -50,7 +81,13 @@ pub fn run(cmd: Command, e: &mut Env<'_>) -> Result<i32, String> {
             e.t.say(USAGE);
             Ok(0)
         }
+        Command::Gui(_) => Err("gui commands run through gui::main".into()),
         Command::Doctor => doctor(e),
+        Command::Panel => {
+            let exe =
+                std::env::current_exe().map_err(|err| format!("finding this binary: {err}"))?;
+            crate::panel::open(e, &exe)
+        }
         Command::Apply { yes } => {
             let boat = required(e.dirs)?;
             converge(e, &boat, yes)
@@ -101,7 +138,7 @@ fn save(e: &mut Env<'_>, boat: &Boat) -> Result<(), String> {
 /// The probe lives in omakeel, so omakeel is fetched and built before the
 /// hardware question, when it isn't already. A stale build is rebuilt too:
 /// a binary from before `probe` existed would fail the question.
-fn hub_ready(e: &mut Env<'_>) -> Result<PathBuf, String> {
+pub fn hub_ready(e: &mut Env<'_>) -> Result<PathBuf, String> {
     let (dir, build) = match find(e.r, e.dirs, App::Keel) {
         OnDisk::Checkout(c) => (c.dir, c.build),
         OnDisk::Absent => (Machine::home_of(e.dirs, App::Keel), None),
@@ -131,7 +168,7 @@ fn hub_ready(e: &mut Env<'_>) -> Result<PathBuf, String> {
     Ok(bin)
 }
 
-fn converge(e: &mut Env<'_>, boat: &Boat, yes: bool) -> Result<i32, String> {
+pub fn converge(e: &mut Env<'_>, boat: &Boat, yes: bool) -> Result<i32, String> {
     let m = Machine::survey(e.r, e.dirs, boat, e.own.as_deref());
     let steps = plan(boat, &m);
     if steps.is_empty() {
@@ -217,7 +254,7 @@ fn doctor(e: &mut Env<'_>) -> Result<i32, String> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     use crate::sys::fake::{Commands, Script};
@@ -259,7 +296,11 @@ mod tests {
     /// A tmp home with only omakeel on it, built and linked, for a boat
     /// that has the demo hub and no apps. Everything matches unless the
     /// unit is stopped.
-    fn keel_only(name: &str, active: bool, plugins_listed: bool) -> (Dirs, Boat, Commands) {
+    pub(crate) fn keel_only(
+        name: &str,
+        active: bool,
+        plugins_listed: bool,
+    ) -> (Dirs, Boat, Commands) {
         let dirs = tmp_dirs(name);
         let mut boat = crate::boat::tests::wavelength();
         boat.hub = crate::hub::Hub::Demo;
@@ -373,6 +414,17 @@ mod tests {
         assert_eq!(p(&["doctor"]), Ok(Command::Doctor));
         assert_eq!(p(&["apply", "--yes"]), Ok(Command::Apply { yes: true }));
         assert_eq!(p(&["hardware"]), Ok(Command::Hardware));
+        assert_eq!(p(&["panel"]), Ok(Command::Panel));
         assert!(p(&["apply", "--force"]).is_err());
+        assert_eq!(p(&["gui", "draft"]), Ok(Command::Gui(Gui::Draft)));
+        assert_eq!(
+            p(&["gui", "probe", "--uucp", "tcp:h:1", "serial:/dev/x"]),
+            Ok(Command::Gui(Gui::Probe {
+                uucp: true,
+                specs: vec!["tcp:h:1".into(), "serial:/dev/x".into()]
+            }))
+        );
+        assert!(p(&["gui", "probe", "--bogus"]).is_err());
+        assert!(p(&["gui"]).is_err());
     }
 }

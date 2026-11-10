@@ -37,6 +37,14 @@ impl Position {
         Position::new(num(a)?, num(b)?)
     }
 
+    pub fn lat(self) -> f64 {
+        self.lat
+    }
+
+    pub fn lon(self) -> f64 {
+        self.lon
+    }
+
     /// The form every app config uses: `47.687, -122.413`.
     pub fn to_config(self) -> String {
         format!("{}, {}", deg(self.lat), deg(self.lon))
@@ -177,6 +185,11 @@ impl Area {
 
     fn inside(&self, o: &Area) -> bool {
         self.south >= o.south && self.north <= o.north && self.west >= o.west && self.east <= o.east
+    }
+
+    /// South, west, north, east.
+    pub fn bounds(self) -> [f64; 4] {
+        [self.south, self.west, self.north, self.east]
     }
 
     /// The form every app config uses: `S,W,N,E`.
