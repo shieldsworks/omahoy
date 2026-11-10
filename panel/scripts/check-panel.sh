@@ -101,6 +101,19 @@ until_is '[.units, .wantUnits, .draft]' '["meters","feet","2.44"]' "nothing conv
 ipc set name Dash
 until_is '[.units, .wantUnits, .draft]' '["feet","","8.01"]' "2.44 m in feet"
 
+echo "panel: a depth that isn't a number keeps a unit change pending"
+settled
+ipc set units meters
+until_is '.units' '"meters"'
+ipc set draft 2m
+sleep 1
+settled
+ipc set units feet
+sleep 1
+until_is '[.units, .wantUnits, .draft]' '["meters","feet","2m"]' "2m has no conversion"
+ipc set draft 2
+until_is '[.units, .wantUnits, .draft]' '["feet","","6.56"]' "2 m in feet"
+
 echo "panel: refuses control characters in every field, including units"
 for bad in $'feet\nsource = tcp:x:1' $'feet\u0085x' $'feet\u2028x' 'fe"et'; do
   ipc set units "$bad"
@@ -187,6 +200,38 @@ until_is '.visible' true
 until_is '.applyState' '"done"'
 ipc hide
 until_is '[.opened, .visible]' '[false,false]' "visible still follows opened"
+
+echo "panel: Go while another window's apply runs applies nothing and claims nothing"
+start
+ipc goTo review
+until_is '.ready' true
+slow=$tmp/bin/slow-apply
+printf '#!/bin/sh\ncat >/dev/null\necho other\nsleep 2\n' > "$slow"
+chmod +x "$slow"
+echo 'name = "Other"' | bash scripts/apply.sh start "$applydir" "$slow"
+ipc go
+until_is '.applyError|test("not applied")' true
+until_is '.applyState' '""'
+sleep 3
+until_is '[.applyState, (.applyError|test("not applied"))]' '["",true]' "the other apply's end is not this one's"
+bash scripts/apply.sh clear "$applydir"
+
+echo "apply.sh: one of many racing starts runs, and clear waits for it"
+runs=$tmp/runs
+printf '#!/bin/sh\ncat >/dev/null\necho run >> %s\nsleep 2\n' "$runs" > "$slow"
+racers=()
+for i in 1 2 3 4 5 6; do
+  (rc=0; echo "name = \"Boat$i\"" | bash scripts/apply.sh start "$applydir" "$slow" 2>/dev/null || rc=$?; echo $rc > "$tmp/race$i") &
+  racers+=($!)
+done
+wait "${racers[@]}"
+[[ $(cat "$tmp"/race? | sort | tr '\n' ' ') == "0 3 3 3 3 3 " ]] || fail "racing starts exited $(cat "$tmp"/race? | tr '\n' ' ')"
+if bash scripts/apply.sh clear "$applydir"; then fail "clear removed a running apply"; fi
+for _ in $(seq 50); do [[ $(bash scripts/apply.sh status "$applydir" | head -1) == "code 0" ]] && break; sleep 0.1; done
+[[ $(bash scripts/apply.sh status "$applydir" | head -1) == "code 0" ]] || fail "the started apply did not finish"
+[[ $(wc -l < "$runs") == 1 ]] || fail "$(wc -l < "$runs") applies ran"
+bash scripts/apply.sh clear "$applydir" || fail "clear refused a finished apply"
+[[ ! -e $applydir/in ]] || fail "clear left the apply's files"
 
 echo "panel: an apply outlives the panel and the next one picks it up"
 start

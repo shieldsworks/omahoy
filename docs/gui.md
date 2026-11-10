@@ -200,8 +200,9 @@ Skip for now, or none yet. The boat's sources are read from the choices;
 
 Choosing other depth units converts draft and clearance with the report's
 `draftIn` and `clearanceIn`. The change waits until a report for the text
-as it stands, with no field refused, has a conversion for every number in
-it; until then units, draft and clearance stay as typed, and Go waits too.
+as it stands, with no field refused, has a conversion for every depth field
+that isn't empty (`2m` has none, so it waits until it reads as a number);
+until then units, draft and clearance stay as typed, and Go waits too.
 A clearance at the old units' default becomes the new units' default.
 
 ## Apply outlives the panel
@@ -213,7 +214,12 @@ unit (`systemd-run --user --collect`, with the panel's environment), or under
 `setsid` where there is no user manager, with the boat text read from a file.
 Its files live in `$XDG_RUNTIME_DIR/omahoy-setup/`: `in` (the boat text),
 `out` and `err` (apply's stdout and stderr), `pid`, and `code` (the exit
-status, written last). A start while one runs is refused. The panel follows
+status, written last). `lock` is flocked by a start while it checks and
+writes, by the worker from its start until `code` is written, and by a
+clear, so of two panels pressing Go only one starts, and a clear never
+removes a running apply's files. A refused start applies nothing: that
+panel says its answers were not applied and does not follow the other
+apply, whose result is not its own. The panel follows
 `out` while it runs; a panel that loads with an apply there, running or
 finished, shows that apply's answers on the review step and follows it to
 the end, then forgets the files. A worker that died without writing `code`

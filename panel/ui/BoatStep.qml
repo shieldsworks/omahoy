@@ -34,7 +34,7 @@ Column {
         theme: step.s.theme
         visible: step.s.wantUnits !== ""
         text: "The numbers below are still in " + step.s.units + ". They change to " + step.s.wantUnits
-            + (step.s.refusing ? " once the fields marked are fixed." : " once omahoy has checked them.")
+            + (step.s.refusing ? " once the fields marked are fixed." : " once omahoy can read them as numbers.")
         dim: true
     }
     Field {

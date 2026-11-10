@@ -13,6 +13,9 @@
 #
 # DIR holds `in` (the boat text), `out` and `err` (apply's stdout and
 # stderr), `pid` (the worker's) and `code` (its exit status, written last).
+# `lock` is flocked by start and clear while they look and write, and by the
+# worker from its start until `code` is written, so two panels can't both
+# start an apply and a clear can't remove a running one's files.
 set -euo pipefail
 
 cmd=${1:-}
@@ -26,7 +29,7 @@ state() {
   if [[ -n $pid ]]; then
     if kill -0 "$pid" 2>/dev/null; then echo running; else echo lost; fi
   elif (( $(date +%s) - $(stat -c %Y -- "$d/in") < 10 )); then
-    # Started, and the worker has not written its pid yet.
+    # Started, and the worker has not taken the lock yet.
     echo running
   else
     echo lost
@@ -37,7 +40,8 @@ case $cmd in
   start)
     bin=${3:?usage: apply.sh start DIR BIN}
     mkdir -p -m 700 -- "$d"
-    if [[ $(state) == running ]]; then
+    exec 9> "$d/lock"
+    if ! flock -n 9 || [[ $(state) == running ]]; then
       echo "An apply is already running." >&2
       exit 3
     fi
@@ -50,14 +54,17 @@ case $cmd in
     # OMARCHY_PATH), which the user manager's own lacks.
     env=()
     while IFS= read -r name; do env+=(-E "$name"); done < <(compgen -e)
-    if ! systemd-run --user --quiet --collect "${env[@]}" -- bash "$self" work "$d" "$bin" 2>/dev/null; then
-      setsid -f bash "$self" work "$d" "$bin" </dev/null >/dev/null 2>&1
+    # The worker waits for this lock, which is released when start exits.
+    if ! systemd-run --user --quiet --collect "${env[@]}" -- bash "$self" work "$d" "$bin" 2>/dev/null 9>&-; then
+      setsid -f bash "$self" work "$d" "$bin" </dev/null >/dev/null 2>&1 9>&-
     fi
     ;;
   work)
+    exec 9> "$d/lock"
+    flock 9
     echo $$ > "$d/pid"
     set +e
-    "$3" gui apply < "$d/in" > "$d/out" 2> "$d/err"
+    "$3" gui apply < "$d/in" > "$d/out" 2> "$d/err" 9>&-
     echo $? > "$d/code.new"
     mv -- "$d/code.new" "$d/code"
     ;;
@@ -69,7 +76,9 @@ case $cmd in
     sed 's/^/i /' -- "$d/in"
     ;;
   clear)
-    [[ $(state) == running ]] && exit 3
+    [[ -d $d ]] || exit 0
+    exec 9> "$d/lock"
+    if ! flock -n 9 || [[ $(state) == running ]]; then exit 3; fi
     rm -f -- "$d/in" "$d/out" "$d/err" "$d/pid" "$d/code"
     ;;
   *)

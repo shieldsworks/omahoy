@@ -270,12 +270,13 @@ Item {
         if (u === "" || !reportCurrent || refusing) return;
         const r = report;
         const a = r.answers;
-        // "same" when there is no number to convert; null when the report
-        // has no conversion for one.
-        const to = (value, table) => value === null || value === undefined ? "same"
+        // "same" for an empty field; null while a field holds something the
+        // report has no conversion for, such as "2m", which would otherwise
+        // be read in the new units once it is fixed.
+        const to = (text, table) => text.trim() === "" ? "same"
             : table && table[u] !== null && table[u] !== undefined ? String(table[u]) : null;
-        const d = to(a.draft, r.draftIn);
-        const c = to(a.clearance, r.clearanceIn);
+        const d = to(draft, r.draftIn);
+        const c = to(clearance, r.clearanceIn);
         if (d === null || c === null) return;
         wantUnits = "";
         if (d !== "same") draft = d;
@@ -599,8 +600,10 @@ Item {
         onFinished: code => {
             if (code === 0) s.pollApply();
             else if (code === 3) {
-                s.applyError = "Another apply was already running; this is its progress.";
-                s.pollApply();
+                // Another window's apply holds the run; its result is not
+                // these answers'.
+                s.applyState = "";
+                s.applyError = "Another apply is running, so these answers were not applied. Press Go again when it has finished.";
             } else {
                 s.applyState = "failed";
                 s.applyError = launcher.err || "Couldn't start omahoy gui apply";
