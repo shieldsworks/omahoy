@@ -200,3 +200,29 @@ ul.check li::before { content: "☐"; position: absolute; left: 0; color: var(--
 .phases { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 16px; }
 .phases h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--bright); }
 .phases h3 .cost { color: var(--warn); font-weight: 400; }
+
+.hero .themes { margin-top: 0; }
+.themes select { max-width: 100%; }
+
+/* Install path tabs. Without JS both panels stay stacked; with JS
+   (.tabs-js) only the selected panel is shown. */
+.paths { display: flex; flex-direction: column; gap: 18px; }
+.paths:not(.tabs-js) [role="tabpanel"] + [role="tabpanel"] { margin-top: 30px; }
+.tabs {
+  display: flex; flex-wrap: wrap; gap: 0;
+  border-bottom: 1px solid var(--line);
+}
+.tabs [role="tab"] {
+  font: inherit; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--soft); background: none; border: 0;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  padding: 8px 16px 8px 0; margin-right: 18px;
+  text-decoration: none;
+}
+.tabs [role="tab"]:hover { color: var(--bright); text-decoration: none; }
+.tabs [role="tab"][aria-selected="true"] {
+  color: var(--bright);
+  border-bottom-color: var(--accent);
+}
+.paths.tabs-js { gap: 18px; }
+.paths.tabs-js [role="tabpanel"]:not(.is-active) { display: none; }
