@@ -25,7 +25,7 @@ Preconditions:
 
 - **Render.** Open the install page. Run `drive install-render "$base/install/"`. `page.png` shows the hero and the first still. `dom.html` contains `src="../media/omahoy-help.webp"`, `src="../media/omahoy-setup-questions.webp"`, `src="../media/omahoy-setup-plan.webp"`, `src="../media/omahoy-doctor.webp"`, `src="../media/omahoy-panel-boat.webp"`, `src="../media/omahoy-panel-hardware.webp"`, `src="../media/omahoy-panel-home.webp"`, `src="../media/omahoy-panel-apps.webp"`, `src="../media/omahoy-panel-logbook.webp"`, and `src="../media/omahoy-panel-review.webp"`. It does not contain `Screenshot not captured`.
 - **Nav.** Same run. `grep -o 'href="[^"]*" aria-current="page"' "$run/artifacts/verify/install-render/dom.html"` prints `href="./" aria-current="page"`.
-- **Home.** From the home-page `home-render` artifacts, `grep -o 'href="install/"' "$run/artifacts/verify/home-render/dom.html"` prints `href="install/"` once.
+- **Home.** From the home-page `home-render` artifacts, `grep -c 'href="install/"' "$run/artifacts/verify/home-render/dom.html"` prints 2: the hero Install omahoy button and the Install section.
 
 ## Gotchas
 
