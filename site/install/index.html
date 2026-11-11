@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../style.css">
 <script src="../theme.js"></script>
+<script src="../tabs.js" defer></script>
 </head>
 <body>
 <main>
@@ -41,32 +42,83 @@
     <p class="lede">You need an Omarchy machine and an internet connection for the first run. Nothing else to install by hand: the <code>./omahoy</code> bootstrap installs mise and the pinned Rust, then builds omahoy, which takes a few minutes the first time.</p>
   </div>
 
-  <section>
-    <h2>Clone and run</h2>
-    <p>From a terminal on the Omarchy machine:</p>
-    <pre class="cmd"><span class="prompt">$ </span>git clone https://github.com/shieldsworks/omahoy &amp;&amp; cd omahoy
-<span class="prompt">$ </span>./omahoy          <span class="note"># questions in the terminal</span>
-<span class="prompt">$ </span>./omahoy panel    <span class="note"># or the setup panel in the Omarchy shell</span></pre>
-    <p>Both ask the same things. <code>./omahoy help</code> lists the commands:</p>
-    <figure class="shot">
-      <img src="../media/omahoy-help.webp" width="1202" height="190" alt="A terminal running ./omahoy help. The usage lists omahoy, omahoy doctor, omahoy apply with an optional --yes, omahoy hardware, omahoy panel, and omahoy gui subcommands.">
-      <figcaption>A real capture of <code>./omahoy help</code> from the release binary, run on 11 Nov 2026.</figcaption>
-    </figure>
-  </section>
+  <div class="paths" data-tabs>
+    <section>
+      <h2>Clone the repo</h2>
+      <p>From a terminal on the Omarchy machine:</p>
+      <pre class="cmd"><span class="prompt">$ </span>git clone https://github.com/shieldsworks/omahoy &amp;&amp; cd omahoy</pre>
+      <p>Both the setup panel and the terminal path ask the same questions, then show a plan and wait for Go. Pick a path:</p>
+      <div class="tabs" role="tablist" aria-label="Install path">
+        <a href="#panel" id="tab-panel" role="tab" aria-controls="panel" aria-selected="true">Setup panel</a>
+        <a href="#terminal" id="tab-terminal" role="tab" aria-controls="terminal" aria-selected="false">Terminal</a>
+      </div>
+    </section>
+
+    <section id="panel" role="tabpanel" aria-labelledby="tab-panel">
+      <h2>The setup panel</h2>
+      <p><code>./omahoy panel</code> opens an Omarchy panel that asks the same questions, with checkboxes for the apps, and installs them on Go. It links the plugin <code>org.omahoy.setup</code> to the checkout, enables it, and opens it. With the shell down it stops and says to start it.</p>
+      <pre class="cmd"><span class="prompt">$ </span>./omahoy panel</pre>
+      <p>These six stills are a real run of that panel on an Omarchy machine on 11 Nov 2026, for Dash, stopped before Go. The home-port coordinates, the line that reads them back, the sailing-area bounds that follow that port, and a local network source were blurred: this site is public.</p>
+      <div class="walkthrough">
+        <figure class="shot">
+          <img src="../media/omahoy-panel-boat.webp" width="3008" height="836" alt="The Omarchy setup panel, step 1, The boat. The boat name is Dash, depth units are feet, draft is 3.5, and the clearance wanted under the keel is 2. The chart will shade water shallower than 6 feet. Back is dimmed; Next is in the corner.">
+          <figcaption><b>1. The boat.</b> Name, depth units, draft, and the clearance you want under the keel.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="../media/omahoy-panel-hardware.webp" width="3008" height="836" alt="The Omarchy setup panel, step 2, Hardware. Listen is selected. A network source field is filled, and that address has been blurred. The page still says nothing is chosen, so the hub will play the demo sail with invented ships until you add hardware.">
+          <figcaption><b>2. Hardware.</b> Plug in GPS and AIS, then Listen, or skip for now. A network source can be a phone app sharing NMEA. In this run Listen is on and a source is entered (the address is blurred); nothing is chosen yet, so the hub keeps the demo sail.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="../media/omahoy-panel-home.webp" width="3008" height="836" alt="The Omarchy setup panel, step 3, Home and area. The home-port latitude and longitude field is blurred, as is the line that would read those coordinates back, and the numeric sailing-area bounds. The sentence that the sailing area follows the home port remains, and NOAA charts, NOAA tides, and HRRR wind are ticked.">
+          <figcaption><b>3. Home and area.</b> Home port as latitude, longitude; the sailing area follows it, and setup will fetch charts, tides and wind for that area. The coordinates and the bounds that give them away are blurred.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="../media/omahoy-panel-apps.webp" width="3008" height="836" alt="The Omarchy setup panel, step 4, Apps. omahelm, omalogbook, omatide and omawind are ticked; omalookout is not.">
+          <figcaption><b>4. Apps.</b> Checkboxes for the apps to install. In this run omahelm, omalogbook, omatide and omawind are on; omalookout is off.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="../media/omahoy-panel-logbook.webp" width="3008" height="836" alt="The Omarchy setup panel, step 5, Logbook. The logbook folder is set to tilde /notes/Logbook, and Keep the logbook in git is ticked.">
+          <figcaption><b>5. Logbook.</b> The logbook folder, here <code>~/notes/Logbook</code>, and whether to keep it in git. This page appears when omalogbook is chosen.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="../media/omahoy-panel-review.webp" width="3008" height="836" alt="The Omarchy setup panel, step 6, Review. It notes that no hardware is chosen, so the hub will play the demo sail with invented ships until you add hardware. The Go button is in the corner, unpressed.">
+          <figcaption><b>6. Review.</b> This run was stopped before Go. The panel notes that no hardware is chosen, so the hub will play the demo sail until you add some.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="terminal" role="tabpanel" aria-labelledby="tab-terminal">
+      <h2>The terminal path</h2>
+      <p>From the same checkout:</p>
+      <pre class="cmd"><span class="prompt">$ </span>./omahoy          <span class="note"># questions in the terminal</span></pre>
+      <p><code>./omahoy help</code> lists the commands:</p>
+      <figure class="shot">
+        <img src="../media/omahoy-help.webp" width="1202" height="190" alt="A terminal running ./omahoy help. The usage lists omahoy, omahoy doctor, omahoy apply with an optional --yes, omahoy hardware, omahoy panel, and omahoy gui subcommands.">
+        <figcaption>A real capture of <code>./omahoy help</code> from the release binary, run on 11 Nov 2026.</figcaption>
+      </figure>
+      <p>A real first run of <code>./omahoy</code>, using the documented example boat <b>Wavelength</b>, stopped before Go:</p>
+      <figure class="shot">
+        <img src="../media/omahoy-setup-questions.webp" width="1082" height="607" alt="A terminal running ./omahoy. The questions have been answered for a boat named Wavelength: feet, draft 5.5, the default two-foot clearance, hardware skipped so the hub keeps the demo sail, home port 47.687, negative 122.413, every app ticked, and the cursor waiting on whether to keep the logbook in git.">
+        <figcaption>A real first run of <code>./omahoy</code> on 11 Nov 2026, using the documented example boat <b>Wavelength</b>, stopped before Go. Hardware was skipped with <code>s</code>, so the hub keeps the demo sail.</figcaption>
+      </figure>
+      <p>Setup saves <code>~/.config/omahoy/boat.toml</code>, then shows the plan:</p>
+      <figure class="shot">
+        <img src="../media/omahoy-setup-plan.webp" width="1082" height="1133" alt="A terminal running omahoy apply. It prints the plan for Wavelength: packages, plugins, builds, links, config keys, systemd units, a git repo in the logbook folder, and fetches for charts and tides, then Go? is answered n, and setup stops before applying.">
+        <figcaption>A real capture of <code>omahoy apply</code> on that same first-run <code>boat.toml</code>, 11 Nov 2026. Go was answered <code>n</code>, so nothing on the machine was applied. The <code>~/.local/bin/omahoy</code> link in the plan points at the checkout this run was built from.</figcaption>
+      </figure>
+      <p class="note">This plan was captured on a machine that is not running Omarchy, so the checkout path is this build tree. On your Omarchy machine the link is to the clone you ran <code>./omahoy</code> from.</p>
+    </section>
+  </div>
 
   <section>
     <h2>The questions</h2>
-    <p>The first run asks, in this order: the boat’s name; depth units (feet, meters or fathoms); draft, and the clearance you want under the keel, both in those units; its GPS and AIS hardware (each receiver can be skipped for now; with none, the hub plays a demo sail); a network source, or Enter to skip; its home port and sailing area; and which apps to install. If you chose omalogbook, it also asks for the logbook folder (default <code>~/Logbook</code>) and whether to keep it in git.</p>
+    <p>Both paths ask, in this order: the boat’s name; depth units (feet, meters or fathoms); draft, and the clearance you want under the keel, both in those units; its GPS and AIS hardware (each receiver can be skipped for now; with none, the hub plays a demo sail); a network source, or Enter to skip; its home port and sailing area; and which apps to install. If you chose omalogbook, it also asks for the logbook folder (default <code>~/Logbook</code>) and whether to keep it in git.</p>
     <p>Before the hardware question, setup builds omakeel once if it isn’t already built, so it can listen for a GPS. Past that, setup saves and changes nothing until you say Go.</p>
-    <figure class="shot">
-      <img src="../media/omahoy-setup-questions.webp" width="1082" height="607" alt="A terminal running ./omahoy. The questions have been answered for a boat named Wavelength: feet, draft 5.5, the default two-foot clearance, hardware skipped so the hub keeps the demo sail, home port 47.687, negative 122.413, every app ticked, and the cursor waiting on whether to keep the logbook in git.">
-      <figcaption>A real first run of <code>./omahoy</code> on 11 Nov 2026, using the documented example boat <b>Wavelength</b>, stopped before Go. Hardware was skipped with <code>s</code>, so the hub keeps the demo sail.</figcaption>
-    </figure>
   </section>
 
   <section>
     <h2>The plan, then Go</h2>
-    <p>Setup saves <code>~/.config/omahoy/boat.toml</code>, then shows the plan. When you say go it:</p>
+    <p>When you say go it:</p>
     <ul class="points">
       <li>installs the packages the apps need,</li>
       <li>clones and builds each chosen app, plus omakeel, the hub, which is always installed,</li>
@@ -77,43 +129,6 @@
       <li>and starts their services.</li>
     </ul>
     <p>Installing packages and adding you to the <code>uucp</code> group (so the hub can read serial GPS and AIS receivers) need your password: <code>sudo</code> asks in the terminal, and a polkit dialog asks from the panel. “No” applies nothing; <code>omahoy apply</code> picks it up later.</p>
-    <figure class="shot">
-      <img src="../media/omahoy-setup-plan.webp" width="1082" height="1133" alt="A terminal running omahoy apply. It prints the plan for Wavelength: packages, plugins, builds, links, config keys, systemd units, a git repo in the logbook folder, and fetches for charts and tides, then Go? is answered n, and setup stops before applying.">
-      <figcaption>A real capture of <code>omahoy apply</code> on that same first-run <code>boat.toml</code>, 11 Nov 2026. Go was answered <code>n</code>, so nothing on the machine was applied. The <code>~/.local/bin/omahoy</code> link in the plan points at the checkout this run was built from.</figcaption>
-    </figure>
-    <p class="note">This plan was captured on a machine that is not running Omarchy, so the checkout path is this build tree. On your Omarchy machine the link is to the clone you ran <code>./omahoy</code> from.</p>
-  </section>
-
-  <section>
-    <h2>The setup panel</h2>
-    <p><code>./omahoy panel</code> opens an Omarchy panel that asks the same questions, with checkboxes for the apps, and installs them on Go. It links the plugin <code>org.omahoy.setup</code> to the checkout, enables it, and opens it. With the shell down it stops and says to start it.</p>
-    <p>These six stills are a real run of that panel on an Omarchy machine on 11 Nov 2026, for Dash, stopped before Go. The home-port coordinates, the line that reads them back, the sailing-area bounds that follow that port, and a local network source were blurred: this site is public.</p>
-    <div class="walkthrough">
-      <figure class="shot">
-        <img src="../media/omahoy-panel-boat.webp" width="3008" height="836" alt="The Omarchy setup panel, step 1, The boat. The boat name is Dash, depth units are feet, draft is 3.5, and the clearance wanted under the keel is 2. The chart will shade water shallower than 6 feet. Back is dimmed; Next is in the corner.">
-        <figcaption><b>1. The boat.</b> Name, depth units, draft, and the clearance you want under the keel.</figcaption>
-      </figure>
-      <figure class="shot">
-        <img src="../media/omahoy-panel-hardware.webp" width="3008" height="836" alt="The Omarchy setup panel, step 2, Hardware. Listen is selected. A network source field is filled, and that address has been blurred. The page still says nothing is chosen, so the hub will play the demo sail with invented ships until you add hardware.">
-        <figcaption><b>2. Hardware.</b> Plug in GPS and AIS, then Listen, or skip for now. A network source can be a phone app sharing NMEA. In this run Listen is on and a source is entered (the address is blurred); nothing is chosen yet, so the hub keeps the demo sail.</figcaption>
-      </figure>
-      <figure class="shot">
-        <img src="../media/omahoy-panel-home.webp" width="3008" height="836" alt="The Omarchy setup panel, step 3, Home and area. The home-port latitude and longitude field is blurred, as is the line that would read those coordinates back, and the numeric sailing-area bounds. The sentence that the sailing area follows the home port remains, and NOAA charts, NOAA tides, and HRRR wind are ticked.">
-        <figcaption><b>3. Home and area.</b> Home port as latitude, longitude; the sailing area follows it, and setup will fetch charts, tides and wind for that area. The coordinates and the bounds that give them away are blurred.</figcaption>
-      </figure>
-      <figure class="shot">
-        <img src="../media/omahoy-panel-apps.webp" width="3008" height="836" alt="The Omarchy setup panel, step 4, Apps. omahelm, omalogbook, omatide and omawind are ticked; omalookout is not.">
-        <figcaption><b>4. Apps.</b> Checkboxes for the apps to install. In this run omahelm, omalogbook, omatide and omawind are on; omalookout is off.</figcaption>
-      </figure>
-      <figure class="shot">
-        <img src="../media/omahoy-panel-logbook.webp" width="3008" height="836" alt="The Omarchy setup panel, step 5, Logbook. The logbook folder is set to tilde /notes/Logbook, and Keep the logbook in git is ticked.">
-        <figcaption><b>5. Logbook.</b> The logbook folder, here <code>~/notes/Logbook</code>, and whether to keep it in git. This page appears when omalogbook is chosen.</figcaption>
-      </figure>
-      <figure class="shot">
-        <img src="../media/omahoy-panel-review.webp" width="3008" height="836" alt="The Omarchy setup panel, step 6, Review. It notes that no hardware is chosen, so the hub will play the demo sail with invented ships until you add hardware. The Go button is in the corner, unpressed.">
-        <figcaption><b>6. Review.</b> This run was stopped before Go. The panel notes that no hardware is chosen, so the hub will play the demo sail until you add some.</figcaption>
-      </figure>
-    </div>
   </section>
 
   <section>

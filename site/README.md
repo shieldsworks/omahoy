@@ -26,7 +26,7 @@ positions and the ground height (y −170) adjusted. `media/omatiller.webp` is a
 static render of the same model for fallback and link previews, captured from
 headless Chromium at 1398 × 801. This page makes no claim that the pilot is built.
 
-`install/` is the install guide: clone the repo, run `./omahoy` or `./omahoy panel`, and apply the plan. Its terminal stills in `media/` (`omahoy-help.webp`, `omahoy-doctor.webp`, `omahoy-setup-questions.webp`, `omahoy-setup-plan.webp`) are real captures of the release binary, not mock-ups. The six `omahoy-panel-*.webp` stills are a real run of the Omarchy setup panel for Dash, with the home-port coordinates, the line that reads them back, the sailing-area bounds, and a local network source blurred.
+`install/` is the install guide: clone the repo, then pick the Setup panel or the Terminal path (`./omahoy panel` or `./omahoy`) and apply the plan. The Setup panel is the default tab, because Omarchy is the main audience; `#panel` and `#terminal` open the matching tab, and without JavaScript both sections stay stacked. Its terminal stills in `media/` (`omahoy-help.webp`, `omahoy-doctor.webp`, `omahoy-setup-questions.webp`, `omahoy-setup-plan.webp`) are real captures of the release binary, not mock-ups. The six `omahoy-panel-*.webp` stills are a real run of the Omarchy setup panel for Dash, with the home-port coordinates, the line that reads them back, the sailing-area bounds, and a local network source blurred.
 
 `dash.html` is the AI shed build plan for Dash: the house-power phases, a single-line schematic, a data diagram, a cost chart, a shopping list, and the questions for the next boat visit. It is a file in `site/`, not a `site/dash/` directory, so the app-nav check does not treat it as an app page. The home page links it from the Aboard Dash section, and the install guide links it too.
 
@@ -66,7 +66,8 @@ wordmark is OMAHOY cut from the letters of Omarchy's `logo.txt`. `index.html`
 inlines the same path, so paste the new `d` attribute there if it changes.
 
 Press T on the page to cycle through Omarchy's theme palettes, or pick one
-from the select. They're copied from each theme's `colors.toml` on Omarchy's
+from the select. On the home page the picker sits in the hero, next to the
+Install button, so the theming is visible without scrolling. They're copied from each theme's `colors.toml` on Omarchy's
 quattro branch, via the snapshot in `shieldsworks/omarchyyc`. The last one,
 `night-watch`, is Omahoy's own red theme for the helm after dark. A link can
 pick the theme: `https://omahoy.org/?theme=night-watch`. Every theme's text
