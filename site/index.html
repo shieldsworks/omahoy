@@ -71,6 +71,7 @@
       <div>
         <p>Omahoy is being built on a real boat. Dash is a Pacific Seacraft 25, one of 157 built between 1976 and 1981, berthed in the Berkeley Marina. She sails San Francisco Bay today. Someday she sails around the world.</p>
         <p>First a laptop comes aboard with a GPS and an AIS receiver. Then a permanent nav station, sensors, and Starlink. Every part goes up in the open, the wiring included.</p>
+        <p>The power, solar and local-AI plan is recorded in the <a href="dash.html">AI shed build plan</a>.</p>
       </div>
       <dl>
         <dt>Length</dt><dd>24.5 ft</dd>
@@ -96,11 +97,10 @@
 
   <section>
     <h2>Install</h2>
-    <p>Early, and for tinkerers. omakeel, the hub, is a Rust daemon. Build it, then start it on your GPS and AIS receivers, each at its own baud rate. Our BU-353-style GPS puck runs at 115200; older ones send at 4800:</p>
-    <pre class="cmd"><span class="prompt">$ </span>cargo install --git https://github.com/shieldsworks/omakeel --locked
-<span class="prompt">$ </span>omakeel run --source serial:/dev/ttyUSB0:115200 --source serial:/dev/ttyACM0:38400</pre>
-    <p>Then put the nearest vessel in your bar with omalookout:</p>
-    <pre class="cmd"><span class="prompt">$ </span>omarchy plugin add https://github.com/shieldsworks/omalookout.git --enable</pre>
+    <p>Early, and for tinkerers. You need an Omarchy machine and an internet connection for the first run. The <a href="install/">install guide</a> has the steps.</p>
+    <pre class="cmd"><span class="prompt">$ </span>git clone https://github.com/shieldsworks/omahoy &amp;&amp; cd omahoy
+<span class="prompt">$ </span>./omahoy          <span class="note"># questions in the terminal</span>
+<span class="prompt">$ </span>./omahoy panel    <span class="note"># or the setup panel in the Omarchy shell</span></pre>
   </section>
 </main>
 

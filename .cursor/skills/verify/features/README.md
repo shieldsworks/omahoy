@@ -57,3 +57,5 @@ handles, required state, commands and observable proof.
 - [App pages](./app-pages.md) covers each app page's recordings, its nav, and reduced motion.
 - [Theme](./theme.md) covers the `?theme=` link, the default, the picker and the T key.
 - [Omatiller](./omatiller.md) covers the 3D viewer over HTTP and its static fallbacks.
+- [Install](./install.md) covers the install guide, its terminal stills, and the panel placeholder.
+- [Dash AI shed](./dash.md) covers the build-plan page, its diagrams, and the shopping list.

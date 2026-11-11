@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dash AI shed · Omahoy</title>
+<meta name="description" content="A build plan to make Dash, a 1977 Pacific Seacraft 25 in the Berkeley Marina, an AI shed: house power, solar, instruments, and local AI for the Omahoy nav apps.">
+<meta property="og:title" content="Dash AI shed · Omahoy">
+<meta property="og:description" content="House power, solar, instruments and local AI for Dash, recorded in the open.">
+<meta property="og:url" content="https://omahoy.org/dash.html">
+<meta property="og:image" content="https://omahoy.org/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1b26">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+</head>
+<body>
+<main>
+  <div class="row">
+    <a href="./">omahoy.org</a>
+    <nav aria-label="Apps">
+      <a href="omakeel/">omakeel</a>
+      <a href="omahelm/">omahelm</a>
+      <a href="omalookout/">omalookout</a>
+      <a href="omalogbook/">omalogbook</a>
+      <a href="omatide/">omatide</a>
+      <a href="omawind/">omawind</a>
+      <a href="omatiller/">omatiller</a>
+      <a href="install/">install</a>
+    </nav>
+    <span class="right"><a href="https://github.com/shieldsworks/omahoy">github</a></span>
+  </div>
+
+  <div class="hero">
+    <p class="tagline"><span>Aboard Dash</span><span class="early">plan</span></p>
+    <h1 class="app-name">AI shed</h1>
+    <p class="lede">The plan to make Dash, a 1977 Pacific Seacraft 25 in the Berkeley Marina, an “AI shed” (DHH’s term): local AI running aboard, starting with an 8 GB M1 Mac mini on Omarchy, then AI features in the Omahoy nav apps.</p>
+    <p class="state"><b>[ plan ]</b> Facts from the boat are labeled as facts. Prices and yields are ballpark estimates unless a date is given. This is not an installation drawing, and Omahoy is not for navigation. The <a href="install/">install guide</a> covers the software.</p>
+  </div>
+
+  <section>
+    <h2>What’s on the boat today</h2>
+    <p>These are facts from Casey:</p>
+    <ul class="points">
+      <li>There is no house bank. Two car batteries serve as starters, and also run the radio and running lights.</li>
+      <li>An inboard Yanmar YSB8 diesel charges those starter batteries from its alternator while the engine is running.</li>
+      <li>The marina has shore power, but the boat has no inlet. An extension cord runs through the companionway to two trickle chargers.</li>
+      <li>There is no dodger or bimini. Panels can mount on the stern pulpit.</li>
+    </ul>
+    <p class="note">A household extension cord through the companionway is a shock and fire risk in a wet cockpit. A real inlet is the first phase, even before the lithium.</p>
+  </section>
+
+  <section>
+    <h2>Single-line schematic</h2>
+    <p>How the house and starter banks connect once the plan is built. The drawing is a sketch of intent, not a wiring diagram to build from.</p>
+    <figure class="diagram">
+      <svg viewBox="0 0 1000 620" role="img" aria-label="Single-line wiring schematic of Dash’s planned house and starter banks, from the shore inlet and alternator through chargers, solar controllers, the SmartShunt, fuses and switches to the DC panel and a USB-C outlet.">
+        <style>
+          .box { fill: var(--well); stroke: var(--accent); stroke-width: 1.5; }
+          .lbl { fill: var(--bright); font: 11px "JetBrains Mono", ui-monospace, monospace; }
+          .sub { fill: var(--soft); font: 10px "JetBrains Mono", ui-monospace, monospace; }
+          .ac { stroke: var(--sea); stroke-width: 2; fill: none; }
+          .pos { stroke: var(--warn); stroke-width: 2; fill: none; }
+          .neg { stroke: var(--dim); stroke-width: 2; fill: none; }
+          .g { fill: var(--soft); font: 10px "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.08em; }
+        </style>
+        <text class="g" x="16" y="22">AC SHORE</text>
+        <rect class="box" x="16" y="36" width="130" height="44" rx="2"/>
+        <text class="lbl" x="28" y="54">Shore inlet</text>
+        <text class="sub" x="28" y="70">30 A, Marinco or SmartPlug</text>
+        <line class="ac" x1="146" y1="58" x2="176" y2="58"/>
+        <rect class="box" x="176" y="36" width="140" height="44" rx="2"/>
+        <text class="lbl" x="188" y="54">ELCI main</text>
+        <text class="sub" x="188" y="70">Blue Sea 30 A, 30 mA</text>
+        <line class="ac" x1="316" y1="58" x2="346" y2="58"/>
+        <rect class="box" x="346" y="36" width="150" height="44" rx="2"/>
+        <text class="lbl" x="358" y="54">Galvanic isolator</text>
+        <text class="sub" x="358" y="70">Victron VDI-32</text>
+        <line class="ac" x1="496" y1="58" x2="526" y2="58"/>
+        <rect class="box" x="526" y="36" width="140" height="44" rx="2"/>
+        <text class="lbl" x="538" y="54">AC panel</text>
+        <text class="sub" x="538" y="70">1–2 outlet circuits</text>
+        <line class="ac" x1="666" y1="58" x2="696" y2="58"/>
+        <rect class="box" x="696" y="36" width="170" height="44" rx="2"/>
+        <text class="lbl" x="708" y="54">Blue Smart 12/25</text>
+        <text class="sub" x="708" y="70">IP67 charger, to house +</text>
+
+        <text class="g" x="16" y="118">ENGINE AND STARTERS</text>
+        <rect class="box" x="16" y="132" width="150" height="50" rx="2"/>
+        <text class="lbl" x="28" y="152">YSB8 alternator</text>
+        <text class="sub" x="28" y="168">Stock is reportedly 35 A</text>
+        <line class="pos" x1="166" y1="150" x2="206" y2="150"/>
+        <rect class="box" x="206" y="132" width="160" height="50" rx="2"/>
+        <text class="lbl" x="218" y="152">Starter batteries</text>
+        <text class="sub" x="218" y="168">The two car batteries, kept</text>
+        <line class="pos" x1="366" y1="150" x2="416" y2="150"/>
+        <rect class="box" x="416" y="132" width="200" height="50" rx="2"/>
+        <text class="lbl" x="428" y="152">Orion-Tr Smart 12/12-18</text>
+        <text class="sub" x="428" y="168">Isolated DC-DC, not the 30 A</text>
+        <text class="sub" x="628" y="158" fill="var(--soft)">engine running → house +</text>
+
+        <text class="g" x="16" y="218">SOLAR</text>
+        <rect class="box" x="16" y="232" width="140" height="44" rx="2"/>
+        <text class="lbl" x="28" y="250">Panel, port</text>
+        <text class="sub" x="28" y="266">100–150 W, pulpit</text>
+        <line class="pos" x1="156" y1="254" x2="196" y2="254"/>
+        <rect class="box" x="196" y="232" width="150" height="44" rx="2"/>
+        <text class="lbl" x="208" y="250">SmartSolar 75/15</text>
+        <text class="sub" x="208" y="266">one controller per panel</text>
+        <rect class="box" x="16" y="288" width="140" height="44" rx="2"/>
+        <text class="lbl" x="28" y="306">Panel, starboard</text>
+        <text class="sub" x="28" y="322">100–150 W, pulpit</text>
+        <line class="pos" x1="156" y1="310" x2="196" y2="310"/>
+        <rect class="box" x="196" y="288" width="150" height="44" rx="2"/>
+        <text class="lbl" x="208" y="306">SmartSolar 75/15</text>
+        <text class="sub" x="208" y="322">shading stays isolated</text>
+
+        <text class="g" x="400" y="218">HOUSE BANK</text>
+        <rect class="box" x="400" y="232" width="170" height="56" rx="2"/>
+        <text class="lbl" x="412" y="252">House + bus</text>
+        <text class="sub" x="412" y="268">Blue Sea bus bar</text>
+        <line class="pos" x1="866" y1="58" x2="896" y2="58"/>
+        <line class="pos" x1="896" y1="58" x2="896" y2="200"/>
+        <line class="pos" x1="896" y1="200" x2="570" y2="200"/>
+        <line class="pos" x1="570" y1="200" x2="570" y2="232"/>
+        <line class="pos" x1="616" y1="157" x2="640" y2="157"/>
+        <line class="pos" x1="640" y1="157" x2="640" y2="200"/>
+        <line class="pos" x1="346" y1="254" x2="400" y2="254"/>
+        <line class="pos" x1="346" y1="310" x2="372" y2="310"/>
+        <line class="pos" x1="372" y1="310" x2="372" y2="268"/>
+        <line class="pos" x1="372" y1="268" x2="400" y2="268"/>
+        <line class="pos" x1="570" y1="260" x2="610" y2="260"/>
+        <rect class="box" x="610" y="232" width="130" height="56" rx="2"/>
+        <text class="lbl" x="622" y="252">Class T fuse</text>
+        <text class="sub" x="622" y="268">at house positive</text>
+        <line class="pos" x1="740" y1="260" x2="770" y2="260"/>
+        <rect class="box" x="770" y="232" width="150" height="56" rx="2"/>
+        <text class="lbl" x="782" y="252">m-Series switch</text>
+        <text class="sub" x="782" y="268">one per bank</text>
+
+        <rect class="box" x="400" y="312" width="200" height="50" rx="2"/>
+        <text class="lbl" x="412" y="332">House bank, 200 Ah</text>
+        <text class="sub" x="412" y="348">two 12 V 100 Ah LiFePO4</text>
+        <line class="pos" x1="500" y1="312" x2="500" y2="288"/>
+        <text class="sub" x="508" y="302">low, on centerline</text>
+
+        <line class="pos" x1="920" y1="260" x2="950" y2="260"/>
+        <line class="pos" x1="950" y1="260" x2="950" y2="400"/>
+        <line class="pos" x1="950" y1="400" x2="400" y2="400"/>
+        <rect class="box" x="16" y="390" width="170" height="50" rx="2"/>
+        <text class="lbl" x="28" y="410">DC panel / SafetyHub</text>
+        <text class="sub" x="28" y="426">fused load circuits</text>
+        <rect class="box" x="206" y="390" width="170" height="50" rx="2"/>
+        <text class="lbl" x="218" y="410">USB-C PD 100 W</text>
+        <text class="sub" x="218" y="426">Starlink Mini, laptops</text>
+        <line class="pos" x1="186" y1="415" x2="206" y2="415"/>
+        <line class="pos" x1="376" y1="415" x2="400" y2="415"/>
+
+        <text class="g" x="16" y="474">RETURNS, THROUGH THE SHUNT</text>
+        <rect class="box" x="16" y="488" width="200" height="50" rx="2"/>
+        <text class="lbl" x="28" y="508">SmartShunt 500 A</text>
+        <text class="sub" x="28" y="524">on house negative</text>
+        <line class="neg" x1="216" y1="513" x2="250" y2="513"/>
+        <rect class="box" x="250" y="488" width="160" height="50" rx="2"/>
+        <text class="lbl" x="262" y="508">House − bus</text>
+        <text class="sub" x="262" y="524">loads and chargers return</text>
+        <line class="neg" x1="116" y1="488" x2="116" y2="362"/>
+        <line class="neg" x1="116" y1="362" x2="500" y2="362"/>
+        <line class="neg" x1="500" y1="362" x2="500" y2="362"/>
+        <text class="sub" x="260" y="378">house bank negative → shunt</text>
+        <text class="sub" x="430" y="560">Loads, MPPTs, Orion and the shore charger return to the house − bus, then through the shunt to the bank.</text>
+        <text class="sub" x="430" y="578">Starter negatives stay on the engine/starter side. The Orion keeps the banks isolated.</text>
+        <text class="sub" x="16" y="610">Illustrative, not an installation drawing. Follow ABYC E-11.</text>
+      </svg>
+      <figcaption><b>Illustrative, not an installation drawing.</b> Follow ABYC E-11. Fuse ratings, cable sizes and the house-bank locker are chosen at install time, and also follow ABYC E-13 for the lithium bank.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Data and compute</h2>
+    <p>How instruments and Victron gear reach the mini, and how the boat is reached from shore.</p>
+    <figure class="diagram">
+      <svg viewBox="0 0 1000 360" role="img" aria-label="Data diagram: Victron BLE or VE.Direct, a masthead wind sensor, an IMU heel sensor and GPS into an M1 mini running Omahoy, reached over Starlink Mini and Tailscale.">
+        <style>
+          .box { fill: var(--well); stroke: var(--accent); stroke-width: 1.5; }
+          .lbl { fill: var(--bright); font: 12px "JetBrains Mono", ui-monospace, monospace; }
+          .sub { fill: var(--soft); font: 10px "JetBrains Mono", ui-monospace, monospace; }
+          .flow { stroke: var(--accent); stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+        </style>
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/>
+          </marker>
+        </defs>
+        <rect class="box" x="16" y="24" width="200" height="56" rx="2"/>
+        <text class="lbl" x="28" y="46">Victron gear</text>
+        <text class="sub" x="28" y="64">BLE Instant Readout or VE.Direct USB</text>
+        <rect class="box" x="16" y="100" width="200" height="56" rx="2"/>
+        <text class="lbl" x="28" y="122">Masthead wind</text>
+        <text class="sub" x="28" y="140">Calypso BLE, or NMEA 2000</text>
+        <rect class="box" x="16" y="176" width="200" height="56" rx="2"/>
+        <text class="lbl" x="28" y="198">IMU heel sensor</text>
+        <text class="sub" x="28" y="216">model still open</text>
+        <rect class="box" x="16" y="252" width="200" height="56" rx="2"/>
+        <text class="lbl" x="28" y="274">GPS</text>
+        <text class="sub" x="28" y="292">USB or serial, into omakeel</text>
+        <line class="flow" x1="216" y1="52" x2="330" y2="160"/>
+        <line class="flow" x1="216" y1="128" x2="330" y2="168"/>
+        <line class="flow" x1="216" y1="204" x2="330" y2="180"/>
+        <line class="flow" x1="216" y1="280" x2="330" y2="196"/>
+        <rect class="box" x="330" y="132" width="260" height="88" rx="2"/>
+        <text class="lbl" x="344" y="158">M1 mini, 8 GB, Omarchy</text>
+        <text class="sub" x="344" y="176">omahoy, llama.cpp, ~18 tok/s on a 3B</text>
+        <text class="sub" x="344" y="194">USB-C PD from the house bank</text>
+        <line class="flow" x1="590" y1="160" x2="680" y2="80"/>
+        <line class="flow" x1="590" y1="192" x2="680" y2="248"/>
+        <rect class="box" x="680" y="40" width="250" height="80" rx="2"/>
+        <text class="lbl" x="694" y="66">Starlink Mini</text>
+        <text class="sub" x="694" y="84">25–40 W, on the USB-C PD outlet</text>
+        <text class="sub" x="694" y="102">internet when it is up</text>
+        <rect class="box" x="680" y="210" width="250" height="80" rx="2"/>
+        <text class="lbl" x="694" y="236">Tailscale</text>
+        <text class="sub" x="694" y="254">Personal plan, $0</text>
+        <text class="sub" x="694" y="272">reach the boat from shore</text>
+        <text class="sub" x="330" y="340">Bigger machines (a Studio or Spark) run from shore AC at the dock, not from the house bank.</text>
+      </svg>
+      <figcaption>Victron data, wind, heel and GPS into the mini. Starlink carries the uplink; Tailscale is how the boat is reached from anywhere.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Phases</h2>
+    <p>All prices below are ballpark estimates, not verified quotes, except where a date is given on the shopping list. The sensible DIY total of about $3,200–6,000 covers phases 1–4. Phase 5 and the inverter are extra. Check with the insurer before a lithium retrofit, and follow ABYC E-11 and E-13.</p>
+    <ul class="phases">
+      <li>
+        <h3>Phase 1, shore power <span class="cost">$800–1,400</span></h3>
+        <p>A 30 A inlet (Marinco or SmartPlug) and a marine shore cord, a Blue Sea 30 A ELCI main, a galvanic isolator, a small AC panel, a Victron Blue Smart IP67 12/25 charger for the house bank, and a maintainer or a 2-bank charger (a Blue Smart IP22 with three outputs is one option) for the starters. This replaces the extension cord.</p>
+      </li>
+      <li>
+        <h3>Phase 2, house bank <span class="cost">$1,300–2,800, plus $300–600 for wire</span></h3>
+        <p>200 Ah of 12 V LiFePO4 as two 100 Ah batteries (Battle Born, Epoch or SOK), mounted low near the centerline, boxed and strapped for a knockdown. A Class T fuse at the house positive, Blue Sea m-Series switches, bus bars, a Victron SmartShunt 500 A (omahoy can read it via BLE Instant Readout with <code>victron-ble</code>, or via VE.Direct USB), a DC panel or SafetyHub, and a fused 100 W USB-C PD outlet for the Starlink Mini and laptops.</p>
+      </li>
+      <li>
+        <h3>Phase 3, alternator to house <span class="cost">$200–300</span></h3>
+        <p>A Victron Orion-Tr Smart 12/12-18 isolated, not the 30 A model. The stock YSB8 alternator is reportedly 35 A and likely gives about 15–25 A at cruise; that figure is from parts listings and owner write-ups, and the label on this engine should be checked, because a 1977 engine may have been re-alternated. Don’t connect lithium directly to the alternator, and don’t use a charging relay.</p>
+      </li>
+      <li>
+        <h3>Phase 4, stern-pulpit solar <span class="cost">$600–1,100</span></h3>
+        <p>Two rigid 100–150 W panels on rail mounts, and two SmartSolar 75/15 controllers, one per panel, so shading from the backstay or sails on one panel doesn’t drag the other down. Estimated yield for 200 W / 300 W: summer 600–800 / 900–1,200 Wh/day; spring and fall 500–700 / 750–1,050 Wh/day; winter 250–400 / 350–600 Wh/day, with Bay fog reducing it. That is enough for the mini 24/7 from spring through fall. Winter leans on shore power.</p>
+      </li>
+      <li>
+        <h3>Phase 5, wind instruments</h3>
+        <p>A masthead wind sensor, for polars. Option A is wireless: the Calypso Ultrasonic Portable (solar, Bluetooth), the easiest fit with the mast up. Option B is wired NMEA 2000 (the Calypso ULP, or a B&amp;G or Garmin transducer, a backbone and a USB gateway), the most reliable, and easiest with the mast down. Add an IMU heel sensor; a specific model is still open. Phase 5 has no complete budget yet: two Calypso unit prices are on the shopping list, and the gateway, mount and IMU are still to be chosen.</p>
+      </li>
+      <li>
+        <h3>Optional inverter <span class="cost">about $150–300</span></h3>
+        <p>A 300–500 W pure-sine inverter (a Victron Phoenix VE.Direct is one option) if the mini must run away from the dock. At the dock, run larger compute such as a Studio or Spark from shore AC.</p>
+      </li>
+    </ul>
+    <figure class="diagram">
+      <svg viewBox="0 0 1000 340" role="img" aria-label="Cost chart of the five phases and the optional inverter, showing estimate ranges, with a total bar for phases 1 through 4 of about 3,200 to 6,000 dollars DIY.">
+        <style>
+          .axis { stroke: var(--line); stroke-width: 1; }
+          .lbl { fill: var(--bright); font: 12px "JetBrains Mono", ui-monospace, monospace; }
+          .sub { fill: var(--soft); font: 10px "JetBrains Mono", ui-monospace, monospace; }
+          .bar { fill: var(--accent); opacity: 0.85; }
+          .open { fill: var(--dim); }
+        </style>
+        <text class="sub" x="200" y="22">Estimate range, US dollars. Scale is 0 to $7,000. Verified unit prices are on the shopping list, not these bars.</text>
+        <line class="axis" x1="200" y1="40" x2="200" y2="300"/>
+        <line class="axis" x1="200" y1="300" x2="960" y2="300"/>
+        <text class="sub" x="196" y="318" text-anchor="end">$0</text>
+        <text class="sub" x="416" y="318" text-anchor="middle">$2,000</text>
+        <text class="sub" x="632" y="318" text-anchor="middle">$4,000</text>
+        <text class="sub" x="848" y="318" text-anchor="middle">$6,000</text>
+        <line class="axis" x1="416" y1="296" x2="416" y2="300"/>
+        <line class="axis" x1="632" y1="296" x2="632" y2="300"/>
+        <line class="axis" x1="848" y1="296" x2="848" y2="300"/>
+        <!-- 108 px per $1000, origin x=200 -->
+        <!-- p1 800-1400 => 86.4 to 151.2 width 64.8 at x=286.4 -->
+        <text class="lbl" x="16" y="68">Phase 1</text>
+        <rect class="bar" x="286.4" y="52" width="64.8" height="22"/>
+        <text class="sub" x="358" y="68">$800–1,400</text>
+        <text class="lbl" x="16" y="108">Phase 2</text>
+        <rect class="bar" x="340.4" y="92" width="226.8" height="22"/>
+        <text class="sub" x="574" y="108">$1,300–2,800 + $300–600 wire</text>
+        <text class="lbl" x="16" y="148">Phase 3</text>
+        <rect class="bar" x="221.6" y="132" width="10.8" height="22"/>
+        <text class="sub" x="240" y="148">$200–300</text>
+        <text class="lbl" x="16" y="188">Phase 4</text>
+        <rect class="bar" x="264.8" y="172" width="54" height="22"/>
+        <text class="sub" x="326" y="188">$600–1,100</text>
+        <text class="lbl" x="16" y="228">Phase 5</text>
+        <rect class="open" x="200" y="212" width="80" height="22"/>
+        <text class="sub" x="288" y="228">open (instruments; see list)</text>
+        <text class="lbl" x="16" y="268">Inverter</text>
+        <rect class="bar" x="216.2" y="252" width="16.2" height="22"/>
+        <text class="sub" x="240" y="268">~$150–300, optional</text>
+        <text class="lbl" x="16" y="308">1–4 total</text>
+        <rect class="bar" x="545.6" y="292" width="302.4" height="8"/>
+        <text class="sub" x="854" y="288">$3,200–6,000 DIY</text>
+      </svg>
+      <figcaption>Estimate ranges only. Phase 2’s bar is batteries plus the $300–600 wire allowance. Phase 5 is open until the IMU, mount and (for option B) the NMEA 2000 backbone are chosen.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Connectivity and compute</h2>
+    <ul class="points">
+      <li>A Starlink Mini, about 25–40 W, on the USB-C PD outlet.</li>
+      <li>Tailscale to reach the boat from anywhere, on the free Personal plan.</li>
+      <li>Local inference on the M1 mini: llama.cpp with Vulkan has run a 3B model at about 18 tok/s. Bigger machines stay on shore power.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Omahoy AI, planned and not built</h2>
+    <p>The math is deterministic. A local model explains the suggestions, offline. None of this is built yet, and Omahoy is not for navigation.</p>
+    <ul class="points">
+      <li><b>A polar learned from omalogbook tracks.</b> True wind from the masthead sensor, or from omawind’s shore stations when that is all there is. Speed through the water from GPS speed over ground, corrected with omatide’s NOAA current predictions, because Bay currents of 2–4 kt would otherwise swamp the polar. Motoring segments are filtered out.</li>
+      <li><b>Routing</b> from wind, tide and that polar.</li>
+      <li><b>Sail choice,</b> and <b>reef suggestions</b> learned from <code>/reef</code> log marks plus wind and heel. Thresholds come from Dash’s data, not from a generic racer’s numbers. A published polar for the PS25 is not known here.</li>
+      <li><b>Power awareness</b> from the Victron data.</li>
+      <li>A local model that explains each suggestion.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Shopping list</h2>
+    <p>Links go to the manufacturer’s page, or to a retailer when that is the public product page. Prices with a date were read on that page on 11 Nov 2026 (America/Los_Angeles). Everything else stays an estimate. Cloudflare blocked automated fetches of bluesea.com; those official URLs were opened another way the same day and were not 404s. Availability changes; check before you buy. Two of each 100 Ah battery are needed.</p>
+    <div class="keys-wrap">
+      <table class="shop">
+        <thead>
+          <tr><th>Phase</th><th>Item</th><th>Link</th><th>Price</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>30 A inlet, Marinco or SmartPlug</td><td><a href="https://marinco.navico.com/marine/shore-power-solutions/">Marinco shore power</a>; <a href="https://smartplug.com/smartplug-inlet/">SmartPlug inlet</a></td><td>estimate, in the phase 1 range</td></tr>
+          <tr><td>1</td><td>30 A marine shore cord</td><td><a href="https://smartplug.com/smartplug-dual-configuration-smartplug-cordset-w-smartplug-connector-shore-power-end/">SmartPlug 30 A cordset</a>; also on the Marinco shore-power page</td><td>estimate, in the phase 1 range</td></tr>
+          <tr><td>1</td><td>Blue Sea 30 A ELCI main, PN 3106100</td><td><a href="https://www.bluesea.com/products/3106100/A-Series_ELCI_Main_Circuit_Breaker_-_Double_Pole_120V_AC_30A">Blue Sea 3106100</a></td><td>estimate, in the phase 1 range</td></tr>
+          <tr><td>1</td><td>Blue Sea ELCI main panel, 30 A + 2 positions, PN 8101</td><td><a href="https://www.bluesea.com/products/8101/ELCI_Main_30A_Double_Pole_+_2_Positions">Blue Sea 8101</a></td><td>estimate, in the phase 1 range</td></tr>
+          <tr><td>1</td><td>Victron galvanic isolator, VDI-32 for a 30 A inlet</td><td><a href="https://www.victronenergy.com/isolation-transformers/galvanic-isolator">Victron VDI-16 / VDI-32 / VDI-64</a></td><td>estimate, in the phase 1 range</td></tr>
+          <tr><td>1</td><td>Victron Blue Smart IP67 12/25 charger, house bank</td><td><a href="https://www.victronenergy.com/chargers/blue-smart-ip67-charger-waterproof">Victron Blue Smart IP67</a></td><td>estimate, in the phase 1 range</td></tr>
+          <tr><td>1</td><td>Maintainer or 2-bank charger for the starters</td><td><a href="https://www.victronenergy.com/chargers/blue-smart-ip22-charger">Victron Blue Smart IP22</a> (1- or 3-output)</td><td>estimate, in the phase 1 range</td></tr>
+          <tr><td>2</td><td>Battle Born 12 V 100 Ah LiFePO4, two needed</td><td><a href="https://battlebornbatteries.com/products/100ah-12v-lifepo4-deep-cycle-battery">Battle Born 100 Ah</a></td><td>$799 each, regular $949, in stock, as of 11 Nov 2026</td></tr>
+          <tr><td>2</td><td>Epoch 12 V 100 Ah Eco, Group 24, two needed, a value option</td><td><a href="https://www.epochbatteries.com/products/12v-100ah-group-24-lifepo4-battery">Epoch Eco 100 Ah</a></td><td>$325 each, listed out of stock, as of 11 Nov 2026</td></tr>
+          <tr><td>2</td><td>SOK SK12V100PC 12 V 100 Ah, two needed, a value option</td><td><a href="https://us.sokbattery.com/product-page/sk12v100pc-sok-12v100ah-lifepo4-battery-bluetooth-clear-sealed-box">SOK SK12V100PC</a></td><td>$319 each, in stock, as of 11 Nov 2026</td></tr>
+          <tr><td>2</td><td>Class T fuse block, 110–200 A, PN 5007100; the fuse itself is chosen at install</td><td><a href="https://www.bluesea.com/products/5007100/Class_T_Fuse_Block_with_Insulating_Cover_-_110_to_200A">Blue Sea 5007100</a></td><td>estimate, in the phase 2 range</td></tr>
+          <tr><td>2</td><td>Blue Sea m-Series ON/OFF switch, PN 6006, one per bank</td><td><a href="https://www.bluesea.com/products/6006/m-Series_Battery_Switch_-_On-Off">Blue Sea 6006</a></td><td>estimate, in the phase 2 range</td></tr>
+          <tr><td>2</td><td>Common 150 A bus bar, 10 gang, PN 2301</td><td><a href="https://www.bluesea.com/products/2301">Blue Sea 2301</a></td><td>estimate, in the phase 2 range</td></tr>
+          <tr><td>2</td><td>Victron SmartShunt 500 A</td><td><a href="https://www.victronenergy.com/battery-monitors/smart-battery-shunt">Victron SmartShunt</a></td><td>estimate, in the phase 2 range</td></tr>
+          <tr><td>2</td><td>Blue Sea SafetyHub 100, or another small DC panel</td><td><a href="https://www.bluesea.com/products/7725/SafetyHub_100_Fuse_Block">Blue Sea SafetyHub 100</a></td><td>estimate, in the phase 2 range</td></tr>
+          <tr><td>2</td><td>Fused 12–24 V USB-C PD 100 W outlet; one option, listed out of stock</td><td><a href="https://www.baywatt.com/products/marine-usb-c-100w-pd-charger-socket">BAYWATT US2XH-2</a></td><td>€24.50, listed out of stock, as of 11 Nov 2026</td></tr>
+          <tr><td>2</td><td>Wire and lugs</td><td>chosen at install, to ABYC E-11</td><td>estimate $300–600</td></tr>
+          <tr><td>3</td><td>Victron Orion-Tr Smart 12/12-18 isolated</td><td><a href="https://www.victronenergy.com/dc-dc-converters/orion-tr-smart">Victron Orion-Tr Smart</a></td><td>estimate $200–300</td></tr>
+          <tr><td>4</td><td>Two rigid 100–150 W pulpit panels</td><td>brand still open</td><td>estimate, in the phase 4 range</td></tr>
+          <tr><td>4</td><td>Victron SmartSolar MPPT 75/15, two of them</td><td><a href="https://www.victronenergy.com/solar-charge-controllers/smartsolar-mppt-75-10-75-15-100-15-100-20">Victron SmartSolar 75/15</a></td><td>estimate, in the phase 4 range</td></tr>
+          <tr><td>5</td><td>Calypso Ultrasonic Portable, solar, Bluetooth, CMI1006</td><td><a href="https://www.calypsoinstruments.com/shop/cmi1006-ultrasonic-portable-solar-wind-meter-2">Calypso Portable Solar</a></td><td>US$615 as of 11 Nov 2026</td></tr>
+          <tr><td>5</td><td>Calypso ULP NMEA 2000, CMI1035, the wired option</td><td><a href="https://www.calypsoinstruments.com/shop/cmi1035-ultra-low-power-ultrasonic-wind-meter-nmea2000-290">Calypso ULP NMEA 2000</a></td><td>US$648 as of 11 Nov 2026</td></tr>
+          <tr><td>5</td><td>IMU heel sensor, plus a mount, and for option B a backbone and USB gateway</td><td>models still open</td><td>not priced</td></tr>
+          <tr><td>Optional</td><td>Victron Phoenix VE.Direct inverter, 300–500 VA class</td><td><a href="https://www.victronenergy.com/inverters/phoenix-inverter-vedirect-250va-800va">Victron Inverter VE.Direct</a></td><td>estimate $150–300</td></tr>
+          <tr><td>—</td><td>Starlink Mini</td><td><a href="https://www.starlink.com/mini">Starlink Mini</a></td><td>hardware and service prices not on the static page today</td></tr>
+          <tr><td>—</td><td>Tailscale Personal plan</td><td><a href="https://tailscale.com/pricing">Tailscale pricing</a></td><td>$0, free forever, as of 11 Nov 2026</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Next time at the boat</h2>
+    <p>Open questions, for the next visit:</p>
+    <ul class="check">
+      <li>The alternator label: amps, and whether it is the original.</li>
+      <li>Stern pulpit width, and clearance from the backstay and boom.</li>
+      <li>Which locker could hold the house bank, low and near the centerline.</li>
+      <li>DIY versus a professional install.</li>
+      <li>The budget ceiling.</li>
+      <li>Insurer approval for a lithium retrofit.</li>
+      <li>The mast wiring path, or a mount spot for the wind sensor.</li>
+    </ul>
+  </section>
+
+  <nav class="pager" aria-label="More on this site">
+    <span>← <a href="./">omahoy.org</a></span>
+    <span><a href="install/">install guide</a> →</span>
+  </nav>
+
+  <div class="themes" id="themes">
+    <span class="label">Theme</span>
+    <span class="hint">press <kbd>T</kbd></span>
+  </div>
+</main>
+
+<footer>
+  <span>MIT · Not for navigation. Carry a backup.</span>
+  <span>A plan for Dash, not a finished install · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
+</footer>
+</body>
+</html>

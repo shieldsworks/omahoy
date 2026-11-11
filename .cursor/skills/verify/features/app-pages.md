@@ -2,7 +2,7 @@
 
 Each app that runs today has a page that tells its story with recordings of
 the real app on omakeel's sample sail, and a nav across the top that links
-every app page with the current one marked.
+every app page, then install, with the current one marked.
 
 ## Sub-features
 
@@ -12,7 +12,7 @@ every app page with the current one marked.
 
 ## How to get to it (user POV)
 
-- The nav at the top of any app page.
+- The nav at the top of any app page, or of the install guide.
 - The app list on the home page.
 - A direct link such as `https://omahoy.org/omahelm/`.
 
