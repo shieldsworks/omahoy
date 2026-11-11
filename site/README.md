@@ -26,7 +26,7 @@ positions and the ground height (y −170) adjusted. `media/omatiller.webp` is a
 static render of the same model for fallback and link previews, captured from
 headless Chromium at 1398 × 801. This page makes no claim that the pilot is built.
 
-`install/` is the install guide: clone the repo, run `./omahoy` or `./omahoy panel`, and apply the plan. Its stills in `media/` (`omahoy-help.webp`, `omahoy-doctor.webp`, `omahoy-setup-questions.webp`, `omahoy-setup-plan.webp`) are real terminal captures of the release binary, not mock-ups. The setup panel itself has no screenshot on the page, and the copy says so.
+`install/` is the install guide: clone the repo, run `./omahoy` or `./omahoy panel`, and apply the plan. Its terminal stills in `media/` (`omahoy-help.webp`, `omahoy-doctor.webp`, `omahoy-setup-questions.webp`, `omahoy-setup-plan.webp`) are real captures of the release binary, not mock-ups. The six `omahoy-panel-*.webp` stills are a real run of the Omarchy setup panel for Dash, with the home-port coordinates, the line that reads them back, the sailing-area bounds, and a local network source blurred.
 
 `dash.html` is the AI shed build plan for Dash: the house-power phases, a single-line schematic, a data diagram, a cost chart, a shopping list, and the questions for the next boat visit. It is a file in `site/`, not a `site/dash/` directory, so the app-nav check does not treat it as an app page. The home page links it from the Aboard Dash section, and the install guide links it too.
 

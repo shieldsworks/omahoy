@@ -277,7 +277,7 @@ You will copy what you see. Before copying, check that what you copy passes
   that needs HTTP, `tiller.css` its styles, `model/` the GLB and its
   metadata.
 - `site/install/`: the install guide, with terminal stills of `./omahoy`
-  and a placeholder for the setup panel.
+  and a six-page walkthrough of the Omarchy setup panel.
 - `site/dash.html`: the AI shed build plan for Dash. A file, not
   `site/dash/`, so the app-nav check does not treat it as an app page.
 - `site/style.css`, `site/theme.js`: shared by every page.
