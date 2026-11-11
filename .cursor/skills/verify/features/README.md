@@ -29,7 +29,7 @@ its headings drift from the contract.
   virtual-time budget) under `$run/artifacts/verify/<feature-id>/`.
 - State proof: a read-only second look at `dom.html`, such as
   `grep -o '<html[^>]*>' "$run/artifacts/verify/theme-query/dom.html" | grep -o 'data-theme="[^"]*"'`.
-  Read `data-theme` off `<html>`: every picker button carries one too.
+  Read `data-theme` off `<html>`: do not read it off the theme select.
 - Record the feature ID and entry point with every artifact.
 - A missing `page.png` or an empty `dom.html` means the run did not reach
   the page.

@@ -23,7 +23,7 @@ Preconditions:
 
 - **Render.** Open the home page. Run `drive home-render "$base/"`. `page.png` shows the wordmark over the chart. `dom.html` contains `<svg class="wordmark"` and `<canvas id="bay"`.
 - **Traffic.** Same run. `grep -o '<span id="ais">[^<]*' "$run/artifacts/verify/home-render/dom.html"` reads `AIS 3`, and `grep -o 'id="nearest">[^<]*'` on the same file reads `Nearest <vessel> <n> nm`.
-- **Apps.** Same run. `diff <(ls site/*/index.html | cut -d/ -f2) <(grep -o 'href="[a-z]*/"' "$run/artifacts/verify/home-render/dom.html" | cut -d'"' -f2 | tr -d / | sort)` prints nothing: the page links each `site/<name>/` directory once, including `install/` from the Install section.
+- **Apps.** Same run. `comm -23 <(ls site/*/index.html | cut -d/ -f2) <(grep -o 'href="[a-z]*/"' "$run/artifacts/verify/home-render/dom.html" | cut -d'"' -f2 | tr -d / | sort -u)` prints nothing: the page links each `site/<name>/` directory at least once. `grep -c 'href="install/"' "$run/artifacts/verify/home-render/dom.html"` prints 2: the hero Install omahoy button and the Install section.
 
 ## Gotchas
 
