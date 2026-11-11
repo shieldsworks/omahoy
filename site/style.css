@@ -141,3 +141,52 @@ table.keys kbd { display: inline-block; min-width: 1.8em; text-align: center; pa
 
 .pager { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; border-top: 1px solid var(--line); padding-top: 14px; font-size: 13px; }
 .pager span { color: var(--soft); }
+
+/* Diagrams, screenshots, shopping lists and checklists on the
+   build-plan and install pages. Colors follow the active theme. */
+figure.diagram, figure.shot {
+  margin: 0;
+  border: 2px solid var(--accent);
+  background: var(--well);
+  overflow-x: auto;
+}
+figure.diagram svg { display: block; width: 100%; height: auto; min-width: 640px; }
+figure.shot img { display: block; width: 100%; height: auto; background: var(--well); }
+figure.diagram figcaption, figure.shot figcaption, figure.missing figcaption {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--soft);
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+figure.diagram figcaption b, figure.shot figcaption b { color: var(--bright); font-weight: 400; }
+
+figure.missing {
+  margin: 0;
+  border: 2px dashed var(--line);
+  background: var(--well);
+  padding: 28px 16px;
+  color: var(--soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+figure.missing .label { color: var(--warn); text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; }
+
+.note { color: var(--soft); font-size: 13px; max-width: 72ch; }
+
+table.shop { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+table.shop th, table.shop td { text-align: left; padding: 7px 16px 7px 0; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+table.shop th { color: var(--soft); font-weight: 400; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+table.shop td:nth-child(4) { white-space: nowrap; }
+@media (max-width: 720px) {
+  table.shop td:nth-child(4) { white-space: normal; }
+}
+
+ul.check { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
+ul.check li { padding-left: 1.6em; position: relative; }
+ul.check li::before { content: "☐"; position: absolute; left: 0; color: var(--accent); }
+
+.phases { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 16px; }
+.phases h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--bright); }
+.phases h3 .cost { color: var(--warn); font-weight: 400; }

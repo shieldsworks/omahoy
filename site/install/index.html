@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install · Omahoy</title>
+<meta name="description" content="Install Omahoy on an Omarchy machine: clone the repo, run ./omahoy or ./omahoy panel, and let setup build the apps you choose.">
+<meta property="og:title" content="Install · Omahoy">
+<meta property="og:description" content="Clone omahoy, run ./omahoy or ./omahoy panel, and set up the suite from one boat file.">
+<meta property="og:url" content="https://omahoy.org/install/">
+<meta property="og:image" content="https://omahoy.org/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1b26">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../style.css">
+<script src="../theme.js"></script>
+</head>
+<body>
+<main>
+  <div class="row">
+    <a href="../">omahoy.org</a>
+    <nav aria-label="Apps">
+      <a href="../omakeel/">omakeel</a>
+      <a href="../omahelm/">omahelm</a>
+      <a href="../omalookout/">omalookout</a>
+      <a href="../omalogbook/">omalogbook</a>
+      <a href="../omatide/">omatide</a>
+      <a href="../omawind/">omawind</a>
+      <a href="../omatiller/">omatiller</a>
+      <a href="./" aria-current="page">install</a>
+    </nav>
+    <span class="right"><a href="https://github.com/shieldsworks/omahoy">github</a></span>
+  </div>
+
+  <div class="hero">
+    <p class="tagline"><span>Getting started</span><span class="early">early</span><span>MIT</span></p>
+    <h1 class="app-name">install</h1>
+    <p class="lede">You need an Omarchy machine and an internet connection for the first run. Nothing else to install by hand: the <code>./omahoy</code> bootstrap installs mise and the pinned Rust, then builds omahoy, which takes a few minutes the first time.</p>
+  </div>
+
+  <section>
+    <h2>Clone and run</h2>
+    <p>From a terminal on the Omarchy machine:</p>
+    <pre class="cmd"><span class="prompt">$ </span>git clone https://github.com/shieldsworks/omahoy &amp;&amp; cd omahoy
+<span class="prompt">$ </span>./omahoy          <span class="note"># questions in the terminal</span>
+<span class="prompt">$ </span>./omahoy panel    <span class="note"># or the setup panel in the Omarchy shell</span></pre>
+    <p>Both ask the same things. <code>./omahoy help</code> lists the commands:</p>
+    <figure class="shot">
+      <img src="../media/omahoy-help.webp" width="1202" height="190" alt="A terminal running ./omahoy help. The usage lists omahoy, omahoy doctor, omahoy apply with an optional --yes, omahoy hardware, omahoy panel, and omahoy gui subcommands.">
+      <figcaption>A real capture of <code>./omahoy help</code> from the release binary, run on 11 Nov 2026.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>The questions</h2>
+    <p>The first run asks, in this order: the boat’s name; depth units (feet, meters or fathoms); draft, and the clearance you want under the keel, both in those units; its GPS and AIS hardware (each receiver can be skipped for now; with none, the hub plays a demo sail); a network source, or Enter to skip; its home port and sailing area; and which apps to install. If you chose omalogbook, it also asks for the logbook folder (default <code>~/Logbook</code>) and whether to keep it in git.</p>
+    <p>Before the hardware question, setup builds omakeel once if it isn’t already built, so it can listen for a GPS. Past that, setup saves and changes nothing until you say Go.</p>
+    <figure class="shot">
+      <img src="../media/omahoy-setup-questions.webp" width="1082" height="607" alt="A terminal running ./omahoy. The questions have been answered for a boat named Wavelength: feet, draft 5.5, the default two-foot clearance, hardware skipped so the hub keeps the demo sail, home port 47.687, negative 122.413, every app ticked, and the cursor waiting on whether to keep the logbook in git.">
+      <figcaption>A real first run of <code>./omahoy</code> on 11 Nov 2026, using the documented example boat <b>Wavelength</b>, stopped before Go. Hardware was skipped with <code>s</code>, so the hub keeps the demo sail.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>The plan, then Go</h2>
+    <p>Setup saves <code>~/.config/omahoy/boat.toml</code>, then shows the plan. When you say go it:</p>
+    <ul class="points">
+      <li>installs the packages the apps need,</li>
+      <li>clones and builds each chosen app, plus omakeel, the hub, which is always installed,</li>
+      <li>adds and enables the Omarchy plugins, in <code>~/.config/omarchy/plugins</code>, with omakeel’s checkout in <code>~/.local/share/omahoy/src/omakeel</code>,</li>
+      <li>links the binaries into <code>~/.local/bin</code>,</li>
+      <li>writes each app’s config from your answers, which it keeps in <code>~/.config/omahoy/boat.toml</code>,</li>
+      <li>downloads charts and tides for your sailing area,</li>
+      <li>and starts their services.</li>
+    </ul>
+    <p>Installing packages and adding you to the <code>uucp</code> group (so the hub can read serial GPS and AIS receivers) need your password: <code>sudo</code> asks in the terminal, and a polkit dialog asks from the panel. “No” applies nothing; <code>omahoy apply</code> picks it up later.</p>
+    <figure class="shot">
+      <img src="../media/omahoy-setup-plan.webp" width="1082" height="1133" alt="A terminal running omahoy apply. It prints the plan for Wavelength: packages, plugins, builds, links, config keys, systemd units, a git repo in the logbook folder, and fetches for charts and tides, then Go? is answered n, and setup stops before applying.">
+      <figcaption>A real capture of <code>omahoy apply</code> on that same first-run <code>boat.toml</code>, 11 Nov 2026. Go was answered <code>n</code>, so nothing on the machine was applied. The <code>~/.local/bin/omahoy</code> link in the plan points at the checkout this run was built from.</figcaption>
+    </figure>
+    <p class="note">This plan was captured on a machine that is not running Omarchy, so the checkout path is this build tree. On your Omarchy machine the link is to the clone you ran <code>./omahoy</code> from.</p>
+  </section>
+
+  <section>
+    <h2>The setup panel</h2>
+    <p><code>./omahoy panel</code> opens an Omarchy panel that asks the same questions, with checkboxes for the apps, and installs them on Go. It links the plugin <code>org.omahoy.setup</code> to the checkout, enables it, and opens it. With the shell down it stops and says to start it.</p>
+    <figure class="missing">
+      <span class="label">Screenshot not captured</span>
+      <p>The panel is a Quickshell plugin for the Omarchy shell. This capture was made on a machine without Quickshell or an Omarchy session, so there is no real screenshot of the panel here. Run <code>./omahoy panel</code> on your Omarchy machine to see it.</p>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Afterwards</h2>
+    <pre class="cmd"><span class="prompt">$ </span>omahoy            <span class="note"># boat.toml exists: show it, offer to change a section, then plan and apply</span>
+<span class="prompt">$ </span>omahoy doctor     <span class="note"># read-only: what’s wrong, what apply would do; exit 1 if anything</span>
+<span class="prompt">$ </span>omahoy apply      <span class="note"># make the machine match boat.toml; --yes skips the prompt</span>
+<span class="prompt">$ </span>omahoy hardware   <span class="note"># re-run only the hardware question</span>
+<span class="prompt">$ </span>omahoy panel      <span class="note"># set up from the Omarchy shell’s panel instead</span></pre>
+    <p><code>omahoy doctor</code> checks the machine against <code>boat.toml</code> and changes nothing. Before the first run it says so:</p>
+    <figure class="shot">
+      <img src="../media/omahoy-doctor.webp" width="1202" height="56" alt="A terminal running omahoy doctor on a machine with no boat.toml yet. It prints: No ~/.config/omahoy/boat.toml yet. Run omahoy to set up.">
+      <figcaption>A real capture of <code>omahoy doctor</code> with no <code>boat.toml</code> yet, 11 Nov 2026. That case exits 2.</figcaption>
+    </figure>
+    <p>Run <code>omahoy</code> (or <code>omahoy panel</code>) again to change an answer or add an app, and <code>omahoy hardware</code> to add a receiver later. When apply finishes and omahelm was chosen, setup prints:</p>
+    <pre class="cmd">Open the chart: omarchy-shell shell toggle org.omahoy.helm {}</pre>
+    <p><a href="https://github.com/shieldsworks/omahoy/blob/main/docs/onboarding.md">docs/onboarding.md</a> has the details, including what setup writes into each app’s config.</p>
+  </section>
+
+  <section>
+    <h2>Once it’s running</h2>
+    <p>The six apps that run today have their own pages, with recordings of the real apps on omakeel’s sample sail (a replay, not a real track):</p>
+    <ul class="points">
+      <li><a href="../omakeel/">omakeel</a>, the data hub</li>
+      <li><a href="../omahelm/">omahelm</a>, the chartplotter</li>
+      <li><a href="../omalookout/">omalookout</a>, AIS targets</li>
+      <li><a href="../omalogbook/">omalogbook</a>, the ship’s log</li>
+      <li><a href="../omatide/">omatide</a>, tides and currents</li>
+      <li><a href="../omawind/">omawind</a>, wind forecasts</li>
+    </ul>
+    <p>The power, solar and local-AI plan for Dash is on the <a href="../dash.html">AI shed build plan</a>.</p>
+  </section>
+
+  <nav class="pager" aria-label="More on this site">
+    <span>← <a href="../">omahoy.org</a></span>
+    <span><a href="../dash.html">AI shed build plan</a> →</span>
+  </nav>
+
+  <div class="themes" id="themes">
+    <span class="label">Theme</span>
+    <span class="hint">press <kbd>T</kbd></span>
+  </div>
+</main>
+
+<footer>
+  <span>MIT · Not for navigation. Carry a backup.</span>
+  <span>The first-run screenshots use the documented example boat Wavelength · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
+</footer>
+</body>
+</html>
