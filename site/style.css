@@ -173,6 +173,8 @@ figure.missing {
 }
 figure.missing .label { color: var(--warn); text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; }
 
+.walkthrough { display: flex; flex-direction: column; gap: 16px; }
+
 .note { color: var(--soft); font-size: 13px; max-width: 72ch; }
 
 table.shop { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }

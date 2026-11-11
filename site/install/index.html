@@ -87,10 +87,33 @@
   <section>
     <h2>The setup panel</h2>
     <p><code>./omahoy panel</code> opens an Omarchy panel that asks the same questions, with checkboxes for the apps, and installs them on Go. It links the plugin <code>org.omahoy.setup</code> to the checkout, enables it, and opens it. With the shell down it stops and says to start it.</p>
-    <figure class="missing">
-      <span class="label">Screenshot not captured</span>
-      <p>The panel is a Quickshell plugin for the Omarchy shell. This capture was made on a machine without Quickshell or an Omarchy session, so there is no real screenshot of the panel here. Run <code>./omahoy panel</code> on your Omarchy machine to see it.</p>
-    </figure>
+    <p>These six stills are a real run of that panel on an Omarchy machine on 11 Nov 2026, for Dash, stopped before Go. The home-port coordinates, the line that reads them back, the sailing-area bounds that follow that port, and a local network source were blurred: this site is public.</p>
+    <div class="walkthrough">
+      <figure class="shot">
+        <img src="../media/omahoy-panel-boat.webp" width="3008" height="836" alt="The Omarchy setup panel, step 1, The boat. The boat name is Dash, depth units are feet, draft is 3.5, and the clearance wanted under the keel is 2. The chart will shade water shallower than 6 feet. Back is dimmed; Next is in the corner.">
+        <figcaption><b>1. The boat.</b> Name, depth units, draft, and the clearance you want under the keel.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="../media/omahoy-panel-hardware.webp" width="3008" height="836" alt="The Omarchy setup panel, step 2, Hardware. Listen is selected. A network source field is filled, and that address has been blurred. The page still says nothing is chosen, so the hub will play the demo sail with invented ships until you add hardware.">
+        <figcaption><b>2. Hardware.</b> Plug in GPS and AIS, then Listen, or skip for now. A network source can be a phone app sharing NMEA. In this run Listen is on and a source is entered (the address is blurred); nothing is chosen yet, so the hub keeps the demo sail.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="../media/omahoy-panel-home.webp" width="3008" height="836" alt="The Omarchy setup panel, step 3, Home and area. The home-port latitude and longitude field is blurred, as is the line that would read those coordinates back, and the numeric sailing-area bounds. The sentence that the sailing area follows the home port remains, and NOAA charts, NOAA tides, and HRRR wind are ticked.">
+        <figcaption><b>3. Home and area.</b> Home port as latitude, longitude; the sailing area follows it, and setup will fetch charts, tides and wind for that area. The coordinates and the bounds that give them away are blurred.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="../media/omahoy-panel-apps.webp" width="3008" height="836" alt="The Omarchy setup panel, step 4, Apps. omahelm, omalogbook, omatide and omawind are ticked; omalookout is not.">
+        <figcaption><b>4. Apps.</b> Checkboxes for the apps to install. In this run omahelm, omalogbook, omatide and omawind are on; omalookout is off.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="../media/omahoy-panel-logbook.webp" width="3008" height="836" alt="The Omarchy setup panel, step 5, Logbook. The logbook folder is set to tilde /notes/Logbook, and Keep the logbook in git is ticked.">
+        <figcaption><b>5. Logbook.</b> The logbook folder, here <code>~/notes/Logbook</code>, and whether to keep it in git. This page appears when omalogbook is chosen.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="../media/omahoy-panel-review.webp" width="3008" height="836" alt="The Omarchy setup panel, step 6, Review. It notes that no hardware is chosen, so the hub will play the demo sail with invented ships until you add hardware. The Go button is in the corner, unpressed.">
+        <figcaption><b>6. Review.</b> This run was stopped before Go. The panel notes that no hardware is chosen, so the hub will play the demo sail until you add some.</figcaption>
+      </figure>
+    </div>
   </section>
 
   <section>
@@ -137,7 +160,7 @@
 
 <footer>
   <span>MIT · Not for navigation. Carry a backup.</span>
-  <span>The first-run screenshots use the documented example boat Wavelength · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
+  <span>Terminal stills use the documented example boat Wavelength; the panel stills are of Dash, with the home port and a network source blurred · <a href="https://github.com/shieldsworks">shieldsworks</a></span>
 </footer>
 </body>
 </html>
